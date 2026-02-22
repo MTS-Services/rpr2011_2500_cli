@@ -28,27 +28,16 @@ export default function PortalShell({ children }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex bg-slate-100">
-      {/* Layout */}
-      <div className="flex w-full min-h-screen">
-        <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-slate-100">
+      <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
-        <div className="flex flex-col flex-1 min-w-0">
-          <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
-          {/* Main scrollable content */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="max-w-6xl mx-auto">
-              {children}
-            </div>
-          </main>
-
-          {/* Footer */}
-          <footer className="shrink-0 py-3 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
-            © 2024 McCann &amp; Curran. All rights reserved.
-          </footer>
+      {/* Main — offset for fixed sidebar + topbar */}
+      <main className="lg:pl-[300px] pt-[72px] min-h-screen">
+        <div className="p-4 lg:p-6">
+          {children}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

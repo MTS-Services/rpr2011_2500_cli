@@ -19,7 +19,7 @@ export default function Topbar({ onMenuClick }) {
   };
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 lg:px-6 gap-4 shrink-0">
+    <header className="fixed top-0 left-0 lg:left-[300px] right-0 z-20 h-[72px] bg-white border-b border-slate-200 flex items-center px-4 lg:px-6 gap-4">
       {/* Mobile menu button */}
       <button
         className="lg:hidden p-2 text-slate-500 hover:text-slate-800"
@@ -32,34 +32,32 @@ export default function Topbar({ onMenuClick }) {
       <div className="flex-1" />
 
       {/* Right icons */}
-      <div className="flex items-center gap-3 ml-auto">
-        <button className="p-1.5 text-slate-500 hover:text-slate-800 relative">
-          <Bell size={18} />
+      <div className="flex items-center gap-4 ml-auto">
+        <button className="p-2 text-slate-500 hover:text-slate-800 relative transition">
+          <Bell size={20} />
         </button>
-        <button className="p-1.5 text-slate-500 hover:text-slate-800">
-          <Mail size={18} />
+        <button className="p-2 text-slate-500 hover:text-slate-800 transition">
+          <Mail size={20} />
         </button>
-        <button className="p-1.5 text-slate-500 hover:text-slate-800">
-          <Globe size={18} />
-        </button>
+        
 
         {/* User dropdown */}
         <div className="relative">
           <button
             onClick={() => setDropOpen(!dropOpen)}
-            className="flex items-center gap-2 ml-1 hover:opacity-80 transition"
+            className="flex items-center gap-2.5 ml-1 hover:opacity-80 transition"
           >
             <Image
               src={user?.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
               alt={user?.name}
-              width={32}
-              height={32}
+              width={36}
+              height={36}
               className="rounded-full object-cover"
             />
-            <span className="hidden sm:block text-sm font-medium text-slate-700">
+            <span className="hidden sm:block text-[0.95rem] font-medium text-slate-700">
               {user?.name}
             </span>
-            <ChevronDown size={14} className="text-slate-500" />
+            <ChevronDown size={15} className="text-slate-500" />
           </button>
 
           {dropOpen && (

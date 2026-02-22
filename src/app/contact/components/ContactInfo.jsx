@@ -30,9 +30,9 @@ export default function ContactInfo() {
             <div>
               <p className="text-xs text-dark-400 font-medium uppercase tracking-wide mb-0.5">{label}</p>
               {href && href !== "#" ? (
-                <a href={href} className="section-desc font-medium text-dark-800 hover:text-primary-600 transition-colors leading-snug">{value}</a>
+                <a href={href} className="text-sm font-medium text-dark-800 hover:text-primary-600 transition-colors leading-snug">{value}</a>
               ) : (
-                <p className="section-desc font-medium text-dark-800 leading-snug">{value}</p>
+                <p className="text-sm font-medium text-dark-800 leading-snug">{value}</p>
               )}
             </div>
           </div>

@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import PortalShell from "@/components/portal/PortalShell";
+import Pagination from "@/components/portal/Pagination";
 import { Search } from "lucide-react";
 import Image from "next/image";
 
@@ -61,81 +63,77 @@ const threads = [
 ];
 
 export default function MessagesPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   return (
     <PortalShell>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Messages</h1>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-800">Messages</h1>
       </div>
 
       {/* Search */}
-      <div className="relative mb-4">
-        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="relative mb-5">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
           placeholder="Search messages..."
-          className="w-full pl-10 pr-4 py-2.5 bg-white/90 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition"
+          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition shadow-sm"
         />
       </div>
 
-      <div className="bg-white/90 rounded-xl border border-slate-100 overflow-hidden">
-        <div className="divide-y divide-slate-50">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="divide-y divide-slate-100">
           {threads.map((t, i) => (
             <div
               key={i}
-              className="flex gap-4 px-5 py-4 hover:bg-slate-50/60 cursor-pointer transition-colors"
+              className="flex gap-4 px-6 py-5 hover:bg-slate-50/60 cursor-pointer transition-colors"
             >
               <Image
                 src={t.avatar}
                 alt={t.name}
-                width={42}
-                height={42}
-                className="rounded-full object-cover w-[42px] h-[42px] shrink-0"
+                width={48}
+                height={48}
+                className="rounded-full object-cover w-12 h-12 shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-0.5">
+                <div className="flex items-start justify-between gap-2 mb-1">
                   <div>
-                    <p className="font-semibold text-slate-800 text-sm">{t.name}</p>
-                    <p className="text-xs text-slate-400">{t.property}</p>
-                    <p className="text-xs text-slate-400">{t.age}</p>
+                    <p className="font-semibold text-slate-800 text-base">{t.name}</p>
+                    <p className="text-sm text-slate-400">{t.property}</p>
+                    <p className="text-sm text-slate-400">{t.age}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="text-xs text-slate-400 whitespace-nowrap">{t.time}</span>
+                    <span className="text-sm text-slate-400 whitespace-nowrap">{t.time}</span>
                     {t.unread && (
-                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[0.65rem] font-bold">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-bold">
                         {t.unread}
                       </span>
                     )}
                     {t.badge && (
-                      <span className="text-[0.65rem] font-bold px-1.5 py-0.5 rounded bg-red-400 text-white">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-red-400 text-white">
                         {t.badge}
                       </span>
                     )}
                   </div>
                 </div>
-                <p className="font-semibold text-slate-700 text-sm">{t.subject}</p>
-                <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">{t.preview}</p>
+                <p className="font-semibold text-slate-700 text-base">{t.subject}</p>
+                <p className="text-sm text-slate-400 line-clamp-2 mt-1">{t.preview}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            Rows per page:
-            <select className="ml-1 border border-slate-200 rounded px-2 py-1 text-xs bg-white focus:outline-none">
-              <option>10</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>1–5 of 6</span>
-            <div className="flex gap-1">
-              {["⏮","◀","▶","⏭"].map((a, k) => (
-                <button key={k} className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-400 text-xs">{a}</button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <Pagination
+          total={threads.length}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(value) => {
+            setItemsPerPage(value);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </PortalShell>
   );
