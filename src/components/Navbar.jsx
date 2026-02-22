@@ -29,7 +29,7 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed top-0 inset-x-0 z-50 px-6 lg:px-16 transition-all duration-300 ${
-        scrolled ? "h-16 bg-white shadow-sm" : "h-[72px] bg-white/60 backdrop-blur-md border-b border-white/10"
+        scrolled ? "h-[72px] bg-white shadow-sm" : "h-[72px] bg-white/60 backdrop-blur-md border-b border-white/10"
       }`}
     >
       <div className="container mx-auto flex items-center justify-between h-full">
