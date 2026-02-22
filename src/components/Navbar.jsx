@@ -29,7 +29,7 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed top-0 inset-x-0 z-50 px-6 lg:px-16 transition-all duration-300 ${
-        scrolled ? "h-16 bg-white shadow-sm" : "h-[72px] bg-white/60 backdrop-blur-md border-b border-white/10"
+        scrolled ? "h-[72px] bg-white shadow-sm" : "h-[72px] bg-white/60 backdrop-blur-md border-b border-white/10"
       }`}
     >
       <div className="container mx-auto flex items-center justify-between h-full">
@@ -63,7 +63,7 @@ export default function Navbar() {
             </Link>
           ))}
           <Link
-            href="/contact"
+            href="/portal/login"
             className="ml-4 px-6 py-2.5 text-[0.85rem] font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
           >
             Client Login
@@ -96,7 +96,7 @@ export default function Navbar() {
             </Link>
           ))}
           <Link
-            href="/contact"
+            href="/portal/login"
             onClick={() => setOpen(false)}
             className="mt-2 px-6 py-3 text-center text-[0.9rem] font-semibold text-white bg-primary-600 rounded-full"
           >
