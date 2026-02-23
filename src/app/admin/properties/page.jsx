@@ -52,8 +52,59 @@ export default function AdminPropertiesPage() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Mobile cards — visible below lg */}
+      <div className="lg:hidden space-y-3">
+        {filtered.map((p) => (
+          <div key={p.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display='none'; }} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-800 text-sm truncate">{p.name}</p>
+                <p className="text-xs text-slate-400">{p.area}</p>
+              </div>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${PROP_STATUS[p.statusProp]}`}>
+                {p.statusProp !== "Vacant" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />}
+                {p.statusProp}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">Landlord</p>
+                <p className="font-medium text-slate-700 truncate">{p.landlord}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">Tenant</p>
+                <p className="font-medium text-slate-700 truncate">{p.tenant}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">Rent</p>
+                <p className="font-semibold text-slate-800">{p.rent}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">RTB #</p>
+                <p className={`font-medium flex items-center gap-1 ${p.rtbStyle}`}>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" />{p.rtb}
+                </p>
+              </div>
+            </div>
+            <div className="pt-1 border-t border-slate-100">
+              <button
+                aria-label="View"
+                onClick={() => { setActiveProp(p); setModalOpen(true); }}
+                className="w-full h-9 inline-flex items-center justify-center gap-2 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs font-medium"
+              >
+                <Eye size={14} /> View Details
+              </button>
+            </div>
+          </div>
+        ))}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <Pagination total={PROPERTIES.length} />
+        </div>
+      </div>
+
+      {/* Table — visible lg+ */}
+      <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-base">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">

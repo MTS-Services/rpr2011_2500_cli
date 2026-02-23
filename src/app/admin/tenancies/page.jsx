@@ -55,8 +55,57 @@ function AdminTenanciesInner() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Mobile cards — visible below lg */}
+      <div className="lg:hidden space-y-3">
+        {filtered.map((t) => (
+          <div key={t.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                {t.initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-800 text-sm truncate">{t.name}</p>
+                <p className="text-xs text-slate-400 truncate">{t.sub}</p>
+              </div>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${STATUS_LET[t.statusLet]}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />{t.statusLet}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">Landlord</p>
+                <p className="font-medium text-slate-700 truncate">{t.landlord}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">Rent</p>
+                <p className="font-semibold text-slate-800">{t.rent}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">County/City</p>
+                <p className="font-medium text-slate-700">{t.county}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">RTB #</p>
+                <p className="font-medium text-slate-700">{t.rtb}</p>
+              </div>
+            </div>
+            <div className="pt-1 border-t border-slate-100 flex items-center gap-0.5">
+              <button className={`flex-1 py-1.5 text-white text-xs font-semibold rounded-l-md transition ${
+                t.rtbStatus === "Notice" ? "bg-orange-400 hover:bg-orange-500" : "bg-teal-600 hover:bg-teal-700"
+              }`}>{t.rtbStatus}</button>
+              <button className={`px-2 py-1.5 text-white rounded-r-md transition border-l ${
+                t.rtbStatus === "Notice" ? "bg-orange-500 hover:bg-orange-600 border-orange-400" : "bg-teal-700 hover:bg-teal-800 border-teal-500"
+              }`}><ChevronDown size={12} /></button>
+            </div>
+          </div>
+        ))}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <Pagination total={filtered.length} />
+        </div>
+      </div>
+
+      {/* Table — visible lg+ */}
+      <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-base">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">

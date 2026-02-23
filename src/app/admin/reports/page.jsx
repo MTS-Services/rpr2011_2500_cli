@@ -87,18 +87,22 @@ export default function AdminReportsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-slate-800">Reports</h1>
           <p className="text-base text-slate-500 mt-0.5">View and export system-wide financial and occupancy reports</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-slate-500">From</label>
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="px-2 py-1 border rounded-md" />
-          <label className="text-sm text-slate-500">To</label>
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="px-2 py-1 border rounded-md" />
-          <select value={property} onChange={(e) => setProperty(e.target.value)} className="px-3 py-1 border rounded-md">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm text-slate-500">From</label>
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm text-slate-500">To</label>
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400" />
+          </div>
+          <select value={property} onChange={(e) => setProperty(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400">
             {properties.map((p) => <option key={p}>{p}</option>)}
           </select>
           <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
@@ -129,8 +133,8 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Bar chart - Enhanced */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-8">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Monthly Rent Collected</h2>
             <p className="text-sm text-slate-400 mt-1">Figures in thousands (€000s) • Teal bars = selected range</p>

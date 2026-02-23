@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Send, Search } from "lucide-react";
+import { MessageSquare, Send, Search, ArrowLeft } from "lucide-react";
 
 const CONVERSATIONS = [
   {
@@ -35,6 +35,7 @@ export default function AdminMessagesPage() {
   const [activeId, setActiveId] = useState(CONVERSATIONS[0].id);
   const [text, setText]       = useState("");
   const [search, setSearch]   = useState("");
+  const [showChat, setShowChat] = useState(false);
   const scrollRef             = useRef(null);
 
   const active = convos.find((c) => c.id === activeId);
@@ -82,7 +83,7 @@ export default function AdminMessagesPage() {
         style={{ height: "calc(100vh - 200px)", minHeight: 520 }}
       >
         {/* ── Left: conversation list ───────────────────────── */}
-        <div className="w-72 shrink-0 border-r border-slate-100 flex flex-col">
+        <div className={`${showChat ? 'hidden' : 'flex'} md:flex w-full md:w-72 shrink-0 border-r border-slate-100 flex-col`}>
           {/* search */}
           <div className="p-4 border-b border-slate-100">
             <div className="relative">
@@ -101,7 +102,7 @@ export default function AdminMessagesPage() {
             {filtered.map((c) => (
               <button
                 key={c.id}
-                onClick={() => setActiveId(c.id)}
+                onClick={() => { setActiveId(c.id); setShowChat(true); }}
                 className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 text-left transition ${c.id === activeId ? "bg-slate-50 border-l-2 border-purple-500" : "border-l-2 border-transparent"}`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${roleBadge(c.role)}`}>
@@ -125,9 +126,16 @@ export default function AdminMessagesPage() {
         </div>
 
         {/* ── Right: chat area ──────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className={`${showChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-w-0`}>
           {/* chat header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 shrink-0">
+            <button
+              onClick={() => setShowChat(false)}
+              className="md:hidden p-1.5 -ml-1 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
+              aria-label="Back to conversations"
+            >
+              <ArrowLeft size={18} />
+            </button>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${roleBadge(active.role)}`}>
               {active.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
             </div>
