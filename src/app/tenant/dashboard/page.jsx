@@ -9,6 +9,7 @@ import {
   MessageSquare,
   AlertCircle,
   CheckCircle2,
+  Key,
   ArrowRight,
   Clock,
   Calendar,
@@ -263,6 +264,42 @@ export default function TenantDashboardPage() {
                 className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-semibold text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-50 transition"
               >
                 View Full Details <ArrowRight size={14} />
+              </a>
+            </div>
+          </div>
+
+          {/* Right to Buy quick card */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">Right to Buy</h3>
+              <a href="/tenant/rtb" className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5">
+                View <ArrowRight size={14} />
+              </a>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center">
+                  <Key size={20} className="text-teal-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Eligible for Right to Buy</p>
+                  <p className="text-xs text-slate-500 mt-1">You have an estimated discount based on tenancy years.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-xs text-slate-500">Years tenancy</div>
+                  <div className="font-semibold text-slate-800">7 years</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-xs text-slate-500">Estimated discount</div>
+                  <div className="font-semibold text-slate-800">7%</div>
+                </div>
+              </div>
+
+              <a href="/tenant/rtb" className="block w-full text-center py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold">
+                View RTB Details
               </a>
             </div>
           </div>
