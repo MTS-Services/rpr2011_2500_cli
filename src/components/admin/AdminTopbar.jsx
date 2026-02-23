@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bell, Mail, Users2, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { Bell, Mail, Users2, ChevronDown, LogOut, Menu } from "lucide-react";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 
 export default function AdminTopbar({ onMenuClick, mobileOpen }) {
@@ -37,9 +37,7 @@ export default function AdminTopbar({ onMenuClick, mobileOpen }) {
         <button className="p-2 text-slate-500 hover:text-slate-800 transition">
           <Mail size={20} />
         </button>
-        <button className="p-2 text-slate-500 hover:text-slate-800 transition">
-          <Users2 size={20} />
-        </button>
+       
 
         {/* User dropdown */}
         <div className="relative">
@@ -80,10 +78,7 @@ export default function AdminTopbar({ onMenuClick, mobileOpen }) {
           )}
         </div>
 
-        {/* Mobile menu (small screens) */}
-        <button className="md:hidden p-2 ml-1 rounded-lg text-slate-500 hover:bg-slate-100" onClick={onMenuClick}>
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        {/* (right-side mobile menu removed) */}
       </div>
     </header>
   );

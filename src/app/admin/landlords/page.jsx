@@ -3,8 +3,9 @@ import { useState } from "react";
 import {
   Plus, ChevronDown, Search, MoreHorizontal,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, Home, Users
+  ArrowUpDown, Home, Users, Eye, Edit, Trash
 } from "lucide-react";
+import Pagination from "@/components/portal/Pagination";
 
 const LANDLORDS = [
   { id: 1, name: "Joan Doyle",      initials: "JD", color: "bg-teal-500",    sub: "Apt 28 Perkside Plaza",  properties: 12, tenants: 9,  mobile: "085-323-8927", pps: "3276513B",  pps2: "325-0305597", dob: "14 Mar 1972", email: "joan.doyle@email.com" },
@@ -87,11 +88,11 @@ export default function AdminLandlordsPage() {
                 />
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Properties <ArrowUpDown size={13} className="text-slate-400" /></span>
+              <th className="px-4 py-3 text-center font-semibold text-slate-600">
+                <span className="flex items-center justify-center gap-1">Properties <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Tenants <ArrowUpDown size={13} className="text-slate-400" /></span>
+              <th className="px-4 py-3 text-center font-semibold text-slate-600">
+                <span className="flex items-center justify-center gap-1">Tenants <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Mobile</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">
@@ -101,7 +102,7 @@ export default function AdminLandlordsPage() {
                 <span className="flex items-center gap-1">Date of Birth <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Email</th>
-              <th className="w-10 px-4 py-3"><MoreHorizontal size={14} className="text-slate-400" /></th>
+              <th className="w-28 px-4 py-3 text-right font-semibold text-slate-600">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -129,18 +130,14 @@ export default function AdminLandlordsPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5 text-slate-700">
-                      <Home size={12} className="text-slate-400" /> {landlord.properties}
-                    </div>
-                    <p className="text-sm text-slate-400 pl-[18px]">{landlord.properties} properties</p>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex flex-col items-center gap-1 text-slate-700">
+                    <div className="text-sm font-medium text-slate-700">{landlord.properties}</div>
+                    <p className="text-sm text-slate-400">{landlord.properties} properties</p>
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <Users size={12} className="text-slate-400" /> {landlord.tenants}
-                  </div>
+                <td className="px-4 py-3 text-center">
+                  <div className="text-sm font-medium text-slate-700">{landlord.tenants}</div>
                 </td>
                 <td className="px-4 py-3">
                   <p className="text-slate-700 text-sm">{landlord.mobile}</p>
@@ -154,13 +151,16 @@ export default function AdminLandlordsPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-600 text-sm">{landlord.dob}</td>
                 <td className="px-4 py-3 text-slate-400 text-sm">{landlord.email}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-0.5">
-                    <button className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-l-md transition">
-                      View
+                <td className="px-4 py-3 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
+                      <Eye size={16} />
                     </button>
-                    <button className="px-1.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-r-md transition border-l border-teal-500">
-                      <ChevronDown size={13} />
+                    <button aria-label="Edit" className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
+                      <Edit size={16} />
+                    </button>
+                    <button aria-label="Delete" className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
+                      <Trash size={16} />
                     </button>
                   </div>
                 </td>
@@ -168,32 +168,8 @@ export default function AdminLandlordsPage() {
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex justify-center">
-        <Pagination />
+        <Pagination total={filtered.length} />
       </div>
     </div>
-  );
-}
-
-function Pagination() {
-  return (
-    <div className="flex items-center gap-1">
-      <PagBtn icon={<ChevronsLeft size={14} />} />
-      <PagBtn icon={<ChevronLeft size={14} />} />
-      <button className="w-8 h-8 flex items-center justify-center rounded-md bg-teal-600 text-white text-sm font-semibold">1</button>
-      <PagBtn icon={<ChevronRight size={14} />} />
-      <PagBtn icon={<ChevronsRight size={14} />} />
-    </div>
-  );
-}
-
-function PagBtn({ icon }) {
-  return (
-    <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 transition">
-      {icon}
-    </button>
   );
 }

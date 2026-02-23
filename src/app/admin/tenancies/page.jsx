@@ -1,42 +1,44 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus, ChevronDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown
 } from "lucide-react";
-
-const TENANCIES = [
-  { id: 1,  initials: "SK", color: "bg-teal-500",    name: "Sarah Kelly",           sub: "Apt 12, Grand Dock",         statusLet: "Let",    statusBadge: null,           county: "AKsiculs",  landlord: "Edward O'Neill", landlordSub: "Dublin · 10:44", startDate: "01 Feb 2022", rent: "€2,200", rtb: "1234598",   rtbStatus: "Active",  rtbReg: null },
-  { id: 2,  initials: "KM", color: "bg-orange-400",  name: "Kevin Madden",          sub: "Apt 5B · 10:2",              statusLet: "Notice", statusBadge: "Notice",       county: null,        landlord: "Joan Doyle",      landlordSub: "Dublin · 54:60", startDate: "18 Nov 2020", rent: "€1,950", rtb: "2324059",   rtbStatus: "Notice", rtbReg: null },
-  { id: 3,  initials: "AW", color: "bg-slate-500",   name: "Adam Walsh",            sub: "1652AO55 · 3.6.2",           statusLet: "Let",    statusBadge: null,           county: null,        landlord: "Brendan Walsh",   landlordSub: "Dublin · 00:383", startDate: "27 Dec 2019", rent: "€1,950", rtb: "2324059",   rtbStatus: "Active",  rtbReg: null },
-  { id: 4,  initials: "RS", color: "bg-sky-600",     name: "Reginald Spencer",      sub: "Apt 25, Grand Dock",        statusLet: "Let",    statusBadge: null,           county: null,        landlord: "Edward O'Neill", landlordSub: "Dublin · 10:24", startDate: "28 Jan 2022", rent: "€2,350", rtb: "100999118", rtbStatus: "Active",  rtbReg: "Registered" },
-  { id: 5,  initials: "ES", color: "bg-emerald-500", name: "Apt 21C, Harbour View",  sub: "Dublin · 10:30",            statusLet: "Let",    statusBadge: "AAlctice",     county: null,        landlord: "Edward O'Neill", landlordSub: "Dublin · 10:36", startDate: "20 Feb 2021", rent: "€2,400", rtb: "100999118", rtbStatus: "Active",  rtbReg: "Registered" },
-  { id: 6,  initials: "7D", color: "bg-teal-700",    name: "Apt 7D, Hanover Quay",  sub: "IyarlSD Dublin · 10:40",    statusLet: "Let",    statusBadge: "AAlctice",     county: null,        landlord: "Brendan Walsh",   landlordSub: "Dublin · 10:63", startDate: "23 Jan 2018", rent: "€2,200", rtb: "100993361",  rtbStatus: "Active",  rtbReg: "Registered" },
-  { id: 7,  initials: "PH", color: "bg-slate-400",   name: "Peter Hughes",           sub: "Dublin · Spetari · 1042",  statusLet: "Let",    statusBadge: "Notice",       county: null,        landlord: "Mary Bennett",    landlordSub: "Dublin · 29:23", startDate: "29 Jun 2018", rent: "€2,100", rtb: "100999253",  rtbStatus: "Active",  rtbReg: "Registered" },
-  { id: 8,  initials: "SB", color: "bg-indigo-400",  name: "Apt 399, Pearse Street", sub: "Dublin · 10:25",            statusLet: "Let",    statusBadge: "Notice",       county: null,        landlord: "Edward O'Neill", landlordSub: "Dublin · 10:55", startDate: "20 Sep 2023", rent: "€2,100", rtb: "1000993419", rtbStatus: "Active",  rtbReg: "Registered" },
-  { id: 9,  initials: "HQ", color: "bg-pink-400",    name: "Holly Quigley",          sub: "Dublin · 10:35",            statusLet: "Let",    statusBadge: "AActive",      county: null,        landlord: "Leo Mohan",       landlordSub: "Dublin · 10:35", startDate: "25 Dec 2021", rent: "€1,650", rtb: "100992455",  rtbStatus: "Active",  rtbReg: "Registered" },
-  { id: 10, initials: "2B", color: "bg-violet-400",  name: "Apt 2B, Parkside Plaza", sub: "Dublin · 10:69",            statusLet: "Let",    statusBadge: null,           county: null,        landlord: "Leo Mohan",       landlordSub: "Dublin · 16r:29", startDate: "29 Jun 2020", rent: "€1,800", rtb: "100092490",  rtbStatus: "Active",  rtbReg: "Unknown" },
-];
+import Pagination from "@/components/portal/Pagination";
+import TENANCIES from "@/data/tenancies";
 
 const STATUS_LET = {
   Let:    "bg-teal-500 text-white",
   Notice: "bg-orange-100 text-orange-600 border border-orange-300",
 };
 const BADGE = {
-  Notice:   "bg-orange-400 text-white",
-  AAlctice: "bg-teal-500 text-white",
-  AActive:  "bg-teal-500 text-white",
+  Notice: "bg-orange-400 text-white",
+  Active: "bg-teal-500 text-white",
 };
 const RTB_STATUS = {
   Active: "bg-teal-600 text-white",
   Notice: "bg-orange-400 text-white",
 };
 
-export default function AdminTenanciesPage() {
+function AdminTenanciesInner() {
   const [selected, setSelected] = useState([]);
+  const searchParams = useSearchParams();
+  const filterParam  = searchParams?.get("filter");
 
-  const filtered = TENANCIES;
+  const today = new Date();
+  const in30  = new Date(); in30.setDate(today.getDate() + 30);
+
+  const filtered = TENANCIES.filter((t) => {
+    if (filterParam === "rtb-missing")  return !t.rtb || t.rtb === "N/A";
+    if (filterParam === "rent-reviews") {
+      if (!t.rentReviewDate) return false;
+      const d = new Date(t.rentReviewDate);
+      return d >= today && d <= in30;
+    }
+    return true;
+  });
 
   const toggleAll = () =>
     setSelected(selected.length === filtered.length ? [] : filtered.map((t) => t.id));
@@ -146,31 +148,18 @@ export default function AdminTenanciesPage() {
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex justify-center">
-        <Pagination />
+        <Pagination total={filtered.length} />
       </div>
     </div>
   );
 }
 
-function Pagination() {
+export default function AdminTenanciesPage() {
   return (
-    <div className="flex items-center gap-1">
-      <PagBtn icon={<ChevronsLeft size={14} />} />
-      <PagBtn icon={<ChevronLeft size={14} />} />
-      <button className="w-8 h-8 flex items-center justify-center rounded-md bg-teal-600 text-white text-sm font-semibold">1</button>
-      <PagBtn icon={<ChevronRight size={14} />} />
-      <PagBtn icon={<ChevronsRight size={14} />} />
-    </div>
+    <Suspense fallback={null}>
+      <AdminTenanciesInner />
+    </Suspense>
   );
 }
-function PagBtn({ icon }) {
-  return (
-    <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 transition">
-      {icon}
-    </button>
-  );
-}
+
+// using shared Pagination component from components/portal/Pagination

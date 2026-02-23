@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import {
-  Plus, ChevronDown,
+  Plus, ChevronDown, Eye, X,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown
 } from "lucide-react";
@@ -32,6 +32,8 @@ const RTB_STATUS = {
 
 export default function AdminPropertiesPage() {
   const [selected, setSelected] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeProp, setActiveProp] = useState(null);
 
   const filtered = PROPERTIES;
 
@@ -59,21 +61,21 @@ export default function AdminPropertiesPage() {
                 <input type="checkbox" checked={selected.length === filtered.length && filtered.length > 0} onChange={toggleAll} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
               </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
-                <span className="flex items-center gap-1">Photo <ArrowUpDown size={14} className="text-slate-400" /></span>
+                <span className="flex items-center gap-1">Photo </span>
               </th>
-              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-sm">
-                <span className="flex items-center gap-1">Status <ArrowUpDown size={14} className="text-slate-400" /></span>
-              </th>
-              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
-                <span className="flex items-center gap-1">Landlord <ArrowUpDown size={14} className="text-slate-400" /></span>
+              <th className="w-48 px-3 py-3 text-center font-semibold text-slate-600 text-sm">
+                <span className="flex items-center justify-center gap-1">Status</span>
               </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
-                <span className="flex items-center gap-1">Tenant <ArrowUpDown size={14} className="text-slate-400" /></span>
+                <span className="flex items-center gap-1">Landlord </span>
+              </th>
+              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
+                <span className="flex items-center gap-1">Tenant </span>
               </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">Rent</th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">MPRN</th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
-                <span className="flex items-center gap-1">RTB # <ChevronDown size={14} className="text-slate-400" /></span>
+                <span className="flex items-center gap-1">RTB # </span>
               </th>
               <th className="w-48 px-3 py-3 text-right font-semibold text-slate-600">Actions</th>
             </tr>
@@ -121,17 +123,54 @@ export default function AdminPropertiesPage() {
                 </td>
                 <td className="w-48 px-3 py-3 text-right">
                   <div>
-                    <button className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-base font-semibold rounded-md transition">View</button>
+                    <button
+                      aria-label="View"
+                      onClick={() => { setActiveProp(p); setModalOpen(true); }}
+                      className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-700 text-teal-700 hover:text-white rounded-md transition"
+                    >
+                      <Eye size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        <Pagination total={PROPERTIES.length} />
       </div>
 
-      {/* Pagination (portal style: left "Show" and right page controls) */}
-      <Pagination total={PROPERTIES.length} itemsPerPage={10} currentPage={1} onPageChange={() => {}} onItemsPerPageChange={() => {}} />
+      {/* Modal: Property details */}
+      {modalOpen && activeProp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={() => { setModalOpen(false); setActiveProp(null); }} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">{activeProp.name}</h3>
+                <p className="text-sm text-slate-500 mt-1">{activeProp.area}</p>
+              </div>
+              <button aria-label="Close" onClick={() => { setModalOpen(false); setActiveProp(null); }} className="text-slate-500 hover:text-slate-700">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <img src={activeProp.img} alt={activeProp.name} className="w-full h-40 object-cover rounded-md sm:col-span-1" />
+              <div className="sm:col-span-2 space-y-2">
+                <p className="text-sm"><strong>Landlord:</strong> {activeProp.landlord} <span className="text-xs text-slate-400">({activeProp.landlordSub})</span></p>
+                <p className="text-sm"><strong>Tenant:</strong> {activeProp.tenant}</p>
+                <p className="text-sm"><strong>Rent:</strong> {activeProp.rent}</p>
+                <p className="text-sm"><strong>MPRN:</strong> {activeProp.mprn}</p>
+                <p className="text-sm"><strong>RTB #:</strong> <span className={activeProp.rtbStyle}>{activeProp.rtb}</span></p>
+                <p className="text-sm"><strong>Status:</strong> {activeProp.statusProp}</p>
+              </div>
+            </div>
+            <div className="mt-6 text-right">
+              <button onClick={() => { setModalOpen(false); setActiveProp(null); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
