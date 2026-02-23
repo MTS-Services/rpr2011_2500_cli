@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Mail, Lock, ArrowRight, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 
 export default function LoginPage() {
@@ -81,6 +82,13 @@ export default function LoginPage() {
           <div className="relative z-10 order-1 lg:order-2">
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
               <div className="p-8 sm:p-10">
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal-700 mb-6 transition-colors group"
+                >
+                  <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+                  Back to home
+                </Link>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
                     <Image src="/logo.png" alt="McCann & Curran" width={40} height={40} />

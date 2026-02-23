@@ -125,7 +125,7 @@ export default function AdminLandlordsPage() {
       </div>
 
       {/* Table — visible lg+ */}
-      <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
         <table className="w-full text-base">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
@@ -149,7 +149,7 @@ export default function AdminLandlordsPage() {
                 <span className="flex items-center gap-1">P.P.S. <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Date of Birth <ArrowUpDown size={13} className="text-slate-400" /></span>
+                <span className="flex whitespace-nowrap items-center gap-1">Date of Birth <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Email</th>
               <th className="w-28 px-4 py-3 text-right font-semibold text-slate-600">Action</th>

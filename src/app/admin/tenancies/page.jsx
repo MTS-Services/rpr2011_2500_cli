@@ -2,7 +2,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Plus, ChevronDown,
+  Plus,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown
 } from "lucide-react";
@@ -89,13 +89,10 @@ function AdminTenanciesInner() {
                 <p className="font-medium text-slate-700">{t.rtb}</p>
               </div>
             </div>
-            <div className="pt-1 border-t border-slate-100 flex items-center gap-0.5">
-              <button className={`flex-1 py-1.5 text-white text-xs font-semibold rounded-l-md transition ${
+            <div className="pt-1 border-t border-slate-100">
+              <button className={`w-full py-1.5 text-white text-xs font-semibold rounded-md transition ${
                 t.rtbStatus === "Notice" ? "bg-orange-400 hover:bg-orange-500" : "bg-teal-600 hover:bg-teal-700"
               }`}>{t.rtbStatus}</button>
-              <button className={`px-2 py-1.5 text-white rounded-r-md transition border-l ${
-                t.rtbStatus === "Notice" ? "bg-orange-500 hover:bg-orange-600 border-orange-400" : "bg-teal-700 hover:bg-teal-800 border-teal-500"
-              }`}><ChevronDown size={12} /></button>
             </div>
           </div>
         ))}
@@ -105,7 +102,7 @@ function AdminTenanciesInner() {
       </div>
 
       {/* Table — visible lg+ */}
-      <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
         <table className="w-full text-base">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
@@ -152,12 +149,7 @@ function AdminTenanciesInner() {
                       <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
                       {t.statusLet}
                     </span>
-                    {t.statusBadge && (
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-semibold w-fit ${BADGE[t.statusBadge] || "bg-orange-400 text-white"}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                        {t.statusBadge.replace("AAlctice", "Active").replace("AActive", "Active")}
-                      </span>
-                    )}
+                            {/* statusBadge intentionally removed - single primary status shown */}
                   </div>
                 </td>
                 <td className="px-3 py-3 text-slate-600 text-sm">{t.county}</td>
@@ -176,22 +168,13 @@ function AdminTenanciesInner() {
                   )}
                 </td>
                 <td className="px-3 py-3">
-                  <div className="flex items-center gap-0.5">
-                    <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-l-md transition ${
-                      t.rtbStatus === "Notice"
-                        ? "bg-orange-400 hover:bg-orange-500"
-                        : "bg-teal-600 hover:bg-teal-700"
-                    }`}>
-                      {t.rtbStatus}
-                    </button>
-                    <button className={`px-1.5 py-1.5 text-white rounded-r-md transition border-l ${
-                      t.rtbStatus === "Notice"
-                        ? "bg-orange-500 hover:bg-orange-600 border-orange-400"
-                        : "bg-teal-700 hover:bg-teal-800 border-teal-500"
-                    }`}>
-                      <ChevronDown size={13} />
-                    </button>
-                  </div>
+                  <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-md transition ${
+                    t.rtbStatus === "Notice"
+                      ? "bg-orange-400 hover:bg-orange-500"
+                      : "bg-teal-600 hover:bg-teal-700"
+                  }`}>
+                    {t.rtbStatus}
+                  </button>
                 </td>
               </tr>
             ))}
