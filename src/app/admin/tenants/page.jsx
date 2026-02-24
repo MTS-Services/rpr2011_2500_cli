@@ -50,8 +50,8 @@ export default function AdminTenantsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">Tenants</h1>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-          <Plus size={15} /> Add Tenant
+        <button className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+          <Plus size={15} /> <span className="hidden sm:inline">Add Tenant</span>
         </button>
       </div>
 
