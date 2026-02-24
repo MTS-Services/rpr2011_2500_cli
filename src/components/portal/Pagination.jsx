@@ -51,7 +51,7 @@ export default function Pagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-between px-6 py-5 border-t border-slate-100">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-t border-slate-100">
       {/* Left: Items per page */}
       <div className="flex items-center gap-2 text-sm text-slate-600">
         <span>Show</span>
@@ -68,12 +68,12 @@ export default function Pagination({
       </div>
 
       {/* Right: Page navigation and info */}
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-slate-500 font-medium">
+      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+        <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
           {Math.max(1, startItem)}–{endItem} of {total}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={handlePrevious}
             disabled={currentPage === 1}
@@ -83,7 +83,7 @@ export default function Pagination({
             <ChevronLeft size={18} />
           </button>
 
-          <div className="flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-1">
             {pageNumbers.map((page, idx) =>
               page === "..." ? (
                 <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-slate-400 font-medium">
@@ -104,6 +104,11 @@ export default function Pagination({
               )
             )}
           </div>
+
+          {/* Mobile: show current / total instead of full number list */}
+          <span className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">
+            {currentPage}
+          </span>
 
           <button
             onClick={handleNext}
