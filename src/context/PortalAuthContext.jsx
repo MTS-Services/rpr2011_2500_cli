@@ -1,80 +1,93 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 const PortalAuthContext = createContext(null);
-
-// Dummy users by role
-const DUMMY_USERS = {
-  admin: {
-    id: "admin_001",
-    name: "Admin",
-    email: "admin@mccannandcurran.ie",
-    phone: "+353 1 234 5678",
-    address: "McCann & Curran HQ, Dublin, Ireland",
-    ppsNumber: "1234567AB",
-    avatar: "https://randomuser.me/api/portraits/men/5.jpg",
-    role: "admin",
-  },
-  landlord: {
-    id: "landlord_001",
-    name: "Joe Doyle",
-    email: "joe.doyle@email.com",
-    phone: "+353 86 123 4567",
-    address: "124 Ashwood Crescent, Dublin, Ireland",
-    ppsNumber: "5432109WA",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    role: "landlord",
-  },
-  tenant: {
-    id: "tenant_001",
-    name: "Tenant",
-    email: "tenant@example.com",
-    phone: "+353 87 654 3210",
-    address: "Apt 12, Example St, Dublin, Ireland",
-    ppsNumber: "9876543XY",
-    avatar: "https://randomuser.me/api/portraits/women/50.jpg",
-    role: "tenant",
-  },
-};
-
-const DUMMY_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOlwiZHVtbXlfdXNlclwiLCJyb2xlIjoiZHluYW1pY1wiLCJpYXQiOjE3MDk5OTk5OTl9.dummy_signature";
 
 export function PortalAuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
+  const TOKEN_KEY = (role) => `${role}_token`;
+  const USER_KEY  = (role) => `${role}_user`;
+  const ROLE_KEYS = ["admin", "landlord", "tenant"];
+
+ 
   useEffect(() => {
-    const token = localStorage.getItem("portal_token");
-    const role = localStorage.getItem("portal_role") || "landlord";
-    if (token === DUMMY_TOKEN) {
-      const selectedUser = DUMMY_USERS[role] || DUMMY_USERS.landlord;
-      setUser(selectedUser);
+    try {
+      for (const role of ROLE_KEYS) {
+        const stored = localStorage.getItem(USER_KEY(role));
+        const token  = localStorage.getItem(TOKEN_KEY(role));
+        if (stored && token) {
+          setUser(JSON.parse(stored));
+          break;
+        }
+      }
+    } catch {
+      
     }
     setLoading(false);
   }, []);
 
-  const login = (email, password, role = "landlord") => {
-    // Accept any credentials that match pattern
-    if (email && password.length >= 4) {
-      const selectedUser = DUMMY_USERS[role] || DUMMY_USERS.landlord;
-      localStorage.setItem("portal_token", DUMMY_TOKEN);
-      localStorage.setItem("portal_role", role);
-      setUser(selectedUser);
-      return true;
+
+  const login = async (email, password) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const detail = data?.errors?.length
+          ? data.errors.map((e) => e.message).join(" · ")
+          : data?.message || "Invalid credentials. Please try again.";
+        return { ok: false, error: detail };
+      }
+
+ 
+      const payload      = data?.data ?? data ?? {};
+      const userData     = payload?.user ?? {};
+      const accessToken  = payload?.tokens?.accessToken  ?? data?.accessToken ?? data?.token ?? "";
+      const refreshToken = payload?.tokens?.refreshToken ?? "";
+
+     
+      const role = (userData?.role ?? "").toLowerCase(); // "admin" | "landlord" | "tenant"
+      localStorage.setItem(`${role}_token`,         accessToken);
+      localStorage.setItem(`${role}_refresh_token`, refreshToken);
+      localStorage.setItem(`${role}_user`,          JSON.stringify(userData));
+
+      setUser(userData);
+      return { ok: true, role };
+    } catch {
+      return { ok: false, error: "Network error. Please check your connection." };
     }
-    return false;
   };
 
   const logout = () => {
-    localStorage.removeItem("portal_token");
-    localStorage.removeItem("portal_role");
+    const role = (user?.role ?? "").toLowerCase();
+    if (role) {
+      localStorage.removeItem(`${role}_token`);
+      localStorage.removeItem(`${role}_refresh_token`);
+      localStorage.removeItem(`${role}_user`);
+    }
     setUser(null);
   };
 
+  
+  const getToken = () => {
+    const role = (user?.role ?? "").toLowerCase();
+    return role ? localStorage.getItem(`${role}_token`) ?? "" : "";
+  };
+
   return (
-    <PortalAuthContext.Provider value={{ user, loading, login, logout }}>
+    <PortalAuthContext.Provider value={{ user, loading, login, logout, getToken }}>
       {children}
     </PortalAuthContext.Provider>
   );

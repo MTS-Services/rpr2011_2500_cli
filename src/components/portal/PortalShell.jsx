@@ -15,7 +15,11 @@ export default function PortalShell({ children }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/portal/login");
+      router.replace("/login");
+    } else if (!loading && user?.role?.toUpperCase() === "ADMIN") {
+      router.replace("/admin/dashboard");
+    } else if (!loading && user?.role?.toUpperCase() === "TENANT") {
+      router.replace("/tenant/dashboard");
     }
   }, [user, loading, router]);
 

@@ -13,9 +13,11 @@ export default function AdminShell({ children }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/portal/login");
-    } else if (!loading && user?.role !== "admin") {
-      router.replace("/portal/dashboard");
+      router.replace("/login");
+    } else if (!loading && user?.role?.toUpperCase() !== "ADMIN") {
+      const r = user?.role?.toUpperCase();
+      if (r === "TENANT") router.replace("/tenant/dashboard");
+      else router.replace("/portal/dashboard");
     }
   }, [user, loading, router]);
 
@@ -27,9 +29,11 @@ export default function AdminShell({ children }) {
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
       />
-      <AdminTopbar onMenuClick={() => setMobileOpen((p) => !p)} mobileOpen={mobileOpen} />
+      <AdminTopbar
+        onMenuClick={() => setMobileOpen((p) => !p)}
+        mobileOpen={mobileOpen}
+      />
 
-      {/* Main — offset for fixed sidebar + topbar (match portal) */}
       <main className="lg:pl-[300px] pt-[72px] min-h-screen">
         <div className="p-4 lg:p-6">{children}</div>
       </main>

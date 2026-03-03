@@ -14,7 +14,7 @@ export default function AdminTopbar({ onMenuClick, mobileOpen }) {
 
   const handleLogout = () => {
     logout();
-    router.push("/portal/login");
+    router.push("/login");
   };
 
   return (

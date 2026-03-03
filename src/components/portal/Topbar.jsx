@@ -16,7 +16,7 @@ export default function Topbar({ onMenuClick }) {
 
   const handleLogout = () => {
     logout();
-    router.push("/portal/login");
+    router.push("/login");
   };
 
   return (
