@@ -8,11 +8,12 @@ import { PortalAuthProvider } from "@/context/PortalAuthContext";
 
 export default function ConditionalShell({ children }) {
   const pathname = usePathname();
-  const isPortal = pathname.startsWith("/portal");
-  const isAdmin  = pathname.startsWith("/admin");
-  const isTenant = pathname.startsWith("/tenant");
+  const isPortal  = pathname.startsWith("/portal");
+  const isAdmin   = pathname.startsWith("/admin");
+  const isTenant  = pathname.startsWith("/tenant");
+  const isAuth    = pathname.startsWith("/login") || pathname.startsWith("/register");
 
-  if (isPortal || isTenant) {
+  if (isPortal || isTenant || isAuth) {
     return <>{children}</>;
   }
 

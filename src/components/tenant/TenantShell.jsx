@@ -14,7 +14,12 @@ export default function TenantShell({ children }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/portal/login");
+      router.replace("/login");
+    } else if (!loading && user?.role?.toUpperCase() !== "TENANT") {
+      // Non-tenant tried to access tenant area — send to their own dashboard
+      const r = user?.role?.toUpperCase();
+      if (r === "ADMIN") router.replace("/admin/dashboard");
+      else router.replace("/portal/dashboard");
     }
   }, [user, loading, router]);
 

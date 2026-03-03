@@ -10,7 +10,6 @@ import { usePortalAuth } from "@/context/PortalAuthContext";
 export default function LoginPage() {
   const { login } = usePortalAuth();
   const router = useRouter();
-  const [role, setRole] = useState("landlord");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -21,18 +20,19 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const ok = login(email, password, role);
-    if (ok) {
-      if (role === "admin") {
+
+    const result = await login(email, password);
+
+    if (result.ok) {
+      if (result.role === "admin") {
         router.push("/admin/dashboard");
-      } else if (role === "tenant") {
+      } else if (result.role === "tenant") {
         router.push("/tenant/dashboard");
       } else {
         router.push("/portal/dashboard");
       }
     } else {
-      setError("Invalid credentials. Please try again.");
+      setError(result.error);
       setLoading(false);
     }
   };
@@ -40,48 +40,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-white">
       <div className="container mx-auto px-6 py-10 lg:py-0">
-        <div className="mx-auto max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-10 items-center">
-
-          {/* Left: Brand / illustration */}
-          <div className="flex flex-col justify-center gap-6 p-8 order-2 lg:order-1">
-            
-            {/* Demo credentials panel */}
-            <div className="mt-6 rounded-2xl bg-white p-4 border border-slate-100 shadow-sm">
-              <h5 className="text-base font-semibold text-slate-800 mb-3">Demo accounts</h5>
-              <div className="space-y-3 text-base text-slate-700">
-                {[
-                  { r: "admin",    e: "admin@mccannandcurran.ie", p: "admin1234" },
-                  { r: "landlord", e: "joe.doyle@email.com",      p: "demo1234" },
-                  { r: "tenant",   e: "tenant@example.com",       p: "tenant123" },
-                ].map((a) => (
-                  <div key={a.r} className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-base font-medium text-slate-800">{a.r.charAt(0).toUpperCase() + a.r.slice(1)}</div>
-                      <div className="text-xs text-slate-500">{a.e} · {a.p}</div>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRole(a.r);
-                          setEmail(a.e);
-                          setPassword(a.p);
-                        }}
-                        className="px-3 py-1 rounded-md bg-primary-50 border border-primary-100 text-sm text-primary-700 hover:bg-primary-100"
-                      >
-                        Use
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        <div className="mx-auto max-w-6xl flex justify-center items-center">
 
           {/* Right: Login card */}
-          <div className="relative z-10 order-1 lg:order-2">
-            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
-              <div className="p-8 sm:p-10">
+          <div className="relative z-10 w-full max-w-md sm:max-w-lg">
+            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 w-full">
+              <div className="pt-8 sm:pt-10 sm:px-10 pb-3">
                 <Link
                   href="/"
                   className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal-700 mb-6 transition-colors group"
@@ -108,19 +72,7 @@ export default function LoginPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Role selector + demo autofill */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-2">Role</label>
-                    <select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400"
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="landlord">Landlord</option>
-                      <option value="tenant">Tenant</option>
-                    </select>
-                  </div>
+                
                   <div>
                     <label className="relative block">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Mail size={18} /></span>
@@ -182,7 +134,12 @@ export default function LoginPage() {
                   </div>
                 </form>
 
-                
+                <p className="mt-5 text-center text-sm text-slate-500">
+                  Don&apos;t have an account?{" "}
+                  <Link href="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+                    Register
+                  </Link>
+                </p>
               </div>
 
               <div className="bg-slate-50 px-6 py-4 text-center border-t border-slate-100">

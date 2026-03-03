@@ -22,14 +22,25 @@ export default function Navbar() {
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
-    setPortalLoggedIn(Boolean(localStorage.getItem("portal_token")));
+    const anyToken = () => Boolean(
+      localStorage.getItem("admin_token") ||
+      localStorage.getItem("landlord_token") ||
+      localStorage.getItem("tenant_token")
+    );
+    setPortalLoggedIn(anyToken());
   }, [pathname]);
 
   useEffect(() => {
-    const check = () => Boolean(localStorage.getItem("portal_token"));
-    setPortalLoggedIn(check());
+    const anyToken = () => Boolean(
+      localStorage.getItem("admin_token") ||
+      localStorage.getItem("landlord_token") ||
+      localStorage.getItem("tenant_token")
+    );
+    setPortalLoggedIn(anyToken());
     const onStorage = (e) => {
-      if (e.key === "portal_token") setPortalLoggedIn(Boolean(e.newValue));
+      if (["admin_token", "landlord_token", "tenant_token"].includes(e.key)) {
+        setPortalLoggedIn(anyToken());
+      }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -81,15 +92,18 @@ export default function Navbar() {
           {portalLoggedIn ? (
             <div className="ml-4 flex items-center gap-3">
               <Link
-                href="/portal/dashboard"
+                href={
+                  localStorage.getItem("admin_token") ? "/admin/dashboard"
+                  : localStorage.getItem("tenant_token") ? "/tenant/dashboard"
+                  : "/portal/dashboard"
+                }
                 className="px-4 py-2 text-[0.85rem] font-semibold text-white bg-[#079489] rounded-lg hover:bg-slate-200 transition-colors"
               >
                 Dashboard
               </Link>
               <button
                 onClick={() => {
-                  localStorage.removeItem("portal_token");
-                  localStorage.removeItem("portal_role");
+                  ["admin_token", "admin_user", "landlord_token", "landlord_user", "tenant_token", "tenant_user"].forEach(k => localStorage.removeItem(k));
                   setPortalLoggedIn(false);
                   router.push("/");
                 }}
@@ -100,7 +114,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link
-              href="/portal/login"
+              href="/login"
               className="ml-4 px-6 py-2.5 text-[0.85rem] font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
             >
               Client Login
@@ -136,7 +150,11 @@ export default function Navbar() {
           {portalLoggedIn ? (
             <div className="mt-2 flex gap-3">
               <Link
-                href="/portal/dashboard"
+                href={
+                  localStorage.getItem("admin_token") ? "/admin/dashboard"
+                  : localStorage.getItem("tenant_token") ? "/tenant/dashboard"
+                  : "/portal/dashboard"
+                }
                 onClick={() => setOpen(false)}
                 className="flex-1 px-4 py-3 text-center text-[0.95rem] font-semibold text-dark-800 bg-slate-100 rounded-lg"
               >
@@ -144,8 +162,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={() => {
-                  localStorage.removeItem("portal_token");
-                  localStorage.removeItem("portal_role");
+                  ["admin_token", "admin_user", "landlord_token", "landlord_user", "tenant_token", "tenant_user"].forEach(k => localStorage.removeItem(k));
                   setPortalLoggedIn(false);
                   setOpen(false);
                   router.push("/");
@@ -157,7 +174,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link
-              href="/portal/login"
+              href="/login"
               onClick={() => setOpen(false)}
               className="mt-2 px-6 py-3 text-center text-[0.9rem] font-semibold text-white bg-primary-600 rounded-full"
             >

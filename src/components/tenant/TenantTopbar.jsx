@@ -14,7 +14,7 @@ export default function TenantTopbar({ onMenuClick }) {
 
   const handleLogout = () => {
     logout();
-    router.push("/portal/login");
+    router.push("/login");
   };
 
   return (
