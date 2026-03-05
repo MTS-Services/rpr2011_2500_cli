@@ -3,7 +3,7 @@
 import { useState } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
 import Link from "next/link";
-import { Download, AlertTriangle, CreditCard } from "lucide-react";
+import { Download, AlertTriangle, CreditCard, Calendar, AlertCircle } from "lucide-react";
 
 const payments = [
   { month: "February 2025", amount: "€1,750", status: "Overdue",   statusColor: "bg-red-100 text-red-700",    date: "Due Feb 1, 2025",  ref: "#TXN-2025-02" },
@@ -25,18 +25,19 @@ export default function TenantRentPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 lg:gap-3 mb-3 xl:mb-5">
         {[
-          { label: "Monthly Rent",   value: "€1,750", color: "text-teal-600 bg-teal-50",   border: "border-teal-100" },
-          { label: "Next Payment",   value: "Mar 1",  color: "text-blue-600 bg-blue-50",    border: "border-blue-100" },
-          { label: "Current Balance",value: "Overdue",color: "text-red-600 bg-red-50",      border: "border-red-100" },
-        ].map(({ label, value, color, border }) => (
-          <div key={label} className={`bg-white rounded-2xl border p-4 shadow-sm flex items-center gap-3 ${border}`}>
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
-              <CreditCard size={22} />
+          { label: "Monthly Rent",    value: "€1,750",  sub: "Due 1st of month",   Icon: CreditCard,  color: "bg-teal-50 text-teal-600",   border: "border-teal-100" },
+          { label: "Next Payment",    value: "Mar 1",   sub: "6 days away",        Icon: Calendar,    color: "bg-blue-50 text-blue-600",    border: "border-blue-100" },
+          { label: "Current Balance", value: "Overdue", sub: "Feb 2025 unpaid",    Icon: AlertCircle, color: "bg-red-50 text-red-600",      border: "border-red-100" },
+        ].map(({ label, value, sub, Icon, color, border }) => (
+          <div key={label} className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm ${border}`}>
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-semibold text-slate-500 leading-tight">{label}</p>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+                <Icon size={20} />
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500">{label}</p>
-              <p className="text-xl font-bold text-slate-800 mt-0.5">{value}</p>
-            </div>
+            <p className="text-2xl font-bold text-slate-800 leading-tight">{value}</p>
+            <p className="text-xs text-slate-400">{sub}</p>
           </div>
         ))}
       </div>

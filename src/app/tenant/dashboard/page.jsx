@@ -106,7 +106,7 @@ export default function TenantDashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-2 xl:gap-3 mb-3 xl:mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 xl:gap-3 mb-3 xl:mb-5">
         {kpis.map(({ label, value, Icon, color, sub }) => (
           <div
             key={label}
