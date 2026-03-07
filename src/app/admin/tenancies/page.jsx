@@ -35,6 +35,13 @@ function AdminTenanciesInner() {
   const [rentOverrides, setRentOverrides] = useState({});
   const getRentStatus = (t) => rentOverrides[t.id] ?? t.rentStatus;
   const markPaid = (id) => setRentOverrides((prev) => ({ ...prev, [id]: "Paid" }));
+  // Local status override: { [tenancy.id]: string }
+  const [statusOverrides, setStatusOverrides] = useState({});
+  const getStatus = (t) => statusOverrides[t.id] ?? t.statusLet;
+  const setStatus = (id, value) => setStatusOverrides((prev) => ({ ...prev, [id]: value }));
+
+  // Build status options from source data so we stay in sync
+  const STATUS_OPTIONS = Array.from(new Set(TENANCIES.map((x) => x.statusLet)));
 
   const searchParams = useSearchParams();
   const filterParam  = searchParams?.get("filter");
@@ -79,9 +86,17 @@ function AdminTenanciesInner() {
                 <p className="font-semibold text-slate-800 text-sm truncate">{t.name}</p>
                 <p className="text-xs text-slate-400 truncate">{t.sub}</p>
               </div>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${STATUS_LET[t.statusLet]}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />{t.statusLet}
-              </span>
+              <div className="flex-shrink-0">
+                <select
+                  value={getStatus(t)}
+                  onChange={(e) => setStatus(t.id, e.target.value)}
+                  className="text-xs rounded-full px-2 py-1 border border-slate-200 bg-white"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-slate-50 rounded-lg p-2">
@@ -103,20 +118,25 @@ function AdminTenanciesInner() {
             </div>
             {/* Rent status row */}
             <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
-                RENT_STYLE[getRentStatus(t)]?.badge ?? "bg-slate-100 text-slate-500"
-              }`}>
-                {getRentStatus(t) === "Paid" ? <CheckCircle2 size={11} /> : <Clock size={11} />}
-                {getRentStatus(t)}
-              </span>
-              {getRentStatus(t) !== "Paid" && (
-                <button
-                  onClick={() => markPaid(t.id)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition"
+              <div className="flex items-center gap-2 w-full">
+                <select
+                  value={getRentStatus(t)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "mark-paid") {
+                      markPaid(t.id);
+                    } else {
+                      setRentOverrides((prev) => ({ ...prev, [t.id]: v }));
+                    }
+                  }}
+                  className="w-full max-w-xs rounded-md border border-slate-200 px-3 py-2 text-sm bg-white"
                 >
-                  <CreditCard size={11} /> Mark Paid
-                </button>
-              )}
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Overdue">Overdue</option>
+                  <option value="mark-paid">Mark Paid</option>
+                </select>
+              </div>
             </div>
             <div className="pt-1 border-t border-slate-100">
               <button className={`w-full py-1.5 text-white text-xs font-semibold rounded-md transition ${
@@ -175,12 +195,16 @@ function AdminTenanciesInner() {
                   </div>
                 </td>
                 <td className="px-3 py-3">
-                  <div className="flex flex-col gap-1">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-semibold w-fit ${STATUS_LET[t.statusLet]}`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                      {t.statusLet}
-                    </span>
-                            {/* statusBadge intentionally removed - single primary status shown */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={getStatus(t)}
+                      onChange={(e) => setStatus(t.id, e.target.value)}
+                      className="rounded-md border border-slate-200 px-2 py-1 text-sm bg-white"
+                    >
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
                   </div>
                 </td>
                 <td className="px-3 py-3 text-slate-600 text-sm">{t.county}</td>
@@ -191,20 +215,23 @@ function AdminTenanciesInner() {
                 <td className="px-3 py-3 font-semibold text-slate-800 text-sm">{t.rent}</td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
-                      RENT_STYLE[getRentStatus(t)]?.badge ?? "bg-slate-100 text-slate-500"
-                    }`}>
-                      {getRentStatus(t) === "Paid" ? <CheckCircle2 size={11} /> : <Clock size={11} />}
-                      {getRentStatus(t)}
-                    </span>
-                    {getRentStatus(t) !== "Paid" && (
-                      <button
-                        onClick={() => markPaid(t.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition"
-                      >
-                        <CreditCard size={11} /> Mark Paid
-                      </button>
-                    )}
+                    <select
+                      value={getRentStatus(t)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "mark-paid") {
+                          markPaid(t.id);
+                        } else {
+                          setRentOverrides((prev) => ({ ...prev, [t.id]: v }));
+                        }
+                      }}
+                      className="rounded-md border border-slate-200 px-2.5 py-1 text-sm bg-white"
+                    >
+                      <option value="Paid">Paid</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Overdue">Overdue</option>
+                      <option value="mark-paid">Mark Paid</option>
+                    </select>
                   </div>
                 </td>
                 <td className="px-3 py-3">

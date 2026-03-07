@@ -73,7 +73,7 @@ export default function TenantPropertyPage() {
           <div className="px-5 py-3 border-b border-slate-100">
             <h3 className="text-lg font-bold text-slate-800">Tenancy Timeline</h3>
           </div>
-          <div className="p-4">
+          <div className="px-8 py-3">
             <ol className="relative border-l-2 border-slate-100 space-y-6">
               {timeline.map((item, i) => (
                 <li key={i} className="pl-6 relative">
