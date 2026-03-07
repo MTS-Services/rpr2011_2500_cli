@@ -236,7 +236,7 @@ export default function AdminMaintenancePage() {
                 </td>
                 <td className="px-4 py-3 text-slate-400">{r.age}</td>
                 <td className="px-4 py-3 text-right">
-                  <button className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-700 text-teal-700 hover:text-white rounded-md transition">
+                  <button className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-300 hover:text-gray-800 text-teal-700 rounded-md transition">
                     <Eye size={15} />
                   </button>
                 </td>

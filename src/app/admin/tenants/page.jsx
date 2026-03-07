@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from 'next/link';
 import {
   Plus, ChevronDown, Search, MoreHorizontal,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
@@ -26,24 +27,72 @@ const STATUS_STYLES = {
 export default function AdminTenantsPage() {
   const [selected, setSelected] = useState([]);
   const [statusFilter, setStatusFilter] = useState("All Statuses");
+  const [countyFilter, setCountyFilter] = useState("All County/City");
+  const [propertyFilter, setPropertyFilter] = useState("All Properties");
   const [search, setSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [tenants, setTenants] = useState(TENANTS);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
 
   const statuses = ["All Statuses", "Active", "Notice"];
   const nextStatus = () =>
     setStatusFilter((cur) => statuses[(statuses.indexOf(cur) + 1) % statuses.length]);
 
-  const filtered = TENANTS.filter((t) => {
+  const uniqueSubs = Array.from(new Set(tenants.map((t) => t.sub))).slice(0, 50);
+  const uniqueProperties = Array.from(new Set(tenants.map((t) => t.property))).slice(0, 50);
+
+  const filtered = tenants.filter((t) => {
     const matchStatus = statusFilter === "All Statuses" || t.status === statusFilter;
     const matchSearch =
       t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.property.toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchSearch;
+      t.property.toLowerCase().includes(search.toLowerCase()) ||
+      t.email.toLowerCase().includes(search.toLowerCase());
+    const matchCounty = countyFilter === "All County/City" || t.sub === countyFilter;
+    const matchProperty = propertyFilter === "All Properties" || t.property === propertyFilter;
+    return matchStatus && matchSearch && matchCounty && matchProperty;
   });
 
   const toggleAll = () =>
     setSelected(selected.length === filtered.length ? [] : filtered.map((t) => t.id));
   const toggleRow = (id) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const openAdd = () => setAddOpen(true);
+  const closeAdd = () => setAddOpen(false);
+  const handleAdd = (newT) => {
+    const nextId = tenants[tenants.length - 1]?.id || filtered[filtered.length - 1]?.id || 0;
+    const initials = (newT.name || "").split(" ").map(n => n[0] || "").join("").slice(0,2).toUpperCase();
+    const tenant = { id: nextId + 1, name: newT.name||'New Tenant', initials, color: 'bg-slate-400', sub: newT.sub||'', property: newT.property||'', moveIn: newT.moveIn||'', status: newT.status||'Active', mobile: newT.mobile||'', email: newT.email||'', pps: newT.pps||'', dob: newT.dob||'' };
+    setTenants((t) => [tenant, ...t]);
+    closeAdd();
+    alert('Tenant created (client-side mock)');
+  };
+
+  const exportSelected = () => {
+    const rows = tenants.filter((t) => selected.includes(t.id));
+    if (rows.length === 0) { alert('No rows selected'); return; }
+    const csv = ['Name,Email,Mobile,Property,Status'].concat(rows.map(r => `${r.name},${r.email},${r.mobile},${r.property},${r.status}`)).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'tenants.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+
+  const deleteSelected = () => {
+    if (selected.length === 0) { alert('No rows selected'); return; }
+    if (!confirm(`Delete ${selected.length} tenants?`)) return;
+    setTenants((t) => t.filter(x => !selected.includes(x.id)));
+    setSelected([]);
+    alert('Deleted (client-side mock)');
+  };
+
+  const openEdit = (t) => { setEditing(t); setEditOpen(true); };
+  const closeEdit = () => { setEditing(null); setEditOpen(false); };
+  const handleEdit = (updated) => {
+    setTenants((p) => p.map(x => x.id === updated.id ? {...x, ...updated} : x));
+    closeEdit();
+    alert('Saved (client-side mock)');
+  };
 
   return (
     <div className="space-y-4">
@@ -64,20 +113,17 @@ export default function AdminTenantsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        {["All County/City", "All Properties"].map((label) => (
-          <button
-            key={label}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition"
-          >
-            {label} <ChevronDown size={14} />
-          </button>
-        ))}
-        <button
-          onClick={nextStatus}
-          className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition"
-        >
-          {statusFilter} <ChevronDown size={14} />
-        </button>
+        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+          <option>All County/City</option>
+          {uniqueSubs.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+          <option>All Properties</option>
+          {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+          {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
         <div className="flex-1 min-w-[200px] relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -87,12 +133,7 @@ export default function AdminTenantsPage() {
             className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
           />
         </div>
-        <button className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition">
-          <Plus size={14} /> New
-        </button>
-        <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:border-slate-300 transition">
-          <MoreHorizontal size={16} />
-        </button>
+        
       </div>
 
       {/* Mobile cards — visible below lg */}
@@ -125,13 +166,13 @@ export default function AdminTenantsPage() {
             </div>
             <p className="text-xs text-slate-400 truncate">{tenant.email}</p>
             <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
-              <button aria-label="View" className="flex-1 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs gap-1 font-medium">
+              <Link href={`/admin/tenants/${tenant.id}`} aria-label="View" className="flex-1 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs gap-1 font-medium">
                 <Eye size={14} /> View
-              </button>
-              <button aria-label="Edit" className="flex-1 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition text-xs gap-1 font-medium">
+              </Link>
+              <button aria-label="Edit" onClick={() => openEdit(tenant)} className="flex-1 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition text-xs gap-1 font-medium">
                 <Edit size={14} /> Edit
               </button>
-              <button aria-label="Delete" className="flex-1 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition text-xs gap-1 font-medium">
+              <button aria-label="Delete" onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="flex-1 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition text-xs gap-1 font-medium">
                 <Trash size={14} /> Delete
               </button>
             </div>
@@ -212,15 +253,15 @@ export default function AdminTenantsPage() {
                 <td className="px-4 py-3 text-sm text-slate-500">{tenant.dob}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
-                      <Eye size={16} />
-                    </button>
-                    <button aria-label="Edit" className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
-                      <Edit size={16} />
-                    </button>
-                    <button aria-label="Delete" className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
-                      <Trash size={16} />
-                    </button>
+                        <Link href={`/admin/tenants/${tenant.id}`} aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
+                          <Eye size={16} />
+                        </Link>
+                        <button aria-label="Edit" onClick={() => openEdit(tenant)} className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
+                          <Edit size={16} />
+                        </button>
+                        <button aria-label="Delete" onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
+                          <Trash size={16} />
+                        </button>
                   </div>
                 </td>
               </tr>
@@ -229,6 +270,79 @@ export default function AdminTenantsPage() {
         </table>
         <Pagination total={filtered.length} />
       </div>
+      {/* Add modal */}
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={closeAdd} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Add Tenant</h3>
+                <p className="text-sm text-slate-500 mt-1">Create a tenant (client-side mock).</p>
+              </div>
+              <button aria-label="Close" onClick={closeAdd} className="text-slate-500 hover:text-slate-700">✕</button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleAdd({ name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value, sub: f.sub.value }); }} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Full name</label>
+                <input name="name" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Email</label>
+                <input name="email" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
+                <input name="mobile" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Property</label>
+                <input name="property" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div className="flex items-center gap-2 justify-end mt-4">
+                <button type="button" onClick={closeAdd} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Create</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit modal */}
+      {editOpen && editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={closeEdit} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Edit Tenant</h3>
+              </div>
+              <button aria-label="Close" onClick={closeEdit} className="text-slate-500 hover:text-slate-700">✕</button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleEdit({ id: editing.id, name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value }); }} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Full name</label>
+                <input name="name" defaultValue={editing.name} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Email</label>
+                <input name="email" defaultValue={editing.email} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
+                <input name="mobile" defaultValue={editing.mobile} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Property</label>
+                <input name="property" defaultValue={editing.property} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div className="flex items-center gap-2 justify-end mt-4">
+                <button type="button" onClick={closeEdit} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
