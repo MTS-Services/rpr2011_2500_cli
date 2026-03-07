@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Plus, ChevronDown, Search, MoreHorizontal,
+  Plus, ChevronDown, Search,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown, Home, Users, Eye, Edit, Trash
 } from "lucide-react";
@@ -23,11 +23,18 @@ const LANDLORDS = [
 export default function AdminLandlordsPage() {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
+  const [landlords, setLandlords] = useState(LANDLORDS);
+  const [countyFilter, setCountyFilter] = useState("All County/City");
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  const filtered = LANDLORDS.filter(
+  const uniqueSubs = Array.from(new Set(LANDLORDS.map((l) => l.sub))).slice(0, 50);
+
+  const filtered = landlords.filter(
     (l) =>
-      l.name.toLowerCase().includes(search.toLowerCase()) ||
-      l.email.toLowerCase().includes(search.toLowerCase())
+      (l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase())) &&
+      (countyFilter === "All County/City" ? true : l.sub === countyFilter)
   );
 
   const toggleAll = () =>
@@ -35,21 +42,59 @@ export default function AdminLandlordsPage() {
   const toggleRow = (id) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
+  const openAdd = () => setAddOpen(true);
+  const closeAdd = () => setAddOpen(false);
+
+  const handleAdd = (newL) => {
+    setLandlords((p) => [{ id: (p[p.length - 1]?.id || 0) + 1, initials: newL.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(), color: 'bg-slate-400', sub: newL.sub || '', properties: 0, tenants: 0, mobile: newL.mobile||'', pps: '', pps2: '', dob: '', email: newL.email||'' }, ...p]);
+    closeAdd();
+  };
+
+  const openEdit = (l) => { setEditing(l); setEditOpen(true); };
+  const closeEdit = () => { setEditing(null); setEditOpen(false); };
+  const handleEdit = (updated) => {
+    setLandlords((p) => p.map(x => x.id === updated.id ? {...x, ...updated} : x));
+    closeEdit();
+  };
+
+  const handleDelete = (id) => {
+    if (!confirm('Delete landlord?')) return;
+    setLandlords((p) => p.filter(x => x.id !== id));
+    setSelected((s) => s.filter(x => x !== id));
+  };
+
+  const exportSelected = () => {
+    const rows = landlords.filter((l) => selected.includes(l.id));
+    if (rows.length === 0) { alert('No rows selected'); return; }
+    const csv = ['Name,Email,Mobile,Properties,Tenants'].concat(rows.map(r => `${r.name},${r.email},${r.mobile},${r.properties},${r.tenants}`)).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'landlords.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+
+  const deleteSelected = () => {
+    if (selected.length === 0) { alert('No rows selected'); return; }
+    if (!confirm(`Delete ${selected.length} landlords?`)) return;
+    setLandlords((p) => p.filter(l => !selected.includes(l.id)));
+    setSelected([]);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">Landlords</h1>
-        <button className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+        <button onClick={openAdd} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
           <Plus size={15} /> <span className="hidden sm:inline">Add Landlord</span>
         </button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <button className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition">
-          All County/City <ChevronDown size={14} />
-        </button>
+        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+          <option>All County/City</option>
+          {uniqueSubs.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -60,18 +105,9 @@ export default function AdminLandlordsPage() {
           />
         </div>
         <div className="flex-1" />
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            placeholder="Search landlords"
-            className="pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition w-52"
-          />
-        </div>
-        <button className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition">
+        
+        <button onClick={openAdd} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition">
           <Plus size={14} /> New
-        </button>
-        <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:border-slate-300 transition">
-          <MoreHorizontal size={16} />
         </button>
       </div>
 
@@ -207,12 +243,12 @@ export default function AdminLandlordsPage() {
                     <Link href={`/admin/landlords/${landlord.id}`} aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
                       <Eye size={16} />
                     </Link>
-                    <button aria-label="Edit" className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
-                      <Edit size={16} />
-                    </button>
-                    <button aria-label="Delete" className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
-                      <Trash size={16} />
-                    </button>
+                      <button onClick={() => openEdit(landlord)} aria-label="Edit" className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
+                        <Edit size={16} />
+                      </button>
+                      <button onClick={() => handleDelete(landlord.id)} aria-label="Delete" className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
+                        <Trash size={16} />
+                      </button>
                   </div>
                 </td>
               </tr>
@@ -221,6 +257,78 @@ export default function AdminLandlordsPage() {
         </table>
         <Pagination total={filtered.length} />
       </div>
+      {/* Add / Edit modals */}
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={closeAdd} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Add Landlord</h3>
+                <p className="text-sm text-slate-500 mt-1">Create a landlord (client-side mock).</p>
+              </div>
+              <button aria-label="Close" onClick={closeAdd} className="text-slate-500 hover:text-slate-700">✕</button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleAdd({ name: f.name.value, email: f.email.value, mobile: f.mobile.value, sub: f.sub.value }); }} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Full name</label>
+                <input name="name" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Email</label>
+                <input name="email" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
+                <input name="mobile" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Sub / Town</label>
+                <input name="sub" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div className="flex items-center gap-2 justify-end mt-4">
+                <button type="button" onClick={closeAdd} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Create</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {editOpen && editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={closeEdit} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Edit Landlord</h3>
+              </div>
+              <button aria-label="Close" onClick={closeEdit} className="text-slate-500 hover:text-slate-700">✕</button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleEdit({ id: editing.id, name: f.name.value, email: f.email.value, mobile: f.mobile.value, sub: f.sub.value }); }} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Full name</label>
+                <input name="name" defaultValue={editing.name} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Email</label>
+                <input name="email" defaultValue={editing.email} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
+                <input name="mobile" defaultValue={editing.mobile} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Sub / Town</label>
+                <input name="sub" defaultValue={editing.sub} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+              </div>
+              <div className="flex items-center gap-2 justify-end mt-4">
+                <button type="button" onClick={closeEdit} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

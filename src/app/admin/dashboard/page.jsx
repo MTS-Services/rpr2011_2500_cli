@@ -191,7 +191,6 @@ function ActivityRowAvatar({ item }) {
   );
 }
 
-/* ─── Page ────────────────────────────────────── */
 export default function AdminDashboardPage() {
   const router = useRouter();
   return (
