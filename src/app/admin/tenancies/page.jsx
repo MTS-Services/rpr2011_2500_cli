@@ -7,16 +7,17 @@ import {
   ArrowUpDown, CheckCircle2, Clock, CreditCard
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import AddTenancyModal from "./components/AddTenancyModal";
 import TENANCIES from "@/data/tenancies";
 
 const RENT_STYLE = {
-  Paid:    { badge: "bg-teal-100 text-teal-700",   label: "Paid" },
-  Overdue: { badge: "bg-red-100 text-red-700",     label: "Overdue" },
+  Paid: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
+  Overdue: { badge: "bg-red-100 text-red-700", label: "Overdue" },
   Pending: { badge: "bg-amber-100 text-amber-700", label: "Pending" },
 };
 
 const STATUS_LET = {
-  Let:    "bg-teal-500 text-white",
+  Let: "bg-teal-500 text-white",
   Notice: "bg-orange-100 text-orange-600 border border-orange-300",
 };
 const BADGE = {
@@ -30,6 +31,7 @@ const RTB_STATUS = {
 
 function AdminTenanciesInner() {
   const [selected, setSelected] = useState([]);
+  const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
   // Local override map: { [tenancy.id]: "Paid" | "Overdue" | "Pending" }
   // In production this would write to Supabase
   const [rentOverrides, setRentOverrides] = useState({});
@@ -43,14 +45,19 @@ function AdminTenanciesInner() {
   // Build status options from source data so we stay in sync
   const STATUS_OPTIONS = Array.from(new Set(TENANCIES.map((x) => x.statusLet)));
 
+  const handleAddTenancy = (formData) => {
+    console.log("New tenancy:", formData);
+    // TODO: Add API call to save the tenancy
+  };
+
   const searchParams = useSearchParams();
-  const filterParam  = searchParams?.get("filter");
+  const filterParam = searchParams?.get("filter");
 
   const today = new Date();
-  const in30  = new Date(); in30.setDate(today.getDate() + 30);
+  const in30 = new Date(); in30.setDate(today.getDate() + 30);
 
   const filtered = TENANCIES.filter((t) => {
-    if (filterParam === "rtb-missing")  return !t.rtb || t.rtb === "N/A";
+    if (filterParam === "rtb-missing") return !t.rtb || t.rtb === "N/A";
     if (filterParam === "rent-reviews") {
       if (!t.rentReviewDate) return false;
       const d = new Date(t.rentReviewDate);
@@ -69,7 +76,7 @@ function AdminTenanciesInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">Tenancies</h1>
-        <button className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+        <button onClick={() => setAddTenancyModalOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
           <Plus size={15} /> <span className="hidden sm:inline">New Tenancy</span>
         </button>
       </div>
@@ -139,9 +146,8 @@ function AdminTenanciesInner() {
               </div>
             </div>
             <div className="pt-1 border-t border-slate-100">
-              <button className={`w-full py-1.5 text-white text-xs font-semibold rounded-md transition ${
-                t.rtbStatus === "Notice" ? "bg-orange-400 hover:bg-orange-500" : "bg-teal-600 hover:bg-teal-700"
-              }`}>{t.rtbStatus}</button>
+              <button className={`w-full py-1.5 text-white text-xs font-semibold rounded-md transition ${t.rtbStatus === "Notice" ? "bg-orange-400 hover:bg-orange-500" : "bg-teal-600 hover:bg-teal-700"
+                }`}>{t.rtbStatus}</button>
             </div>
           </div>
         ))}
@@ -247,11 +253,10 @@ function AdminTenanciesInner() {
                   {t.rtbDate ?? <span className="text-slate-300">—</span>}
                 </td>
                 <td className="px-3 py-3">
-                  <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-md transition ${
-                    t.rtbStatus === "Notice"
+                  <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-md transition ${t.rtbStatus === "Notice"
                       ? "bg-orange-400 hover:bg-orange-500"
                       : "bg-teal-600 hover:bg-teal-700"
-                  }`}>
+                    }`}>
                     {t.rtbStatus}
                   </button>
                 </td>
@@ -261,6 +266,12 @@ function AdminTenanciesInner() {
         </table>
         <Pagination total={filtered.length} />
       </div>
+
+      <AddTenancyModal
+        isOpen={addTenancyModalOpen}
+        onClose={() => setAddTenancyModalOpen(false)}
+        onSubmit={handleAddTenancy}
+      />
     </div>
   );
 }

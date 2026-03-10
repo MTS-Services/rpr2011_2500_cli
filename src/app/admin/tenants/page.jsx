@@ -7,16 +7,17 @@ import {
   ArrowUpDown, Eye, Edit, Trash
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import AddTenantModal from "./components/AddTenantModal";
 
 const TENANTS = [
-  { id: 1, name: "Sarah Kelly",      initials: "SK", color: "bg-teal-500",    sub: "Apt 12 Grand Canal Dock", property: "Apt 39 Grand Canal Dock", moveIn: "01 Feb 2022", status: "Active",  mobile: "087-965-6692",  email: "sarah.kelly@email.com",       pps: "1234567SA", dob: "14 Mar 1990" },
-  { id: 2, name: "Kevin Madden",     initials: "KM", color: "bg-indigo-500",  sub: "Apt 5B Rosewood Close",   property: "Apt 5B Rosewood Close",   moveIn: "20 Jan 2024", status: "Active",  mobile: "085-349-2118",  email: "kevin.madder@email.com",      pps: "8765432TA", dob: "22 Jul 1988" },
-  { id: 3, name: "Adam Walsh",       initials: "AW", color: "bg-orange-500",  sub: "Apt 65 Southern Cross",   property: "Apt 65 Southern Cross",   moveIn: "26 Sep 2021", status: "Notice",  mobile: "086-492-7564",  email: "adam.walsh@email.com",        pps: "9876543LW", dob: "05 Jan 1985" },
-  { id: 4, name: "Reginald Spencer", initials: "RS", color: "bg-sky-600",     sub: "Apt 21C Harbour View",    property: "Apt 21C Harbour View",    moveIn: "24 Sep 2022", status: "Active",  mobile: "085-235-3433",  email: "reginald.spencer@email.com",  pps: "4561237RB", dob: "19 Nov 1979" },
-  { id: 5, name: "Steven Keane",     initials: "SK", color: "bg-emerald-600", sub: "Apt 5 City Square",        property: "Apt 5 City Square",       moveIn: "03 Mar 2020", status: "Active",  mobile: "083-705-6836",  email: "steven.keane@email.com",      pps: "3210987SK", dob: "08 Aug 1993" },
-  { id: 6, name: "Stephen Blake",    initials: "SB", color: "bg-violet-500",  sub: "Apt 30 Fairview Road",    property: "Apt 30 Fairview Road",    moveIn: "17 Oct 2020", status: "Active",  mobile: "086-103-6112",  email: "stephen.blake@email.com",     pps: "6543210SB", dob: "31 Mar 1987" },
-  { id: 7, name: "Holly Quigley",    initials: "HQ", color: "bg-pink-500",    sub: "Apt 22 Parkside Plaza",   property: "Apt 29 Parkside Plaza",   moveIn: "01 Apr 2018", status: "Notice",  mobile: "086-927-6382",  email: "holly.quigley@email.com",     pps: "7654321HQ", dob: "27 Jun 1982" },
-  { id: 8, name: "Peter Hughes",     initials: "PH", color: "bg-amber-600",   sub: "Apt 306 Fairview Road",   property: "Apt 206 Fairview Road",   moveIn: "08 Mar 2022", status: "Notice",  mobile: "086-209-3605",  email: "peter.hughes@email.com",      pps: "2109876PH", dob: "14 Dec 1980" },
+  { id: 1, name: "Sarah Kelly", initials: "SK", color: "bg-teal-500", sub: "Apt 12 Grand Canal Dock", property: "Apt 39 Grand Canal Dock", moveIn: "01 Feb 2022", status: "Active", mobile: "087-965-6692", email: "sarah.kelly@email.com", pps: "1234567SA", dob: "14 Mar 1990" },
+  { id: 2, name: "Kevin Madden", initials: "KM", color: "bg-indigo-500", sub: "Apt 5B Rosewood Close", property: "Apt 5B Rosewood Close", moveIn: "20 Jan 2024", status: "Active", mobile: "085-349-2118", email: "kevin.madder@email.com", pps: "8765432TA", dob: "22 Jul 1988" },
+  { id: 3, name: "Adam Walsh", initials: "AW", color: "bg-orange-500", sub: "Apt 65 Southern Cross", property: "Apt 65 Southern Cross", moveIn: "26 Sep 2021", status: "Notice", mobile: "086-492-7564", email: "adam.walsh@email.com", pps: "9876543LW", dob: "05 Jan 1985" },
+  { id: 4, name: "Reginald Spencer", initials: "RS", color: "bg-sky-600", sub: "Apt 21C Harbour View", property: "Apt 21C Harbour View", moveIn: "24 Sep 2022", status: "Active", mobile: "085-235-3433", email: "reginald.spencer@email.com", pps: "4561237RB", dob: "19 Nov 1979" },
+  { id: 5, name: "Steven Keane", initials: "SK", color: "bg-emerald-600", sub: "Apt 5 City Square", property: "Apt 5 City Square", moveIn: "03 Mar 2020", status: "Active", mobile: "083-705-6836", email: "steven.keane@email.com", pps: "3210987SK", dob: "08 Aug 1993" },
+  { id: 6, name: "Stephen Blake", initials: "SB", color: "bg-violet-500", sub: "Apt 30 Fairview Road", property: "Apt 30 Fairview Road", moveIn: "17 Oct 2020", status: "Active", mobile: "086-103-6112", email: "stephen.blake@email.com", pps: "6543210SB", dob: "31 Mar 1987" },
+  { id: 7, name: "Holly Quigley", initials: "HQ", color: "bg-pink-500", sub: "Apt 22 Parkside Plaza", property: "Apt 29 Parkside Plaza", moveIn: "01 Apr 2018", status: "Notice", mobile: "086-927-6382", email: "holly.quigley@email.com", pps: "7654321HQ", dob: "27 Jun 1982" },
+  { id: 8, name: "Peter Hughes", initials: "PH", color: "bg-amber-600", sub: "Apt 306 Fairview Road", property: "Apt 206 Fairview Road", moveIn: "08 Mar 2022", status: "Notice", mobile: "086-209-3605", email: "peter.hughes@email.com", pps: "2109876PH", dob: "14 Dec 1980" },
 ];
 
 const STATUS_STYLES = {
@@ -60,10 +61,24 @@ export default function AdminTenantsPage() {
 
   const openAdd = () => setAddOpen(true);
   const closeAdd = () => setAddOpen(false);
-  const handleAdd = (newT) => {
+  const handleAdd = (formData) => {
     const nextId = tenants[tenants.length - 1]?.id || filtered[filtered.length - 1]?.id || 0;
-    const initials = (newT.name || "").split(" ").map(n => n[0] || "").join("").slice(0,2).toUpperCase();
-    const tenant = { id: nextId + 1, name: newT.name||'New Tenant', initials, color: 'bg-slate-400', sub: newT.sub||'', property: newT.property||'', moveIn: newT.moveIn||'', status: newT.status||'Active', mobile: newT.mobile||'', email: newT.email||'', pps: newT.pps||'', dob: newT.dob||'' };
+    const initials = ((formData.firstName || "") + (formData.lastName || "")).split(" ").map(n => n[0] || "").join("").slice(0, 2).toUpperCase();
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    const tenant = {
+      id: nextId + 1,
+      name: fullName || 'New Tenant',
+      initials,
+      color: 'bg-slate-400',
+      sub: '',
+      property: '',
+      moveIn: '',
+      status: 'Active',
+      mobile: formData.mobile || '',
+      email: formData.email || '',
+      pps: formData.pps || '',
+      dob: formData.dob || ''
+    };
     setTenants((t) => [tenant, ...t]);
     closeAdd();
     alert('Tenant created (client-side mock)');
@@ -89,7 +104,7 @@ export default function AdminTenantsPage() {
   const openEdit = (t) => { setEditing(t); setEditOpen(true); };
   const closeEdit = () => { setEditing(null); setEditOpen(false); };
   const handleEdit = (updated) => {
-    setTenants((p) => p.map(x => x.id === updated.id ? {...x, ...updated} : x));
+    setTenants((p) => p.map(x => x.id === updated.id ? { ...x, ...updated } : x));
     closeEdit();
     alert('Saved (client-side mock)');
   };
@@ -99,7 +114,7 @@ export default function AdminTenantsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">Tenants</h1>
-        <button className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+        <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
           <Plus size={15} /> <span className="hidden sm:inline">Add Tenant</span>
         </button>
       </div>
@@ -133,7 +148,7 @@ export default function AdminTenantsPage() {
             className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
           />
         </div>
-        
+
       </div>
 
       {/* Mobile cards — visible below lg */}
@@ -253,15 +268,15 @@ export default function AdminTenantsPage() {
                 <td className="px-4 py-3 text-sm text-slate-500">{tenant.dob}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/tenants/${tenant.id}`} aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
-                          <Eye size={16} />
-                        </Link>
-                        <button aria-label="Edit" onClick={() => openEdit(tenant)} className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
-                          <Edit size={16} />
-                        </button>
-                        <button aria-label="Delete" onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
-                          <Trash size={16} />
-                        </button>
+                    <Link href={`/admin/tenants/${tenant.id}`} aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
+                      <Eye size={16} />
+                    </Link>
+                    <button aria-label="Edit" onClick={() => openEdit(tenant)} className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
+                      <Edit size={16} />
+                    </button>
+                    <button aria-label="Delete" onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
+                      <Trash size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -270,43 +285,12 @@ export default function AdminTenantsPage() {
         </table>
         <Pagination total={filtered.length} />
       </div>
-      {/* Add modal */}
-      {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={closeAdd} />
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-800">Add Tenant</h3>
-                <p className="text-sm text-slate-500 mt-1">Create a tenant (client-side mock).</p>
-              </div>
-              <button aria-label="Close" onClick={closeAdd} className="text-slate-500 hover:text-slate-700">✕</button>
-            </div>
-            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleAdd({ name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value, sub: f.sub.value }); }} className="mt-4 space-y-3">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Full name</label>
-                <input name="name" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Email</label>
-                <input name="email" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
-                <input name="mobile" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Property</label>
-                <input name="property" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div className="flex items-center gap-2 justify-end mt-4">
-                <button type="button" onClick={closeAdd} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+      <AddTenantModal
+        isOpen={addOpen}
+        onClose={closeAdd}
+        onSubmit={handleAdd}
+      />
       {/* Edit modal */}
       {editOpen && editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -318,7 +302,7 @@ export default function AdminTenantsPage() {
               </div>
               <button aria-label="Close" onClick={closeEdit} className="text-slate-500 hover:text-slate-700">✕</button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleEdit({ id: editing.id, name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value }); }} className="mt-4 space-y-3">
+            <form onSubmit={(e) => { e.preventDefault(); const f = e.target; handleEdit({ id: editing.id, name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value }); }} className="mt-4 space-y-3">
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Full name</label>
                 <input name="name" defaultValue={editing.name} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />

@@ -49,7 +49,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
         <div className="sticky top-0 flex items-start justify-between p-6 border-b border-slate-200 bg-white rounded-t-xl">
           <div>
             <h3 className="text-xl font-semibold text-slate-800">Add New Property</h3>
-            <p className="text-sm text-slate-500 mt-1">Fill in the property details below</p>
+            <p className="text-base text-slate-500 mt-1">Fill in the property details below</p>
           </div>
           <button aria-label="Close" onClick={onClose} className="text-slate-500 hover:text-slate-700 flex-shrink-0">
             <X size={18} />
@@ -60,7 +60,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
         <form id="addPropertyForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-base font-medium text-slate-700 mb-1">
               Property Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -75,7 +75,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
 
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-base font-medium text-slate-700 mb-1">
               Property Type <span className="text-red-500">*</span>
             </label>
             <select
@@ -96,7 +96,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
           {/* Bedrooms & Bathrooms */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Bedrooms</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">Bedrooms</label>
               <input
                 type="number"
                 name="bedrooms"
@@ -108,7 +108,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Bathrooms</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">Bathrooms</label>
               <input
                 type="number"
                 name="bathrooms"
@@ -123,7 +123,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+            <label className="block text-base font-medium text-slate-700 mb-1">Address</label>
             <input
               type="text"
               name="address"
@@ -137,7 +137,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
           {/* County/City & Eircode */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">County/City</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">County/City</label>
               <input
                 type="text"
                 name="county"
@@ -148,7 +148,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Eircode</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">Eircode</label>
               <input
                 type="text"
                 name="eircode"
@@ -162,7 +162,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
 
           {/* Assigned Landlord */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-base font-medium text-slate-700 mb-1">
               Assigned Landlord <span className="text-red-500">*</span>
             </label>
             <select
