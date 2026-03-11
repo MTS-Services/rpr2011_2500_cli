@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Download,
   Tag,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -45,6 +46,7 @@ const property = {
   tenancy: {
     rtbNumber: "RTB-2022-10-456782",
     registrationDate: "Nov 5, 2022",
+    expiryDate: "Nov 5, 2025",
     leaseStart: "Oct 10, 2022",
     leaseEnd: "Oct 9, 2024",
     rentReviewDate: "Apr 10, 2024",
@@ -76,6 +78,7 @@ const notes = [
 const TABS = [
   { key: "overview", label: "Overview", Icon: Home },
   { key: "tenancy", label: "Tenancy", Icon: BadgeCheck },
+  { key: "rtb", label: "RTB Registration", Icon: CheckCircle },
   { key: "documents", label: "Documents", Icon: FileText },
   { key: "maintenance", label: "Maintenance", Icon: Wrench },
   { key: "notes", label: "Notes", Icon: StickyNote },
@@ -225,6 +228,78 @@ export default function PropertyProfilePage() {
           <InfoRow label="Review Frequency" value={property.tenancy.rentReviewFrequency} />
           <InfoRow label="Notice Given" value={property.tenancy.noticeGiven} />
           <InfoRow label="Notice Period" value={property.tenancy.noticePeriod} />
+        </div>
+      )}
+
+      {/* Tab: RTB Registration */}
+      {activeTab === "rtb" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* RTB Status Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+              <CheckCircle size={16} className="text-teal-600" /> RTB Registration Status
+            </h2>
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
+                <p className="text-xs text-teal-600 font-semibold uppercase mb-1">Status</p>
+                <p className="text-lg font-bold text-teal-700 flex items-center gap-2">
+                  <CheckCircle size={18} /> Registered
+                </p>
+              </div>
+              <InfoRow label="RTB Number" value={property.tenancy.rtbNumber} mono />
+              <InfoRow label="Registration Date" value={property.tenancy.registrationDate} />
+              <InfoRow label="Expiry Date" value={property.tenancy.expiryDate} />
+            </div>
+          </div>
+
+          {/* Expiry Alert & Renewal */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+              <CalendarDays size={16} className="text-teal-600" /> Renewal & Alerts
+            </h2>
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">Renewal Due Soon</p>
+                  <p className="text-xs text-amber-700 mt-1">RTB registration expires in ~8 months. Renew at least 30 days before expiry.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button className="w-full px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm transition">
+                  Renew RTB Registration
+                </button>
+                <a href="https://www.rtb.ie" target="_blank" rel="noopener noreferrer" className="w-full px-4 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm transition text-center block">
+                  Visit RTB Website
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Documentation */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+              <FileText size={16} className="text-teal-600" /> RTB Documents
+            </h2>
+            <div className="space-y-2">
+              {documents
+                .filter((d) => d.type === "RTB Registration")
+                .map((d, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700">{d.name}</p>
+                      <p className="text-xs text-slate-400 mt-1">{d.date} • {d.size}</p>
+                    </div>
+                    <button className="px-3 py-1.5 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition flex items-center gap-1.5">
+                      <Download size={14} /> Download
+                    </button>
+                  </div>
+                ))}
+              {documents.filter((d) => d.type === "RTB Registration").length === 0 && (
+                <p className="text-sm text-slate-500 px-4 py-6 text-center">No RTB documents uploaded yet.</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

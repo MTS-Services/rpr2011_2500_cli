@@ -82,7 +82,7 @@ export default function TenantsPage() {
                 <th className="text-left px-5 py-3">Name</th>
                 <th className="text-left px-5 py-4">Property Address</th>
                 <th className="text-left px-5 py-4">Tenancy Start</th>
-                <th className="text-left px-5 py-4">P.P.S. Number</th>
+                {/* <th className="text-left px-5 py-4">P.P.S. Number</th> */}
                 <th className="text-left px-5 py-4">Status</th>
                 <th className="text-right px-5 py-3">Action</th>
               </tr>
@@ -93,16 +93,16 @@ export default function TenantsPage() {
                   <td className="px-5 py-4 text-base font-semibold text-slate-700">{t.name}</td>
                   <td className="px-5 py-5 text-base text-slate-600">{t.property}</td>
                   <td className="px-5 py-5 text-base text-slate-600">{t.start}</td>
-                  <td className="px-5 py-5 font-mono text-sm text-slate-600">{t.pps}</td>
+                  {/* <td className="px-5 py-5 font-mono text-sm text-slate-600">{t.pps}</td> */}
                   <td className="px-5 py-5">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${t.statusColor}`}>
+                    <span className={`text-sm font-semibold px-2 py-0.5 rounded-full ${t.statusColor}`}>
                       {t.status}
                     </span>
 
                   </td>
                   <td className="px-5 py-4 text-right">
                     <Link
-                      href={`/portal/tenants/${tenants.indexOf(t) + 1}`}
+                      href={"#"}
                       className="inline-flex items-center justify-center px-3 py-2 bg-teal-50 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-teal-700 rounded-lg transition"
                       aria-label={`View ${t.name} details`}
                       title="View tenant details"
