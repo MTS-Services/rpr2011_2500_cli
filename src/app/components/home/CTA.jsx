@@ -21,7 +21,7 @@ export default function CTA() {
           </h2>
 
           <p className="section-desc text-dark-300 mb-10 max-w-xl mx-auto leading-relaxed">
-            Join 500+ landlords who trust McCann &amp; Curran for stress-free, fully transparent property management across Ireland.
+            Join 500+ clients who trust McCann &amp; Curran for stress-free, fully transparent property management across Ireland.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -33,7 +33,7 @@ export default function CTA() {
               Book a Free Consultation
             </Link>
             <Link
-              href="tel:+35312345678"
+              href="tel:+0498991111"
               className="inline-flex items-center gap-2 px-8 py-3.5 text-[0.9rem] font-semibold text-white bg-white/10 border border-white/20 rounded-lg hover:bg-white/15 transition-all"
             >
               <Phone size={16} />
