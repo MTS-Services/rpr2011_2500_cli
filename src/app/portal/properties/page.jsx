@@ -5,13 +5,31 @@ import { Eye } from "lucide-react";
 import Link from "next/link";
 
 const properties = [
-  { id: "1", status: "Notice Served", statusColor: "bg-red-100 text-red-700", address: "Apt 5B Rosewood Close", tenant: "Kevin Madden", rent: "€1,750", rentBadge: "Rent 5 Days Late", rtb: "Registered", mprn: "10623847501" },
-  { id: "2", status: "Let", statusColor: "bg-teal-100 text-teal-700", address: "Apt 306 Fairview Rd", tenant: "Stephen Blake", rent: "€1,850", rentBadge: null, rtb: "Registered", mprn: "10234762819" },
-  { id: "3", status: "Notice Served", statusColor: "bg-amber-100 text-amber-700", address: "Apt 22 Parkside Plaza", tenant: "Reginald Spencer", rent: "€1,500", rentBadge: null, rtb: "Pending", mprn: "10987654321" },
-  { id: "4", status: "Let", statusColor: "bg-teal-100 text-teal-700", address: "Apt 104 Elmwood Grove", tenant: "Adam Walsh", rent: "€1,600", rentBadge: null, rtb: "Registered", mprn: "10543218765" },
+  { id: "1", status: "Notice Served", statusColor: "bg-red-100 text-red-700", address: "Apt 5B Rosewood Close", tenant: "Kevin Madden", rent: "€1,750", rentBadge: "Rent 5 Days Late", rtb: "Registered", rtbExpiry: "2025-08-15", mprn: "10623847501" },
+  { id: "2", status: "Let", statusColor: "bg-teal-100 text-teal-700", address: "Apt 306 Fairview Rd", tenant: "Stephen Blake", rent: "€1,850", rentBadge: null, rtb: "Registered", rtbExpiry: "2026-12-20", mprn: "10234762819" },
+  { id: "3", status: "Notice Served", statusColor: "bg-amber-100 text-amber-700", address: "Apt 22 Parkside Plaza", tenant: "Reginald Spencer", rent: "€1,500", rentBadge: null, rtb: "Pending", rtbExpiry: null, mprn: "10987654321" },
+  { id: "4", status: "Let", statusColor: "bg-teal-100 text-teal-700", address: "Apt 104 Elmwood Grove", tenant: "Adam Walsh", rent: "€1,600", rentBadge: null, rtb: "Registered", rtbExpiry: "2026-05-10", mprn: "10543218765" },
 ];
 
 export default function PropertiesPage() {
+  const getRTBExpiryColor = (expiryDate) => {
+    if (!expiryDate) return "";
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const daysUntilExpiry = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilExpiry <= 30) {
+      return "bg-red-50 text-red-700"; // Expiring soon
+    } else if (daysUntilExpiry <= 90) {
+      return "bg-amber-50 text-amber-700"; // Expiring in 3 months
+    }
+    return "bg-teal-50 text-teal-700"; // Valid for longer
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("en-IE", { year: "numeric", month: "short", day: "numeric" });
+  };
   return (
     <PortalShell>
       <div className="mb-3 xl:mb-5">
@@ -41,6 +59,10 @@ export default function PropertiesPage() {
                   <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${p.rtb === "Registered" ? "bg-teal-50 text-teal-700" : "bg-amber-50 text-amber-700"}`}>{p.rtb}</span>
                 </div>
                 <div>
+                  <p className="text-slate-400">RTB Expiry</p>
+                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getRTBExpiryColor(p.rtbExpiry)}`}>{formatDate(p.rtbExpiry)}</span>
+                </div>
+                <div>
                   <p className="text-slate-400">MPRN</p>
                   <p className="font-mono text-slate-600">{p.mprn}</p>
                 </div>
@@ -62,6 +84,7 @@ export default function PropertiesPage() {
                 <th className="text-left px-5 py-4">Tenant</th>
                 <th className="text-left px-5 py-4">Rent</th>
                 <th className="text-left px-5 py-4">RTB Status</th>
+                <th className="text-left px-5 py-4">RTB Expiry</th>
                 <th className="text-left px-5 py-4">MPRN</th>
                 <th className="text-right px-5 py-3">Action</th>
               </tr>
@@ -84,6 +107,11 @@ export default function PropertiesPage() {
                   <td className="px-5 py-5">
                     <span className={`text-sm font-medium px-2.5 py-1 rounded-full ${p.rtb === "Registered" ? "bg-teal-50 text-teal-700" : "bg-amber-50 text-amber-700"}`}>
                       {p.rtb}
+                    </span>
+                  </td>
+                  <td className="px-5 py-5">
+                    <span className={`text-sm font-medium px-2.5 py-1 rounded-full ${getRTBExpiryColor(p.rtbExpiry)}`}>
+                      {formatDate(p.rtbExpiry)}
                     </span>
                   </td>
                   <td className="px-5 py-5 text-slate-500 font-mono text-sm">{p.mprn}</td>

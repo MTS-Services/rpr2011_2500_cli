@@ -7,21 +7,22 @@ import {
   ArrowUpDown, Eye, Edit, Trash
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import AddTenantModal from "./components/AddTenantModal";
 
 const TENANTS = [
-  { id: 1, name: "Sarah Kelly",      initials: "SK", color: "bg-teal-500",    sub: "Apt 12 Grand Canal Dock", property: "Apt 39 Grand Canal Dock", moveIn: "01 Feb 2022", status: "Active",  mobile: "087-965-6692",  email: "sarah.kelly@email.com",       pps: "1234567SA", dob: "14 Mar 1990" },
-  { id: 2, name: "Kevin Madden",     initials: "KM", color: "bg-indigo-500",  sub: "Apt 5B Rosewood Close",   property: "Apt 5B Rosewood Close",   moveIn: "20 Jan 2024", status: "Active",  mobile: "085-349-2118",  email: "kevin.madder@email.com",      pps: "8765432TA", dob: "22 Jul 1988" },
-  { id: 3, name: "Adam Walsh",       initials: "AW", color: "bg-orange-500",  sub: "Apt 65 Southern Cross",   property: "Apt 65 Southern Cross",   moveIn: "26 Sep 2021", status: "Notice",  mobile: "086-492-7564",  email: "adam.walsh@email.com",        pps: "9876543LW", dob: "05 Jan 1985" },
-  { id: 4, name: "Reginald Spencer", initials: "RS", color: "bg-sky-600",     sub: "Apt 21C Harbour View",    property: "Apt 21C Harbour View",    moveIn: "24 Sep 2022", status: "Active",  mobile: "085-235-3433",  email: "reginald.spencer@email.com",  pps: "4561237RB", dob: "19 Nov 1979" },
-  { id: 5, name: "Steven Keane",     initials: "SK", color: "bg-emerald-600", sub: "Apt 5 City Square",        property: "Apt 5 City Square",       moveIn: "03 Mar 2020", status: "Active",  mobile: "083-705-6836",  email: "steven.keane@email.com",      pps: "3210987SK", dob: "08 Aug 1993" },
-  { id: 6, name: "Stephen Blake",    initials: "SB", color: "bg-violet-500",  sub: "Apt 30 Fairview Road",    property: "Apt 30 Fairview Road",    moveIn: "17 Oct 2020", status: "Active",  mobile: "086-103-6112",  email: "stephen.blake@email.com",     pps: "6543210SB", dob: "31 Mar 1987" },
-  { id: 7, name: "Holly Quigley",    initials: "HQ", color: "bg-pink-500",    sub: "Apt 22 Parkside Plaza",   property: "Apt 29 Parkside Plaza",   moveIn: "01 Apr 2018", status: "Notice",  mobile: "086-927-6382",  email: "holly.quigley@email.com",     pps: "7654321HQ", dob: "27 Jun 1982" },
-  { id: 8, name: "Peter Hughes",     initials: "PH", color: "bg-amber-600",   sub: "Apt 306 Fairview Road",   property: "Apt 206 Fairview Road",   moveIn: "08 Mar 2022", status: "Notice",  mobile: "086-209-3605",  email: "peter.hughes@email.com",      pps: "2109876PH", dob: "14 Dec 1980" },
+  { id: 1, name: "Sarah Kelly", initials: "SK", color: "bg-teal-500", sub: "Apt 12 Grand Canal Dock", property: "Apt 39 Grand Canal Dock", moveIn: "01 Feb 2022", status: "Active", mobile: "087-965-6692", email: "sarah.kelly@email.com", pps: "1234567SA", dob: "14 Mar 1990" },
+  { id: 2, name: "Kevin Madden", initials: "KM", color: "bg-indigo-500", sub: "Apt 5B Rosewood Close", property: "Apt 5B Rosewood Close", moveIn: "20 Jan 2024", status: "Active", mobile: "085-349-2118", email: "kevin.madder@email.com", pps: "8765432TA", dob: "22 Jul 1988" },
+  { id: 3, name: "Adam Walsh", initials: "AW", color: "bg-orange-500", sub: "Apt 65 Southern Cross", property: "Apt 65 Southern Cross", moveIn: "26 Sep 2021", status: "Notice", mobile: "086-492-7564", email: "adam.walsh@email.com", pps: "9876543LW", dob: "05 Jan 1985" },
+  { id: 4, name: "Reginald Spencer", initials: "RS", color: "bg-sky-600", sub: "Apt 21C Harbour View", property: "Apt 21C Harbour View", moveIn: "24 Sep 2022", status: "Active", mobile: "085-235-3433", email: "reginald.spencer@email.com", pps: "4561237RB", dob: "19 Nov 1979" },
+  { id: 5, name: "Steven Keane", initials: "SK", color: "bg-emerald-600", sub: "Apt 5 City Square", property: "Apt 5 City Square", moveIn: "03 Mar 2020", status: "Active", mobile: "083-705-6836", email: "steven.keane@email.com", pps: "3210987SK", dob: "08 Aug 1993" },
+  { id: 6, name: "Stephen Blake", initials: "SB", color: "bg-violet-500", sub: "Apt 30 Fairview Road", property: "Apt 30 Fairview Road", moveIn: "17 Oct 2020", status: "Active", mobile: "086-103-6112", email: "stephen.blake@email.com", pps: "6543210SB", dob: "31 Mar 1987" },
+  { id: 7, name: "Holly Quigley", initials: "HQ", color: "bg-pink-500", sub: "Apt 22 Parkside Plaza", property: "Apt 29 Parkside Plaza", moveIn: "01 Apr 2018", status: "Notice", mobile: "086-927-6382", email: "holly.quigley@email.com", pps: "7654321HQ", dob: "27 Jun 1982" },
+  { id: 8, name: "Peter Hughes", initials: "PH", color: "bg-amber-600", sub: "Apt 306 Fairview Road", property: "Apt 206 Fairview Road", moveIn: "08 Mar 2022", status: "Notice", mobile: "086-209-3605", email: "peter.hughes@email.com", pps: "2109876PH", dob: "14 Dec 1980" },
 ];
 
 const STATUS_STYLES = {
-  Active: "bg-teal-100 text-teal-700",
-  Notice: "bg-orange-100 text-orange-600",
+  Active: "bg-teal-100 text-teal-800 font-semibold",
+  Notice: "bg-orange-100 text-orange-800 font-semibold",
 };
 
 export default function AdminTenantsPage() {
@@ -47,7 +48,9 @@ export default function AdminTenantsPage() {
     const matchSearch =
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.property.toLowerCase().includes(search.toLowerCase()) ||
-      t.email.toLowerCase().includes(search.toLowerCase());
+      t.email.toLowerCase().includes(search.toLowerCase()) ||
+      t.mobile.toLowerCase().includes(search.toLowerCase()) ||
+      t.pps.toLowerCase().includes(search.toLowerCase());
     const matchCounty = countyFilter === "All County/City" || t.sub === countyFilter;
     const matchProperty = propertyFilter === "All Properties" || t.property === propertyFilter;
     return matchStatus && matchSearch && matchCounty && matchProperty;
@@ -60,10 +63,24 @@ export default function AdminTenantsPage() {
 
   const openAdd = () => setAddOpen(true);
   const closeAdd = () => setAddOpen(false);
-  const handleAdd = (newT) => {
+  const handleAdd = (formData) => {
     const nextId = tenants[tenants.length - 1]?.id || filtered[filtered.length - 1]?.id || 0;
-    const initials = (newT.name || "").split(" ").map(n => n[0] || "").join("").slice(0,2).toUpperCase();
-    const tenant = { id: nextId + 1, name: newT.name||'New Tenant', initials, color: 'bg-slate-400', sub: newT.sub||'', property: newT.property||'', moveIn: newT.moveIn||'', status: newT.status||'Active', mobile: newT.mobile||'', email: newT.email||'', pps: newT.pps||'', dob: newT.dob||'' };
+    const initials = ((formData.firstName || "") + (formData.lastName || "")).split(" ").map(n => n[0] || "").join("").slice(0, 2).toUpperCase();
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    const tenant = {
+      id: nextId + 1,
+      name: fullName || 'New Tenant',
+      initials,
+      color: 'bg-slate-400',
+      sub: '',
+      property: '',
+      moveIn: '',
+      status: 'Active',
+      mobile: formData.mobile || '',
+      email: formData.email || '',
+      pps: formData.pps || '',
+      dob: formData.dob || ''
+    };
     setTenants((t) => [tenant, ...t]);
     closeAdd();
     alert('Tenant created (client-side mock)');
@@ -89,7 +106,7 @@ export default function AdminTenantsPage() {
   const openEdit = (t) => { setEditing(t); setEditOpen(true); };
   const closeEdit = () => { setEditing(null); setEditOpen(false); };
   const handleEdit = (updated) => {
-    setTenants((p) => p.map(x => x.id === updated.id ? {...x, ...updated} : x));
+    setTenants((p) => p.map(x => x.id === updated.id ? { ...x, ...updated } : x));
     closeEdit();
     alert('Saved (client-side mock)');
   };
@@ -98,9 +115,9 @@ export default function AdminTenantsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-800">Tenants</h1>
-        <button className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-          <Plus size={15} /> <span className="hidden sm:inline">Add Tenant</span>
+        <h1 className="text-3xl font-bold text-slate-900">Tenants</h1>
+        <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 text-white text-sm font-semibold rounded-lg shadow-sm transition" aria-label="Add new tenant">
+          <Plus size={15} aria-hidden="true" /> <span className="hidden sm:inline">Add Tenant</span>
         </button>
       </div>
 
@@ -113,27 +130,27 @@ export default function AdminTenantsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by county or city">
           <option>All County/City</option>
           {uniqueSubs.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by property">
           <option>All Properties</option>
           {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by status">
           {statuses.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <div className="flex-1 min-w-[200px] relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tenants…"
-            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+            aria-label="Search tenants by name, email, phone, or PPS"
           />
         </div>
-        
       </div>
 
       {/* Mobile cards — visible below lg */}
@@ -145,35 +162,35 @@ export default function AdminTenantsPage() {
                 {tenant.initials}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-800 text-sm truncate">{tenant.name}</p>
-                <p className="text-xs text-slate-400 truncate">{tenant.sub}</p>
+                <p className="font-semibold text-slate-900 text-sm truncate">{tenant.name}</p>
+                <p className="text-xs text-slate-600 truncate">{tenant.sub}</p>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLES[tenant.status]}`}>{tenant.status}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-slate-50 rounded-lg p-2 col-span-2">
-                <p className="text-xs text-slate-400 mb-0.5">Property</p>
-                <p className="font-medium text-slate-700 truncate">{tenant.property}</p>
+                <p className="text-xs text-slate-600 mb-0.5">Property</p>
+                <p className="font-medium text-slate-900 truncate">{tenant.property}</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Move-In</p>
-                <p className="font-medium text-slate-700">{tenant.moveIn}</p>
+                <p className="text-xs text-slate-600 mb-0.5">Move-In</p>
+                <p className="font-medium text-slate-900">{tenant.moveIn}</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Mobile</p>
-                <p className="font-medium text-slate-700">{tenant.mobile}</p>
+                <p className="text-xs text-slate-600 mb-0.5">Mobile</p>
+                <p className="font-medium text-slate-900">{tenant.mobile}</p>
               </div>
             </div>
-            <p className="text-xs text-slate-400 truncate">{tenant.email}</p>
+            <p className="text-xs text-slate-600 truncate">{tenant.email}</p>
             <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
-              <Link href={`/admin/tenants/${tenant.id}`} aria-label="View" className="flex-1 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs gap-1 font-medium">
-                <Eye size={14} /> View
+              <Link href={`/admin/tenants/${tenant.id}`} aria-label={`View details for ${tenant.name}`} className="flex-1 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-teal-700 rounded-md transition text-xs gap-1 font-medium" title="View tenant details">
+                <Eye size={14} aria-hidden="true" /> View
               </Link>
-              <button aria-label="Edit" onClick={() => openEdit(tenant)} className="flex-1 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition text-xs gap-1 font-medium">
-                <Edit size={14} /> Edit
+              <button aria-label={`Edit ${tenant.name}`} onClick={() => openEdit(tenant)} className="flex-1 h-9 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 text-slate-600 rounded-md transition text-xs gap-1 font-medium" title="Edit tenant">
+                <Edit size={14} aria-hidden="true" /> Edit
               </button>
-              <button aria-label="Delete" onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="flex-1 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition text-xs gap-1 font-medium">
-                <Trash size={14} /> Delete
+              <button aria-label={`Delete ${tenant.name}`} onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="flex-1 h-9 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded-md transition text-xs gap-1 font-medium" title="Delete tenant">
+                <Trash size={14} aria-hidden="true" /> Delete
               </button>
             </div>
           </div>
@@ -193,24 +210,25 @@ export default function AdminTenantsPage() {
                   type="checkbox"
                   checked={selected.length === filtered.length && filtered.length > 0}
                   onChange={toggleAll}
-                  className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                  className="rounded border-slate-300 text-teal-600 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                  aria-label="Select all tenants"
                 />
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Property <ArrowUpDown size={13} className="text-slate-400" /></span>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">Name</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                <span className="flex items-center gap-1">Property <ArrowUpDown size={13} className="text-slate-500" aria-hidden="true" /></span>
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Move-In Date <ArrowUpDown size={13} className="text-slate-400" /></span>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                <span className="flex items-center gap-1">Move-In Date <ArrowUpDown size={13} className="text-slate-500" aria-hidden="true" /></span>
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Status <ArrowUpDown size={13} className="text-slate-400" /></span>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                <span className="flex items-center gap-1">Status <ArrowUpDown size={13} className="text-slate-500" aria-hidden="true" /></span>
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">Mobile</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">Email</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">P.P.S.</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Date of Birth</th>
-              <th className="w-28 px-4 py-3 text-right font-semibold text-slate-600">Action</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">Mobile</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">P.P.S.</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 whitespace-nowrap">Date of Birth</th>
+              <th className="w-28 px-4 py-3 text-right font-semibold text-slate-700">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -224,7 +242,8 @@ export default function AdminTenantsPage() {
                     type="checkbox"
                     checked={selected.includes(tenant.id)}
                     onChange={() => toggleRow(tenant.id)}
-                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    className="rounded border-slate-300 text-teal-600 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                    aria-label={`Select ${tenant.name}`}
                   />
                 </td>
                 <td className="px-4 py-3">
@@ -233,35 +252,35 @@ export default function AdminTenantsPage() {
                       {tenant.initials}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-800 text-sm">{tenant.name}</p>
-                      <p className="text-sm text-slate-400">{tenant.sub}</p>
+                      <p className="font-semibold text-slate-900 text-sm">{tenant.name}</p>
+                      <p className="text-sm text-slate-600">{tenant.sub}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-slate-700 text-sm">{tenant.property}</td>
-                <td className="px-4 py-3 text-slate-600 text-sm">{tenant.moveIn}</td>
+                <td className="px-4 py-3 text-slate-900 text-sm">{tenant.property}</td>
+                <td className="px-4 py-3 text-slate-700 text-sm">{tenant.moveIn}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2.5 py-1 rounded-full text-sm font-semibold ${STATUS_STYLES[tenant.status]}`}>
                     {tenant.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{tenant.mobile}</td>
-                <td className="px-4 py-3 text-slate-400 text-sm">{tenant.email}</td>
-                <td className="px-4 py-3 font-mono text-sm text-slate-500 tracking-wide">
+                <td className="px-4 py-3 text-slate-700">{tenant.mobile}</td>
+                <td className="px-4 py-3 text-slate-700 text-sm">{tenant.email}</td>
+                <td className="px-4 py-3 font-mono text-sm text-slate-700 tracking-wide">
                   {tenant.pps.slice(0, 4).replace(/./g, "•") + tenant.pps.slice(4)}
                 </td>
-                <td className="px-4 py-3 text-sm text-slate-500">{tenant.dob}</td>
+                <td className="px-4 py-3 text-sm text-slate-700">{tenant.dob}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/tenants/${tenant.id}`} aria-label="View" className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition">
-                          <Eye size={16} />
-                        </Link>
-                        <button aria-label="Edit" onClick={() => openEdit(tenant)} className="w-9 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition">
-                          <Edit size={16} />
-                        </button>
-                        <button aria-label="Delete" onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="w-9 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition">
-                          <Trash size={16} />
-                        </button>
+                    <Link href={`/admin/tenants/${tenant.id}`} aria-label={`View details for ${tenant.name}`} className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-teal-700 rounded-md transition" title="View tenant details">
+                      <Eye size={16} aria-hidden="true" />
+                    </Link>
+                    <button aria-label={`Edit ${tenant.name}`} onClick={() => openEdit(tenant)} className="w-9 h-9 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 text-slate-600 rounded-md transition" title="Edit tenant">
+                      <Edit size={16} aria-hidden="true" />
+                    </button>
+                    <button aria-label={`Delete ${tenant.name}`} onClick={() => { if (!confirm('Delete tenant?')) return; setTenants(t => t.filter(x => x.id !== tenant.id)); }} className="w-9 h-9 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded-md transition" title="Delete tenant">
+                      <Trash size={16} aria-hidden="true" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -270,74 +289,43 @@ export default function AdminTenantsPage() {
         </table>
         <Pagination total={filtered.length} />
       </div>
-      {/* Add modal */}
-      {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={closeAdd} />
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-800">Add Tenant</h3>
-                <p className="text-sm text-slate-500 mt-1">Create a tenant (client-side mock).</p>
-              </div>
-              <button aria-label="Close" onClick={closeAdd} className="text-slate-500 hover:text-slate-700">✕</button>
-            </div>
-            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleAdd({ name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value, sub: f.sub.value }); }} className="mt-4 space-y-3">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Full name</label>
-                <input name="name" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Email</label>
-                <input name="email" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
-                <input name="mobile" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Property</label>
-                <input name="property" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div className="flex items-center gap-2 justify-end mt-4">
-                <button type="button" onClick={closeAdd} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+      <AddTenantModal
+        isOpen={addOpen}
+        onClose={closeAdd}
+        onSubmit={handleAdd}
+      />
       {/* Edit modal */}
       {editOpen && editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="editDialogTitle" aria-modal="true">
           <div className="fixed inset-0 bg-black/40" onClick={closeEdit} />
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-slate-800">Edit Tenant</h3>
+                <h3 id="editDialogTitle" className="text-xl font-semibold text-slate-900">Edit Tenant</h3>
               </div>
-              <button aria-label="Close" onClick={closeEdit} className="text-slate-500 hover:text-slate-700">✕</button>
+              <button aria-label="Close modal" onClick={closeEdit} className="text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 rounded">✕</button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleEdit({ id: editing.id, name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value }); }} className="mt-4 space-y-3">
+            <form onSubmit={(e) => { e.preventDefault(); const f = e.target; handleEdit({ id: editing.id, name: f.name.value, email: f.email.value, mobile: f.mobile.value, property: f.property.value }); }} className="mt-4 space-y-3">
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Full name</label>
-                <input name="name" defaultValue={editing.name} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="editName" className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+                <input id="editName" name="name" defaultValue={editing.name} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Email</label>
-                <input name="email" defaultValue={editing.email} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="editEmail" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input id="editEmail" name="email" type="email" defaultValue={editing.email} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
-                <input name="mobile" defaultValue={editing.mobile} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="editMobile" className="block text-sm font-medium text-slate-700 mb-1">Mobile</label>
+                <input id="editMobile" name="mobile" type="tel" defaultValue={editing.mobile} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Property</label>
-                <input name="property" defaultValue={editing.property} className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="editProperty" className="block text-sm font-medium text-slate-700 mb-1">Property</label>
+                <input id="editProperty" name="property" defaultValue={editing.property} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div className="flex items-center gap-2 justify-end mt-4">
-                <button type="button" onClick={closeEdit} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Save</button>
+                <button type="button" onClick={closeEdit} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 rounded-md font-medium">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 text-white rounded-md font-medium">Save</button>
               </div>
             </form>
           </div>

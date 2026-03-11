@@ -2,9 +2,9 @@ import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, Clock } fr
 
 export default function ContactInfo() {
   const contacts = [
-    { Icon: Mail, label: "Email", value: "info@mccanncurran.ie", href: "mailto:info@mccanncurran.ie" },
-    { Icon: Phone, label: "Phone", value: "+353 1 250 6013", href: "tel:+35312506013" },
-    { Icon: MapPin, label: "Address", value: "73284 McCann & Curran Property Management Ltd., Dublin, D01 P123, Ireland", href: "#" },
+    { Icon: Mail, label: "Email", value: "info@mccannandcorran.com", href: "mailto:info@mccannandcorran.com" },
+    { Icon: Phone, label: "Phone", value: "+ 049 899 1111", href: "tel:+0498991111" },
+    { Icon: MapPin, label: "Address", value: "Camden Street, Dublin, Ireland", href: "#" },
     { Icon: Clock, label: "Office Hours", value: "Monday – Friday, 9am – 6pm", href: null },
   ];
 

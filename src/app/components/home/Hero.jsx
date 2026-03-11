@@ -67,7 +67,7 @@ export default function Hero() {
                 <Star key={i} size={13} className="fill-primary-500 text-primary-500" />
               ))}
             </div>
-            <span className="text-sm text-dark-500">Trusted by <strong className="text-dark-800">500+</strong> landlords</span>
+            <span className="text-sm text-dark-500">Trusted by <strong className="text-dark-800">500+</strong> Clients</span>
           </div>
         </div>
 
@@ -94,7 +94,7 @@ export default function Hero() {
               </div>
               <div>
                 <p className="text-xs text-dark-400 font-medium">Properties Managed</p>
-                <p className="text-base font-bold text-dark-900">500+ Active Listings</p>
+                <p className="text-base font-bold text-dark-900">210+ Active Listings</p>
               </div>
             </div>
           </div>

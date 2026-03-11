@@ -7,27 +7,28 @@ import {
   ArrowUpDown
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import AddPropertyModal from "./components/AddPropertyModal";
 
 const PROPERTIES = [
-  { id: 1,  img: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60", name: "Apt 12, Grand Canal...", area: "Dublin · 10:2",  statusProp: "Let",    statusRTB: "Let",    landlord: "Edward O'Neill", landlordSub: "John Dyea",    tenant: "Sarah Kelly",          rent: "€2,200", mprn: "100093319", rtb: "Missing",    rtbStyle: "text-slate-500" },
-  { id: 2,  img: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=80&q=60", name: "Apt 5B, Rosewood Close", area: "Dublin · 10:5", statusProp: "Notice",  statusRTB: "Notice",  landlord: "Joan Doyle",      landlordSub: "Kem hetan",     tenant: "Kevin Madden",         rent: "€1,950", mprn: "100093357", rtb: "Pending",    rtbStyle: "text-amber-600" },
-  { id: 3,  img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=80&q=60", name: "Apt 4, Lis Na Dara",  area: "Dublin · 10:9",  statusProp: "Vacant",  statusRTB: null,      landlord: "Zoe Finnegan",    landlordSub: "Emma Curran",   tenant: "–",                    rent: "€1,850", mprn: "100093352", rtb: "Unknown",    rtbStyle: "text-slate-500" },
-  { id: 4,  img: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=80&q=60", name: "Apt 21C, Harbour View", area: "Dublin · 10:68", statusProp: "Let",   statusRTB: "Let",    landlord: "Edward O'Neill", landlordSub: "John Dyea",    tenant: "Reginald Spencer",     rent: "€2,350", mprn: "100093118", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 5,  img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=80&q=60", name: "Apt 65, Southern Cross", area: "Dublin · 10:11", statusProp: "Let",  statusRTB: "Let",    landlord: "Brendan Walsh",  landlordSub: "Deancer",       tenant: "Adam Walsh",           rent: "€2,400", mprn: "1000989721", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 6,  img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&q=60", name: "Apt 306, Fairview Road", area: "Dublin · 10:65", statusProp: "Let",  statusRTB: "Let",    landlord: "Mary Bennett",   landlordSub: "Mary Surran",   tenant: "Peter Hughes",         rent: "€2,100", mprn: "1000992929", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 7,  img: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=80&q=60", name: "Apt 7D, Hanover Quay",  area: "Dublin · 10:46", statusProp: "Let",  statusRTB: "Let",    landlord: "Mark Sheehan",   landlordSub: "Mark Sheehan",  tenant: "Emma Curran",          rent: "€2,250", mprn: "1000992654", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 8,  img: "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=80&q=60", name: "Apt 104, Elmwood Grove", area: "Dublin · 10:69", statusProp: "Notice Served", statusRTB: "Let",   landlord: "Edward O'Neill", landlordSub: "Mark Sheehan",  tenant: "Leanne Byrne",         rent: "€1,800", mprn: "1000993381", rtb: "Pending",    rtbStyle: "text-amber-600" },
-  { id: 9,  img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=80&q=60", name: "Apt 5, City Square",    area: "Dublin · 10:57", statusProp: "Let",   statusRTB: "Let",    landlord: "Joan Doyle",     landlordSub: "John Doyle",    tenant: "Steven Keane",         rent: "€2,100", mprn: "1000932619", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 10, img: "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=80&q=60", name: "Apt 399, Pearse Street", area: "Dublin · 10:23", statusProp: "Notice", statusRTB: "Notice", landlord: "Tony Brennan",   landlordSub: "Leo Mohan",     tenant: "Dean Lyons",           rent: "€1,650", mprn: "1000993537", rtb: "Unknown",    rtbStyle: "text-slate-500" },
+  { id: 1, img: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60", name: "Apt 12, Grand Canal...", area: "Dublin · 10:2", statusProp: "Let", statusRTB: "Let", landlord: "Edward O'Neill", landlordSub: "John Dyea", tenant: "Sarah Kelly", rent: "€2,200", mprn: "100093319", rtb: "Missing", rtbStyle: "text-slate-500" },
+  { id: 2, img: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=80&q=60", name: "Apt 5B, Rosewood Close", area: "Dublin · 10:5", statusProp: "Notice", statusRTB: "Notice", landlord: "Joan Doyle", landlordSub: "Kem hetan", tenant: "Kevin Madden", rent: "€1,950", mprn: "100093357", rtb: "Pending", rtbStyle: "text-amber-600" },
+  { id: 3, img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=80&q=60", name: "Apt 4, Lis Na Dara", area: "Dublin · 10:9", statusProp: "Vacant", statusRTB: null, landlord: "Zoe Finnegan", landlordSub: "Emma Curran", tenant: "–", rent: "€1,850", mprn: "100093352", rtb: "Unknown", rtbStyle: "text-slate-500" },
+  { id: 4, img: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=80&q=60", name: "Apt 21C, Harbour View", area: "Dublin · 10:68", statusProp: "Let", statusRTB: "Let", landlord: "Edward O'Neill", landlordSub: "John Dyea", tenant: "Reginald Spencer", rent: "€2,350", mprn: "100093118", rtb: "Registered", rtbStyle: "text-teal-600" },
+  { id: 5, img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=80&q=60", name: "Apt 65, Southern Cross", area: "Dublin · 10:11", statusProp: "Let", statusRTB: "Let", landlord: "Brendan Walsh", landlordSub: "Deancer", tenant: "Adam Walsh", rent: "€2,400", mprn: "1000989721", rtb: "Registered", rtbStyle: "text-teal-600" },
+  { id: 6, img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&q=60", name: "Apt 306, Fairview Road", area: "Dublin · 10:65", statusProp: "Let", statusRTB: "Let", landlord: "Mary Bennett", landlordSub: "Mary Surran", tenant: "Peter Hughes", rent: "€2,100", mprn: "1000992929", rtb: "Registered", rtbStyle: "text-teal-600" },
+  { id: 7, img: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=80&q=60", name: "Apt 7D, Hanover Quay", area: "Dublin · 10:46", statusProp: "Let", statusRTB: "Let", landlord: "Mark Sheehan", landlordSub: "Mark Sheehan", tenant: "Emma Curran", rent: "€2,250", mprn: "1000992654", rtb: "Registered", rtbStyle: "text-teal-600" },
+  { id: 8, img: "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=80&q=60", name: "Apt 104, Elmwood Grove", area: "Dublin · 10:69", statusProp: "Notice Served", statusRTB: "Let", landlord: "Edward O'Neill", landlordSub: "Mark Sheehan", tenant: "Leanne Byrne", rent: "€1,800", mprn: "1000993381", rtb: "Pending", rtbStyle: "text-amber-600" },
+  { id: 9, img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=80&q=60", name: "Apt 5, City Square", area: "Dublin · 10:57", statusProp: "Let", statusRTB: "Let", landlord: "Joan Doyle", landlordSub: "John Doyle", tenant: "Steven Keane", rent: "€2,100", mprn: "1000932619", rtb: "Registered", rtbStyle: "text-teal-600" },
+  { id: 10, img: "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=80&q=60", name: "Apt 399, Pearse Street", area: "Dublin · 10:23", statusProp: "Notice", statusRTB: "Notice", landlord: "Tony Brennan", landlordSub: "Leo Mohan", tenant: "Dean Lyons", rent: "€1,650", mprn: "1000993537", rtb: "Unknown", rtbStyle: "text-slate-500" },
 ];
 
 const PROP_STATUS = {
-  Let:           "bg-teal-500 text-white",
+  Let: "bg-teal-500 text-white",
   "Notice Served": "bg-orange-100 text-orange-600 border border-orange-300",
-  Vacant:        "bg-slate-100 text-slate-600",
+  Vacant: "bg-slate-100 text-slate-600",
 };
 const RTB_STATUS = {
-  Let:    "bg-teal-500 text-white",
+  Let: "bg-teal-500 text-white",
   Notice: "bg-orange-400 text-white",
 };
 
@@ -35,6 +36,7 @@ export default function AdminPropertiesPage() {
   const [selected, setSelected] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeProp, setActiveProp] = useState(null);
+  const [addPropertyModalOpen, setAddPropertyModalOpen] = useState(false);
 
   const filtered = PROPERTIES;
 
@@ -43,12 +45,17 @@ export default function AdminPropertiesPage() {
   const toggleRow = (id) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
+  const handleAddProperty = (formData) => {
+    console.log("New property:", formData);
+    // TODO: Add API call to save the property
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">Properties</h1>
-        <button className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+        <button onClick={() => setAddPropertyModalOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
           <Plus size={15} /> <span className="hidden sm:inline">Add Property</span>
         </button>
       </div>
@@ -58,7 +65,7 @@ export default function AdminPropertiesPage() {
         {filtered.map((p) => (
           <div key={p.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
             <div className="flex items-center gap-3">
-              <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display='none'; }} />
+              <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-slate-800 text-sm truncate">{p.name}</p>
                 <p className="text-xs text-slate-400">{p.area}</p>
@@ -139,7 +146,7 @@ export default function AdminPropertiesPage() {
                 </td>
                 <td className="w-48 px-3 py-3">
                   <div className="flex items-center gap-4">
-                    <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display='none'; }} />
+                    <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-800 text-base leading-tight truncate">{p.name}</p>
                       <p className="text-sm text-slate-400">{p.area}</p>
@@ -221,6 +228,12 @@ export default function AdminPropertiesPage() {
           </div>
         </div>
       )}
+
+      <AddPropertyModal
+        isOpen={addPropertyModalOpen}
+        onClose={() => setAddPropertyModalOpen(false)}
+        onSubmit={handleAddProperty}
+      />
 
     </div>
   );

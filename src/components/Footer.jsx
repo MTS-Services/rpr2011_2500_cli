@@ -41,18 +41,18 @@ export default function Footer() {
           <div className="flex flex-col gap-2.5 text-[0.85rem]">
             <div className="flex items-center gap-2">
               <Phone size={14} className="text-primary-500" />
-              <span>+353 1 250 6013</span>
+              <span>+0 49 899 1111</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail size={14} className="text-primary-500" />
-              <span>info@mccanncurran.ie</span>
+              <span>info@mccannandcorran.com</span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin size={14} className="text-primary-500 mt-0.5" />
               <span>
-                73284 McCann &amp; Curran
+                Camden Street
                 <br />
-                Property Management Ltd.
+                Dublin, Ireland
               </span>
             </div>
           </div>
@@ -61,7 +61,7 @@ export default function Footer() {
 
       <div className="border-t border-dark-200">
         <div className="container mx-auto px-6 lg:px-16 py-5 text-center text-xs text-dark-400">
-          © 2026 McCann &amp; Curran Property Management Ltd. All rights
+          © 2026 McCann & Corran Realty Limited.. All rights
           reserved.
         </div>
       </div>

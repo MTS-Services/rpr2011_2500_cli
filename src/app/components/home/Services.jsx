@@ -12,7 +12,7 @@ const items = [
     Icon: Building2,
     title: "Property Management",
     desc: "Full-service day-to-day management — inspections, rent collection, tenant communication and more.",
-    stat: "500+ properties managed",
+    stat: "210+ properties managed",
   },
   {
     Icon: ShieldCheck,

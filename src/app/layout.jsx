@@ -5,6 +5,9 @@ export const metadata = {
   title: "McCann & Curran | Professional Property Management",
   description:
     "Comprehensive property management with secure digital reporting, RTB compliance, and transparent financial services in Ireland.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {
