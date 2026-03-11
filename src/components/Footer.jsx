@@ -11,28 +11,31 @@ export default function Footer() {
           <div className="flex items-center gap-2.5">
             <Image
               src="/logo.png"
-              alt="McCann & Curran"
+              alt="McCann & Corran"
               width={36}
               height={36}
             />
             <span className="text-base font-bold text-dark-900 tracking-tight">
-              McCann &amp; Curran
+              McCann &amp; Corran
             </span>
           </div>
 
           {/* Links */}
-          <div className="flex gap-8 text-[0.85rem]">
-            {["Home", "Services", "About", "Privacy Policy"].map((t) => (
+          <div className="flex flex-wrap gap-6 text-[0.85rem]">
+            {[
+              { label: "Home", href: "/" },
+              { label: "Services", href: "/services" },
+              { label: "About", href: "/about" },
+              { label: "Privacy Policy", href: "/privacy-policy" },
+              { label: "Cookie Policy", href: "/cookie-policy" },
+              { label: "Terms of Use", href: "/terms-of-use" },
+            ].map(({ label, href }) => (
               <Link
-                key={t}
-                href={
-                  t === "Privacy Policy"
-                    ? "#"
-                    : `/${t.toLowerCase() === "home" ? "" : t.toLowerCase()}`
-                }
+                key={label}
+                href={href}
                 className="text-dark-500 hover:text-dark-900 transition-colors"
               >
-                {t}
+                {label}
               </Link>
             ))}
           </div>
@@ -61,8 +64,7 @@ export default function Footer() {
 
       <div className="border-t border-dark-200">
         <div className="container mx-auto px-6 lg:px-16 py-5 text-center text-xs text-dark-400">
-          © 2026 McCann & Corran Realty Limited.. All rights
-          reserved.
+          © 2026 McCann &amp; Corran Realty Limited. All rights reserved. &nbsp;·&nbsp; PSBA Lic. No. 004008
         </div>
       </div>
     </footer>

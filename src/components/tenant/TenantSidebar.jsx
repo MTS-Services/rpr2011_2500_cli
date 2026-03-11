@@ -44,10 +44,10 @@ export default function TenantSidebar({ mobileOpen, onClose }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 h-[72px] border-b border-slate-100">
-          <Image src="/logo.png" alt="McCann & Curran" width={36} height={36} />
+          <Image src="/logo.png" alt="McCann & Corran" width={36} height={36} />
           <div className="leading-tight">
             <span className="text-sm font-bold text-slate-800 tracking-tight block">
-              McCann &amp; Curran
+              McCann &amp; Corran
             </span>
             <span className="text-xs text-teal-600 font-semibold">Tenant Portal</span>
           </div>

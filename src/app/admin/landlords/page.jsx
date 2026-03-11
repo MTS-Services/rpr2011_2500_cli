@@ -232,7 +232,6 @@ export default function AdminLandlordsPage() {
                     <span className="inline-block w-2 h-2 rounded-full bg-teal-500" />
                     {landlord.pps}
                   </p>
-                  <p className="text-sm text-slate-400 mt-0.5">{landlord.pps2}</p>
                 </td>
                 <td className="px-4 py-3 text-slate-600 text-sm">{landlord.dob}</td>
                 <td className="px-4 py-3 text-slate-400 text-sm">{landlord.email}</td>

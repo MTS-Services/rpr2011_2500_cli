@@ -32,13 +32,6 @@ const kpis = [
     sub: "6 days away",
   },
   {
-    label: "Lease Ends",
-    value: "Oct 10, 2025",
-    Icon: Home,
-    color: "bg-amber-50 text-amber-600 border-amber-100",
-    sub: "Rosewood Close",
-  },
-  {
     label: "Open Requests",
     value: "1",
     Icon: Wrench,
@@ -84,8 +77,8 @@ const maintenance = [
 ];
 
 const messages = [
-  { from: "McCann & Curran Agency", text: "Your rent review is scheduled for May 2025.", time: "2 days ago" },
-  { from: "McCann & Curran Agency", text: "A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "3 days ago" },
+  { from: "McCann & Corran Agency", text: "Your rent review is scheduled for May 2025.", time: "2 days ago" },
+  { from: "McCann & Corran Agency", text: "A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "3 days ago" },
 ];
 
 export default function TenantDashboardPage() {

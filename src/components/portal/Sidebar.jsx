@@ -47,7 +47,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
         <div className="flex items-center gap-3 px-6 h-[72px] border-b border-slate-100">
           <Image src="/logo.png" alt="McCann & Curran" width={36} height={36} />
           <span className="text-base font-bold text-slate-800 tracking-tight leading-tight">
-            McCann &amp; Curran
+            McCann &amp; Corran
           </span>
         </div>
 

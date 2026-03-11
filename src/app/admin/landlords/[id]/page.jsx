@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, User, Home, FileText, ClipboardList,
   MapPin, Phone, Mail, CalendarDays, Shield, Plus,
-  Edit, Download, BadgeCheck,
+  Edit, Download, BadgeCheck, Key, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 
 /* ─── Mock data (replace with Supabase query) ─── */
@@ -39,10 +39,17 @@ const auditLog = [
 ];
 
 const TABS = [
-  { key: "overview", label: "Overview", Icon: User },
-  { key: "properties", label: "Properties", Icon: Home },
-  { key: "documents", label: "Documents", Icon: FileText },
-  { key: "audit", label: "Audit", Icon: ClipboardList },
+  { key: "overview",   label: "Overview",          Icon: User },
+  { key: "properties", label: "Properties",         Icon: Home },
+  { key: "rtb",        label: "RTB Registration",   Icon: Key },
+  { key: "documents",  label: "Documents",          Icon: FileText },
+  { key: "audit",      label: "Audit",              Icon: ClipboardList },
+];
+
+const rtbRegistrations = [
+  { id: "1", property: "Apt 5B Rosewood Close", rtbNumber: "RTB-2022-10-456782", status: "Registered", regDate: "5 Nov 2022", expiryDate: "4 Nov 2026", tenant: "Kevin Madden", daysToExpiry: 238 },
+  { id: "2", property: "Apt 306 Fairview Rd",   rtbNumber: "RTB-2021-06-334411", status: "Registered", regDate: "12 Jun 2021", expiryDate: "11 Jun 2025", tenant: "Stephen Blake", daysToExpiry: -274 },
+  { id: "3", property: "Apt 22 Parkside Plaza", rtbNumber: "—",                  status: "Pending",    regDate: "—",          expiryDate: "—",           tenant: "—",             daysToExpiry: null },
 ];
 
 const docTypeColors = {
@@ -184,6 +191,71 @@ export default function AdminLandlordProfilePage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── RTB Registration ── */}
+      {activeTab === "rtb" && (
+        <div className="space-y-4">
+          {/* Summary banner */}
+          {rtbRegistrations.some((r) => r.daysToExpiry !== null && r.daysToExpiry <= 30 && r.daysToExpiry >= 0) && (
+            <div className="flex items-start gap-3 px-5 py-4 bg-amber-50 border border-amber-200 rounded-2xl">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800 font-medium">One or more RTB registrations expire within 30 days. Please renew promptly to avoid compliance issues.</p>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Key size={16} className="text-teal-600" />RTB Registrations per Property</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                    <th className="text-left px-5 py-3">Property</th>
+                    <th className="text-left px-5 py-3">RTB Number</th>
+                    <th className="text-left px-5 py-3">Current Tenant</th>
+                    <th className="text-left px-5 py-3">Reg. Date</th>
+                    <th className="text-left px-5 py-3">Expiry Date</th>
+                    <th className="text-left px-5 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rtbRegistrations.map((r) => {
+                    const expiring = r.daysToExpiry !== null && r.daysToExpiry <= 30 && r.daysToExpiry >= 0;
+                    const expired  = r.daysToExpiry !== null && r.daysToExpiry < 0;
+                    return (
+                      <tr key={r.id} className={`hover:bg-slate-50/60 transition-colors ${expiring ? "bg-amber-50/40" : ""}`}>
+                        <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{r.property}</td>
+                        <td className="px-5 py-4 font-mono text-xs text-slate-600">{r.rtbNumber}</td>
+                        <td className="px-5 py-4 text-sm text-slate-600">{r.tenant}</td>
+                        <td className="px-5 py-4 text-sm text-slate-500">{r.regDate}</td>
+                        <td className="px-5 py-4 text-sm">
+                          <span className={expired ? "text-red-600 font-semibold" : expiring ? "text-amber-600 font-semibold" : "text-slate-500"}>
+                            {r.expiryDate}
+                          </span>
+                          {expiring && <span className="ml-2 text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Expires soon</span>}
+                          {expired  && <span className="ml-2 text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Expired</span>}
+                        </td>
+                        <td className="px-5 py-4">
+                          {r.status === "Registered" ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
+                              <CheckCircle2 size={12} /> Registered
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">
+                              Pending
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

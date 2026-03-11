@@ -57,14 +57,14 @@ export default function LoginPage() {
               <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
                 <Image
                   src="/logo.png"
-                  alt="McCann & Curran"
+                  alt="McCann & Corran"
                   width={40}
                   height={40}
                 />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-800">
-                  McCann &amp; Curran
+                  McCann &amp; Corran
                 </h2>
                 <p className="text-xs uppercase text-slate-400 tracking-wide">
                   Landlord portal
