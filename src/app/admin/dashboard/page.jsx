@@ -62,6 +62,7 @@ const rentReviewCount  = TENANCIES.filter((t) => {
   const d = new Date(t.rentReviewDate);
   return d >= _today && d <= _in30;
 }).length;
+const rentOverdueCount = TENANCIES.filter((t) => t.rentStatus === "Overdue").length;
 
 const alerts = [
   {
@@ -84,6 +85,15 @@ const alerts = [
   },
   {
     id: 3,
+    key: "rent-overdue",
+    count: rentOverdueCount,
+    countColor: "bg-red-500",
+    title: "Rent payments overdue",
+    icon: null,
+    iconBg: null,
+  },
+  {
+    id: 4,
     key: null,
     count: null,
     title: "Expiring tenancies",
@@ -91,7 +101,7 @@ const alerts = [
     iconBg: "bg-amber-100",
   },
   {
-    id: 4,
+    id: 5,
     key: null,
     count: null,
     title: "Vacant properties",

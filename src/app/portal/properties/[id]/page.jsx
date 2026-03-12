@@ -76,13 +76,37 @@ const notes = [
 ];
 
 const TABS = [
-  { key: "overview", label: "Overview", Icon: Home },
-  { key: "tenancy", label: "Tenancy", Icon: BadgeCheck },
-  { key: "rtb", label: "RTB Registration", Icon: CheckCircle },
-  { key: "documents", label: "Documents", Icon: FileText },
-  { key: "maintenance", label: "Maintenance", Icon: Wrench },
-  { key: "notes", label: "Notes", Icon: StickyNote },
+  { key: "overview",      label: "Overview",         Icon: Home },
+  { key: "tenancy",       label: "Tenancy",          Icon: BadgeCheck },
+  { key: "rent",          label: "Rent Payments",    Icon: Euro },
+  { key: "rtb",           label: "RTB Registration", Icon: CheckCircle },
+  { key: "documents",     label: "Documents",        Icon: FileText },
+  { key: "maintenance",   label: "Maintenance",      Icon: Wrench },
+  { key: "notes",         label: "Notes",            Icon: StickyNote },
 ];
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const rentTracker = [
+  { month: "Jan", amount: "€1,750", status: "Paid",    date: "Jan 1, 2025",  ref: "#TXN-2025-01" },
+  { month: "Feb", amount: "€1,750", status: "Overdue", date: "Feb 1, 2025",  ref: "#TXN-2025-02" },
+  { month: "Mar", amount: "€1,750", status: "Pending", date: "Mar 1, 2025",  ref: "#TXN-2025-03" },
+  { month: "Apr", amount: "€1,750", status: "Pending", date: "Apr 1, 2025",  ref: "#TXN-2025-04" },
+  { month: "May", amount: "€1,750", status: "Pending", date: "May 1, 2025",  ref: "#TXN-2025-05" },
+  { month: "Jun", amount: "€1,750", status: "Pending", date: "Jun 1, 2025",  ref: "#TXN-2025-06" },
+  { month: "Jul", amount: "€1,750", status: "Pending", date: "Jul 1, 2025",  ref: "#TXN-2025-07" },
+  { month: "Aug", amount: "€1,750", status: "Pending", date: "Aug 1, 2025",  ref: "#TXN-2025-08" },
+  { month: "Sep", amount: "€1,750", status: "Pending", date: "Sep 1, 2025",  ref: "#TXN-2025-09" },
+  { month: "Oct", amount: "€1,750", status: "Pending", date: "Oct 1, 2025",  ref: "#TXN-2025-10" },
+  { month: "Nov", amount: "€1,750", status: "Pending", date: "Nov 1, 2025",  ref: "#TXN-2025-11" },
+  { month: "Dec", amount: "€1,750", status: "Pending", date: "Dec 1, 2025",  ref: "#TXN-2025-12" },
+];
+
+const rentStatusStyle = {
+  Paid:    { dot: "bg-teal-500",   badge: "bg-teal-100 text-teal-700" },
+  Overdue: { dot: "bg-red-500",    badge: "bg-red-100 text-red-700" },
+  Pending: { dot: "bg-slate-300",  badge: "bg-slate-100 text-slate-500" },
+};
 
 const docTypeColors = {
   Lease: "bg-blue-50 text-blue-700",
@@ -230,6 +254,101 @@ export default function PropertyProfilePage() {
           <InfoRow label="Notice Period" value={property.tenancy.noticePeriod} />
         </div>
       )}
+
+      {/* Tab: Rent Payments */}
+      {activeTab === "rent" && (() => {
+        const totalCollected = rentTracker.filter(r => r.status === "Paid").length * 1750;
+        const overdueCount   = rentTracker.filter(r => r.status === "Overdue").length;
+        return (
+          <div className="space-y-4">
+            {/* Summary cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Monthly Rent</p>
+                <p className="text-2xl font-bold text-slate-800">€1,750</p>
+                <p className="text-xs text-slate-400 mt-1">Due 1st of each month</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-teal-100 shadow-sm p-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Total Collected (2025)</p>
+                <p className="text-2xl font-bold text-teal-700">€{totalCollected.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-1">{rentTracker.filter(r => r.status === "Paid").length} of 12 months paid</p>
+              </div>
+              <div className={`bg-white rounded-2xl border shadow-sm p-4 ${overdueCount > 0 ? "border-red-100" : "border-slate-200"}`}>
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Overdue</p>
+                <p className={`text-2xl font-bold ${overdueCount > 0 ? "text-red-600" : "text-slate-800"}`}>{overdueCount}</p>
+                <p className="text-xs text-slate-400 mt-1">{overdueCount > 0 ? "Payment(s) outstanding" : "All payments on time"}</p>
+              </div>
+            </div>
+
+            {overdueCount > 0 && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                <AlertCircle size={18} className="text-red-500 shrink-0" />
+                <p className="text-sm font-semibold text-red-700">{overdueCount} rent payment{overdueCount > 1 ? "s" : ""} overdue for this property.</p>
+              </div>
+            )}
+
+            {/* Monthly calendar grid */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <CalendarDays size={16} className="text-teal-600" /> Monthly Rent Calendar — 2025
+              </h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                {rentTracker.map((r) => {
+                  const s = rentStatusStyle[r.status];
+                  return (
+                    <div key={r.month} className={`rounded-xl border p-3 flex flex-col gap-1.5 ${r.status === "Overdue" ? "border-red-200 bg-red-50" : r.status === "Paid" ? "border-teal-100 bg-teal-50/50" : "border-slate-100 bg-slate-50/40"}`}>
+                      <p className="text-xs font-bold text-slate-500">{r.month}</p>
+                      <p className="text-sm font-bold text-slate-800">{r.amount}</p>
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full w-fit ${s.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                        {r.status}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Detailed table */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+                  <Euro size={16} className="text-teal-600" /> Payment History
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                      <th className="text-left px-5 py-3">Month</th>
+                      <th className="text-left px-5 py-3">Due Date</th>
+                      <th className="text-left px-5 py-3">Reference</th>
+                      <th className="text-left px-5 py-3">Status</th>
+                      <th className="text-right px-5 py-3">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {rentTracker.map((r, i) => {
+                      const s = rentStatusStyle[r.status];
+                      return (
+                        <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-5 py-3 text-sm font-semibold text-slate-700">{r.month} 2025</td>
+                          <td className="px-5 py-3 text-sm text-slate-500">{r.date}</td>
+                          <td className="px-5 py-3 font-mono text-xs text-slate-400">{r.ref}</td>
+                          <td className="px-5 py-3">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.badge}`}>{r.status}</span>
+                          </td>
+                          <td className="px-5 py-3 text-right font-bold text-slate-800">{r.amount}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tab: RTB Registration */}
       {activeTab === "rtb" && (
