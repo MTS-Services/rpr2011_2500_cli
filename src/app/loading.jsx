@@ -23,7 +23,7 @@ export default function LoadingScreen() {
 
       {/* Brand name */}
       <p className="mt-6 text-sm font-semibold text-slate-600 tracking-wide">
-        McCann <span className="text-teal-600">&amp;</span> Curran
+        McCann <span className="text-teal-600">&amp;</span> Corran
       </p>
     </div>
   );

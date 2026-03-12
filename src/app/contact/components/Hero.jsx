@@ -32,10 +32,10 @@ export default function Hero() {
               <MessageSquare size={16} /> Send a Message
             </Link>
             <Link
-              href="tel:+35312506013"
+              href="tel:+0498991111"
               className="inline-flex items-center gap-2 px-7 py-3.5 text-[0.9rem] font-semibold text-dark-800 bg-white border border-dark-200 rounded-lg hover:shadow-sm hover:border-dark-300 transition-all"
             >
-              <Phone size={16} /> +353 1 250 6013
+              <Phone size={16} /> 049-899-1111
             </Link>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function Hero() {
             <div className="absolute inset-0 animate-kenburns">
               <Image
                 src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=900&q=85"
-                alt="McCann & Curran office"
+                alt="McCann & Corran office"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"

@@ -9,13 +9,12 @@ const details = [
   { label: "Bedrooms",          value: "2" },
   { label: "Monthly Rent",      value: "€1,750" },
   { label: "Tenancy Start",     value: "Oct 10, 2022" },
-  { label: "Lease End",         value: "Oct 10, 2025" },
   { label: "RTB Status",        value: "Registered" },
   { label: "MPRN",              value: "10623847501" },
   { label: "Landlord",          value: "Joe Landlord" },
-  { label: "Managing Agent",    value: "McCann & Curran Realty" },
-  { label: "Agent Phone",       value: "+353 1 234 5678" },
-  { label: "Agent Email",       value: "info@mccannandcurran.ie" },
+  { label: "Managing Agent",    value: "McCann & Corran Realty" },
+  { label: "Agent Phone",       value: "049-899-1111" },
+  { label: "Agent Email",       value: "info@mccannandcorran.com" },
 ];
 
 const timeline = [

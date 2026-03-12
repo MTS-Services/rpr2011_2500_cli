@@ -76,7 +76,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose = () => {} })
           </ul>
         </nav>
 
-        <div className="px-5 py-4 border-t border-slate-100 text-xs text-slate-400">McCann &amp; Curran Admin v1.0</div>
+        <div className="px-5 py-4 border-t border-slate-100 text-xs text-slate-400">McCann &amp; Corran Admin v1.0</div>
       </aside>
     </>
   );

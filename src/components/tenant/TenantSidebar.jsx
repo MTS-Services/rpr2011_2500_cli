@@ -90,7 +90,7 @@ export default function TenantSidebar({ mobileOpen, onClose }) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-slate-100 text-xs text-slate-400">
-          © 2024 McCann &amp; Curran
+          © 2026 McCann &amp; Corran
         </div>
       </aside>
     </>

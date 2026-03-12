@@ -58,10 +58,7 @@ export default function TenantsPage() {
                   <p className="text-slate-400">Start Date</p>
                   <p className="text-slate-700">{t.start}</p>
                 </div>
-                <div>
-                  <p className="text-slate-400">PPS No.</p>
-                  <p className="font-mono text-slate-600">{t.pps}</p>
-                </div>
+
               </div>
               <Link
                 href={`/portal/tenants/${tenants.indexOf(t) + 1}`}

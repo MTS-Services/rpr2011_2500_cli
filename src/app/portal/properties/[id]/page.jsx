@@ -426,7 +426,7 @@ export default function PropertyProfilePage() {
           {/* Notice */}
           <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
             <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-700 font-medium">These notes are entered by McCann &amp; Curran staff and are read-only.</p>
+            <p className="text-sm text-amber-700 font-medium">These notes are entered by McCann &amp; Corran staff and are read-only.</p>
           </div>
 
           <div className="relative">

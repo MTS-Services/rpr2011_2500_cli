@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-2xl font-bold text-dark-900 mb-3">1. Who We Are</h2>
             <p>
               McCann &amp; Corran Realty Limited (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a property management company registered in Ireland.
-              Our registered office is at Camden Street, Dublin, Ireland. We are committed to protecting and respecting your privacy in
+              Our registered office is at Lower Camden St, Dublin, D02XE80. We are committed to protecting and respecting your privacy in
               accordance with the General Data Protection Regulation (GDPR) and the Data Protection Acts 1988–2018.
             </p>
             <p className="mt-2">Contact us at: <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a> &nbsp;|&nbsp; <a href="tel:+0498991111" className="text-primary-600 hover:underline">049-899-1111</a></p>

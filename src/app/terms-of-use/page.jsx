@@ -94,7 +94,7 @@ export default function TermsOfUsePage() {
             </p>
             <p className="mt-2">
               McCann &amp; Corran Realty Limited<br />
-              Camden Street, Dublin, Ireland<br />
+              Lower Camden St, Dublin, D02XE80<br />
               <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a><br />
               <a href="tel:+0498991111" className="text-primary-600 hover:underline">049-899-1111</a>
             </p>

@@ -7,7 +7,7 @@ import { Send } from "lucide-react";
 const thread = [
   {
     from: "agency",
-    name: "McCann & Curran",
+    name: "McCann & Corran",
     text: "Hi Kevin, just a reminder that your February rent payment is now overdue. Please arrange payment at your earliest convenience.",
     time: "Feb 6, 2025 · 9:15 AM",
   },
@@ -19,7 +19,7 @@ const thread = [
   },
   {
     from: "agency",
-    name: "McCann & Curran",
+    name: "McCann & Corran",
     text: "Thank you Kevin, appreciated. Also, a maintenance engineer will visit on Feb 24th between 10am–1pm to look at the boiler. Please ensure access.",
     time: "Feb 7, 2025 · 10:00 AM",
   },
@@ -31,7 +31,7 @@ const thread = [
   },
   {
     from: "agency",
-    name: "McCann & Curran",
+    name: "McCann & Corran",
     text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.",
     time: "Feb 10, 2025 · 2:00 PM",
   },
@@ -44,7 +44,7 @@ export default function TenantMessagesPage() {
     <TenantShell>
       <div className="mb-3 xl:mb-5">
         <h1 className="text-3xl font-bold text-slate-800">Messages</h1>
-        <p className="text-slate-500 mt-1 text-sm">Your conversation with McCann & Curran letting agency</p>
+        <p className="text-slate-500 mt-1 text-sm">Your conversation with McCann & Corran letting agency</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: "calc(100vh - 220px)", minHeight: 480 }}>
@@ -54,7 +54,7 @@ export default function TenantMessagesPage() {
             MC
           </div>
           <div>
-            <p className="text-base font-bold text-slate-800">McCann & Curran</p>
+            <p className="text-base font-bold text-slate-800">McCann & Corran</p>
             <p className="text-xs text-teal-600 font-medium">Letting Agent · Online</p>
           </div>
         </div>

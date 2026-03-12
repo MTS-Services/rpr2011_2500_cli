@@ -169,7 +169,7 @@ export default function LoginPage() {
 
           <div className="bg-slate-50 px-5 sm:px-6 py-4 text-center border-t border-slate-100">
             <p className="text-xs text-slate-400">
-              © 2024 McCann &amp; Curran. Confidential and Proprietary.
+              © 2026 McCann &amp; Corran. Confidential and Proprietary.
             </p>
           </div>
         </div>
