@@ -22,7 +22,7 @@ export default function Hero() {
           </h1>
 
           <p className="animate-fade-up-2 text-[1rem] text-dark-500 leading-relaxed mb-8 max-w-md">
-            For over 15 years McCann &amp; Curran has delivered transparent, technology-driven property management that genuinely works for Irish landlords.
+            For over 15 years McCann &amp; Corran has delivered transparent, technology-driven property management that genuinely works for Irish landlords.
           </p>
 
           <div className="animate-fade-up-3 flex flex-wrap items-center gap-3">
@@ -48,7 +48,7 @@ export default function Hero() {
             <div className="absolute inset-0 animate-kenburns">
               <Image
                 src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=85"
-                alt="McCann & Curran team"
+                alt="McCann & Corran team"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"

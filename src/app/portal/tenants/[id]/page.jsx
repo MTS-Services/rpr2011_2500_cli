@@ -186,10 +186,7 @@ export default function TenantDetailsPage() {
                                         <Calendar size={16} className="text-slate-400" /> {tenant.dob}
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">P.P.S. Number</p>
-                                    <p className="text-base font-mono text-slate-700">{tenant.pps}</p>
-                                </div>
+
                                 <div>
                                     <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Mobile</p>
                                     <p className="text-base text-slate-700 flex items-center gap-2">

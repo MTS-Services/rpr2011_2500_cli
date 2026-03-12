@@ -2,7 +2,7 @@ import "./globals.css";
 import ConditionalShell from "@/components/ConditionalShell";
 
 export const metadata = {
-  title: "McCann & Curran | Professional Property Management",
+  title: "McCann & Corran | Professional Property Management",
   description:
     "Comprehensive property management with secure digital reporting, RTB compliance, and transparent financial services in Ireland.",
   icons: {

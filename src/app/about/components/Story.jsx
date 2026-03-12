@@ -12,7 +12,7 @@ export default function Story() {
           </h2>
           <div className="space-y-4 section-desc text-dark-600 leading-relaxed">
             <p>
-              Founded in 2010, McCann &amp; Curran began as a small lettings
+              Founded in 2010, McCann &amp; Corran began as a small lettings
               agency in Dublin with a simple belief: landlords deserve
               complete transparency and professional service.
             </p>

@@ -45,9 +45,9 @@ export default function Sidebar({ mobileOpen, onClose }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 h-[72px] border-b border-slate-100">
-          <Image src="/logo.png" alt="McCann & Curran" width={36} height={36} />
+          <Image src="/logo.png" alt="McCann & Corran" width={36} height={36} />
           <span className="text-base font-bold text-slate-800 tracking-tight leading-tight">
-            McCann &amp; Curran
+            McCann &amp; Corran
           </span>
         </div>
 
@@ -83,7 +83,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-slate-100 text-xs text-slate-400">
-          © 2024 McCann &amp; Curran
+          © 2026 McCann &amp; Corran
         </div>
       </aside>
     </>

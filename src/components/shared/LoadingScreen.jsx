@@ -13,7 +13,7 @@ export default function LoadingScreen() {
         <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center">
           <Image
             src="/logo.png"
-            alt="McCann & Curran"
+            alt="McCann & Corran"
             width={32}
             height={32}
             priority
@@ -23,7 +23,7 @@ export default function LoadingScreen() {
 
       {/* Brand name */}
       <p className="mt-6 text-sm font-semibold text-slate-600 tracking-wide">
-        McCann <span className="text-teal-600">&amp;</span> Curran
+        McCann <span className="text-teal-600">&amp;</span> Corran
       </p>
     </div>
   );

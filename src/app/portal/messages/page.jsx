@@ -1,150 +1,131 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import PortalShell from "@/components/portal/PortalShell";
-import Pagination from "@/components/portal/Pagination";
-import { Search } from "lucide-react";
-import Image from "next/image";
+import { Send } from "lucide-react";
 
-const threads = [
+const initialThread = [
   {
-    name: "Stephen Blake",
-    role: "Tenant",
-    property: "Apt 306 Fairview Rd",
-    age: "Apt 6 days ago",
-    subject: "No Heating",
-    preview: "Hi Joe. I've been having trouble with the heating lately. The heaters aren't turning on correctly. Can you send somn. nome noke to take look?",
-    time: "30 minutes ago",
-    unread: 1,
-    avatar: "https://randomuser.me/api/portraits/men/41.jpg",
+    from: "agency",
+    name: "McCann & Corran",
+    text: "Hi Joan, just to confirm the contractor visit for Apt 5B is scheduled for Feb 28th between 10am–1pm. Please ensure the tenant is aware.",
+    time: "Feb 21, 2025 · 3:15 PM",
   },
   {
-    name: "Edward Martin",
-    role: "Tenant",
-    property: "Apt 104 Elmwood Grove",
-    age: "15 days ago",
-    subject: "Leaky Sink",
-    preview: "Hi Joe. There's a leak under the kitchen sink that needs fixingz. It's dripping all one coboard space below.",
-    time: "2 hours ago",
-    unread: 2,
-    avatar: "https://randomuser.me/api/portraits/men/44.jpg",
+    from: "landlord",
+    name: "Joan Doyle",
+    text: "Thanks for confirming. I've let Kevin know. Please send over the invoice once the work is done.",
+    time: "Feb 21, 2025 · 4:02 PM",
   },
   {
-    name: "Adam Walsh",
-    role: "Tenant",
-    property: "Apt 104 Elmwood Grove",
-    age: "6 days ago",
-    subject: "RTB Registration",
-    preview: "Hi Joe. Have you procsd the RTB registration for my tenancy yet? Thank you.",
-    time: "2 days ago",
-    unread: null,
-    badge: "Red",
-    avatar: "https://randomuser.me/api/portraits/men/52.jpg",
+    from: "agency",
+    name: "McCann & Corran",
+    text: "Will do. We'll upload it to your documents section as well.",
+    time: "Feb 21, 2025 · 4:20 PM",
   },
   {
-    name: "Kevin Madden",
-    role: "Tenant",
-    property: "Apt 5B Rosewood Close",
-    age: "6 days ago",
-    subject: "Rent Payment",
-    preview: "Hi Joe. The payment for the month will be delayed. I should been t to you in a few days. Apologies for any inconvenience.",
-    time: "3 days ago",
-    unread: null,
-    badge: "Red",
-    avatar: "https://randomuser.me/api/portraits/men/55.jpg",
+    from: "landlord",
+    name: "Joan Doyle",
+    text: "What is the status of the RTB registration for Apt 22 Parkside Plaza?",
+    time: "Feb 22, 2025 · 11:00 AM",
   },
   {
-    name: "Sarah Quinn",
-    role: "Staff",
-    property: "Apt 306 Fairview Rd",
-    age: "6 days ago",
-    subject: "Vacating Property",
-    preview: "Hi Joe. My partner ad e planning to vacate the property at the end of next month. We'll send a formal notice shortly. Thanks.",
-    time: "6 days ago",
-    unread: null,
-    badge: "Red",
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    from: "agency",
+    name: "McCann & Corran",
+    text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details. We'll update you as soon as it moves to Registered.",
+    time: "Feb 22, 2025 · 11:45 AM",
   },
 ];
 
-export default function MessagesPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+export default function LandlordMessagesPage() {
+  const [thread, setThread] = useState(initialThread);
+  const [message, setMessage] = useState("");
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [thread]);
+
+  function sendMessage() {
+    if (!message.trim()) return;
+    const now = new Date();
+    const label = now.toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" }) +
+      " · " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    setThread((prev) => [...prev, { from: "landlord", name: "Joan Doyle", text: message.trim(), time: label }]);
+    setMessage("");
+  }
 
   return (
     <PortalShell>
-      <div className="mb-3 lg:mb-5">
-        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800">Messages</h1>
+      <div className="mb-3 xl:mb-5">
+        <h1 className="text-3xl font-bold text-slate-800">Messages</h1>
+        <p className="text-slate-500 mt-1 text-sm">Your conversation with McCann &amp; Corran</p>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-2 lg:mb-4">
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search messages..."
-          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition shadow-sm"
-        />
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="divide-y divide-slate-100">
-          {threads.map((t, i) => (
-            <div
-              key={i}
-              className="flex gap-3 lg:gap-4 px-4 lg:px-5 py-3 lg:py-4 hover:bg-slate-50/60 cursor-pointer transition-colors"
-            >
-              <Image
-                src={t.avatar}
-                alt={t.name}
-                width={40}
-                height={40}
-                className="rounded-full object-cover w-10 h-10 lg:w-12 lg:h-12 shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-semibold text-slate-800 text-sm lg:text-base">{t.name}</p>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      t.role === "Staff"
-                        ? "bg-teal-50 text-teal-700"
-                        : "bg-blue-50 text-blue-700"
-                    }`}>{t.role}</span>
-                  </div>
-                    <p className="text-xs lg:text-sm text-slate-400">{t.property}</p>
-                    <p className="text-xs lg:text-sm text-slate-400">{t.age}</p>
-                  <div className="flex flex-col items-end gap-1 lg:gap-1.5 shrink-0">
-                    <span className="text-xs lg:text-sm text-slate-400 whitespace-nowrap">{t.time}</span>
-                    {t.unread && (
-                      <span className="flex items-center justify-center w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-teal-600 text-white text-xs font-bold">
-                        {t.unread}
-                      </span>
-                    )}
-                    {t.badge && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-red-400 text-white">
-                        {t.badge}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="font-semibold text-slate-700 text-sm lg:text-base">{t.subject}</p>
-                <p className="text-xs lg:text-sm text-slate-400 line-clamp-2 mt-0.5 lg:mt-1">{t.preview}</p>
-              </div>
-            </div>
-          ))}
+      <div
+        className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col"
+        style={{ height: "calc(100vh - 220px)", minHeight: 480 }}
+      >
+        {/* Thread header */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-100 shrink-0">
+          <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
+            MC
+          </div>
+          <div>
+            <p className="text-base font-bold text-slate-800">McCann &amp; Corran</p>
+            <p className="text-xs text-teal-600 font-medium">Property Management · Online</p>
+          </div>
         </div>
 
-        <Pagination
-          total={threads.length}
-          itemsPerPage={itemsPerPage}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={(value) => {
-            setItemsPerPage(value);
-            setCurrentPage(1);
-          }}
-        />
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {thread.map((msg, i) => {
+            const isLandlord = msg.from === "landlord";
+            return (
+              <div key={i} className={`flex gap-3 ${isLandlord ? "flex-row-reverse" : ""}`}>
+                {!isLandlord && (
+                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xs shrink-0 mt-1">
+                    MC
+                  </div>
+                )}
+                <div className={`max-w-[75%] flex flex-col gap-1 ${isLandlord ? "items-end" : "items-start"}`}>
+                  <p className="text-xs text-slate-400 px-1">{msg.name} · {msg.time}</p>
+                  <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                    isLandlord
+                      ? "bg-teal-600 text-white rounded-tr-sm"
+                      : "bg-slate-100 text-slate-800 rounded-tl-sm"
+                  }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Composer */}
+        <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-3 shrink-0">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Type a message…"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!message.trim()}
+            className="w-10 h-10 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 flex items-center justify-center text-white transition shrink-0"
+          >
+            <Send size={16} />
+          </button>
+        </div>
       </div>
     </PortalShell>
   );
 }
+
+

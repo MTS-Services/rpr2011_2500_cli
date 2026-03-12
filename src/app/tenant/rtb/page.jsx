@@ -9,7 +9,7 @@ const rtb = {
   status:           "Registered",
   tenancyStart:     "10 October 2022",
   property:         "Apt 5B Rosewood Close, Dublin 9",
-  landlord:         "McCann & Curran Realty (acting agent)",
+  landlord:         "McCann & Corran Realty (acting agent)",
   certificate:      { name: "RTB Registration Certificate.pdf", size: "134 KB" },
 };
 

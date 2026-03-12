@@ -57,14 +57,14 @@ export default function LoginPage() {
               <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
                 <Image
                   src="/logo.png"
-                  alt="McCann & Curran"
+                  alt="McCann & Corran"
                   width={40}
                   height={40}
                 />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-800">
-                  McCann &amp; Curran
+                  McCann &amp; Corran
                 </h2>
                 <p className="text-xs uppercase text-slate-400 tracking-wide">
                   Landlord portal
@@ -169,7 +169,7 @@ export default function LoginPage() {
 
           <div className="bg-slate-50 px-5 sm:px-6 py-4 text-center border-t border-slate-100">
             <p className="text-xs text-slate-400">
-              © 2024 McCann &amp; Curran. Confidential and Proprietary.
+              © 2026 McCann &amp; Corran. Confidential and Proprietary.
             </p>
           </div>
         </div>

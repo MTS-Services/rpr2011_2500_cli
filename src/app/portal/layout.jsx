@@ -1,8 +1,8 @@
 import { PortalAuthProvider } from "@/context/PortalAuthContext";
 
 export const metadata = {
-  title: "Client Portal — McCann & Curran",
-  description: "Landlord portal for McCann & Curran Realty",
+  title: "Client Portal — McCann & Corran",
+  description: "Landlord portal for McCann & Corran Realty",
 };
 
 export default function PortalLayout({ children }) {
