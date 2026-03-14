@@ -5,14 +5,6 @@ import PortalShell from "@/components/portal/PortalShell";
 import Pagination from "@/components/portal/Pagination";
 import { Eye, Search, ChevronDown } from "lucide-react";
 
-const items = [
-  { property: "Apt 22 Parkside Plaza", issue: "Shower broken", age: "1 day ago", priority: "Medium", status: "In Progress", updated: "1 day ago" },
-  { property: "Apt 104 Elmwood Grove", issue: "Heating issue", age: "2 hours ago", priority: "High", status: "New", updated: "2 hours ago" },
-  { property: "Apt 65 Southern Cross", issue: "Missing three light bulbs", age: "6 days ago", priority: "Low", status: "Awaiting Materials", updated: "3 days ago" },
-  { property: "Apt 32 Aberdeen Street", issue: "Leaky kitchen sink pipe", age: "8 days ago", priority: "Medium", status: "Scheduled (30 Apr 2024)", updated: "8 days ago" },
-  { property: "Apt 104 Elmwood Grove", issue: "Toilet constantly running", age: "3 days ago", priority: "High", status: "Needs Contractor", updated: "3 days ago" },
-];
-
 const priorityColors = {
   High: "bg-red-100 text-red-700",
   Medium: "bg-amber-100 text-amber-700",
@@ -22,6 +14,13 @@ const priorityColors = {
 export default function MaintenancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [items, setItems] = useState([
+    { property: "Apt 22 Parkside Plaza", issue: "Shower broken", age: "1 day ago", priority: "Medium", status: "In Progress", updated: "1 day ago" },
+    { property: "Apt 104 Elmwood Grove", issue: "Heating issue", age: "2 hours ago", priority: "High", status: "Open", updated: "2 hours ago" },
+    { property: "Apt 65 Southern Cross", issue: "Missing three light bulbs", age: "6 days ago", priority: "Low", status: "In Progress", updated: "3 days ago" },
+    { property: "Apt 32 Aberdeen Street", issue: "Leaky kitchen sink pipe", age: "8 days ago", priority: "Medium", status: "Open", updated: "8 days ago" },
+    { property: "Apt 104 Elmwood Grove", issue: "Toilet constantly running", age: "3 days ago", priority: "High", status: "Closed", updated: "3 days ago" },
+  ]);
 
   return (
     <PortalShell>
@@ -60,11 +59,11 @@ export default function MaintenancePage() {
               </div>
               <p className="text-sm text-slate-600">{item.issue}</p>
               <div className="flex items-center justify-between">
-                {item.status === "Awaiting Materials" ? (
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">{item.status}</span>
-                ) : (
-                  <span className="text-xs text-slate-600">{item.status}</span>
-                )}
+                <select value={item.status} onChange={(e) => setItems(items.map(it => it === item ? {...it, status: e.target.value} : it))} className="text-xs px-2.5 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer" style={{backgroundColor: item.status === "Open" ? "#f1f5f9" : item.status === "In Progress" ? "#fef3c7" : "#d1fae5", color: "#374151"}}>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Closed">Closed</option>
+                </select>
               </div>
               <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
                 <Eye size={13} /> View Details
@@ -100,13 +99,11 @@ export default function MaintenancePage() {
                     </span>
                   </td>
                   <td className="px-5 py-5">
-                    {item.status === "Awaiting Materials" ? (
-                      <span className="text-sm font-medium px-3 py-1 rounded-full bg-amber-100 text-amber-700">
-                        {item.status}
-                      </span>
-                    ) : (
-                      <span className="text-base text-slate-600">{item.status}</span>
-                    )}
+                    <select value={item.status} onChange={(e) => setItems(items.map(it => it === item ? {...it, status: e.target.value} : it))} className="text-sm px-3 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer" style={{backgroundColor: item.status === "Open" ? "#f1f5f9" : item.status === "In Progress" ? "#fef3c7" : "#d1fae5", color: "#374151"}}>
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Closed">Closed</option>
+                    </select>
                   </td>
                   <td className="px-5 py-5 text-sm text-slate-400">{item.updated}</td>
                   <td className="px-6 py-5 text-right">

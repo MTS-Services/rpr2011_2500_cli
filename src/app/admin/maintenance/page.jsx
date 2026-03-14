@@ -179,7 +179,11 @@ export default function AdminMaintenancePage() {
               </div>
             </div>
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_STYLE[r.col]}`}>{r.col}</span>
+              <select value={r.col} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, col: e.target.value} : req))} className="text-xs font-semibold px-2.5 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer" style={{backgroundColor: STATUS_STYLE[r.col].split(' ')[0], color: STATUS_STYLE[r.col].split(' ')[1]}}>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Closed">Closed</option>
+              </select>
               <span className="text-xs text-slate-400">{r.age}</span>
             </div>
           </div>
@@ -230,9 +234,11 @@ export default function AdminMaintenancePage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_STYLE[r.col]}`}>
-                    {r.col}
-                  </span>
+                  <select value={r.col} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, col: e.target.value} : req))} className="text-xs font-semibold px-2.5 py-1 rounded-full border-0 focus:outline-none ring-1 ring-teal-400 cursor-pointer" style={{backgroundColor: STATUS_STYLE[r.col].split(' ')[0], color: STATUS_STYLE[r.col].split(' ')[1]}}>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Closed">Closed</option>
+                  </select>
                 </td>
                 <td className="px-4 py-3 text-slate-400">{r.age}</td>
                 <td className="px-4 py-3 text-right">

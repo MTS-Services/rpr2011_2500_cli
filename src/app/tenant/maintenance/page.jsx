@@ -4,39 +4,6 @@ import { useState } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
 import { Wrench, Plus, Clock, CheckCircle2, AlertCircle, X } from "lucide-react";
 
-const requests = [
-  {
-    id: "MR-001",
-    title: "Boiler not heating",
-    desc: "The boiler stopped providing hot water and central heating since Feb 20th.",
-    date: "Feb 20, 2025",
-    status: "In Progress",
-    statusColor: "bg-blue-100 text-blue-700",
-    priority: "High",
-    priorityColor: "bg-red-100 text-red-700",
-  },
-  {
-    id: "MR-002",
-    title: "Leaking tap in kitchen",
-    desc: "The kitchen cold tap has been dripping constantly.",
-    date: "Jan 10, 2025",
-    status: "Resolved",
-    statusColor: "bg-teal-100 text-teal-700",
-    priority: "Medium",
-    priorityColor: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "MR-003",
-    title: "Broken window latch",
-    desc: "Bedroom window latch is broken and cannot be secured.",
-    date: "Nov 5, 2024",
-    status: "Resolved",
-    statusColor: "bg-teal-100 text-teal-700",
-    priority: "Low",
-    priorityColor: "bg-slate-100 text-slate-600",
-  },
-];
-
 const statusIcon = {
   "In Progress": <Clock size={14} className="text-blue-600" />,
   "Resolved": <CheckCircle2 size={14} className="text-teal-600" />,
@@ -45,6 +12,38 @@ const statusIcon = {
 
 export default function TenantMaintenancePage() {
   const [showForm, setShowForm] = useState(false);
+  const [requests, setRequests] = useState([
+    {
+      id: "MR-001",
+      title: "Boiler not heating",
+      desc: "The boiler stopped providing hot water and central heating since Feb 20th.",
+      date: "Feb 20, 2025",
+      status: "In Progress",
+      statusColor: "bg-blue-100 text-blue-700",
+      priority: "High",
+      priorityColor: "bg-red-100 text-red-700",
+    },
+    {
+      id: "MR-002",
+      title: "Leaking tap in kitchen",
+      desc: "The kitchen cold tap has been dripping constantly.",
+      date: "Jan 10, 2025",
+      status: "Closed",
+      statusColor: "bg-teal-100 text-teal-700",
+      priority: "Medium",
+      priorityColor: "bg-amber-100 text-amber-700",
+    },
+    {
+      id: "MR-003",
+      title: "Broken window latch",
+      desc: "Bedroom window latch is broken and cannot be secured.",
+      date: "Nov 5, 2024",
+      status: "Closed",
+      statusColor: "bg-teal-100 text-teal-700",
+      priority: "Low",
+      priorityColor: "bg-slate-100 text-slate-600",
+    },
+  ]);
 
   return (
     <TenantShell>
@@ -147,9 +146,11 @@ export default function TenantMaintenancePage() {
                     </span>
                   </td>
                   <td className="px-5 py-5">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${r.statusColor}`}>
-                      {statusIcon[r.status]} {r.status}
-                    </span>
+                    <select value={r.status} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, status: e.target.value, statusColor: e.target.value === "Open" ? "bg-slate-100 text-slate-600" : e.target.value === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"} : req))} className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer ${r.statusColor}`}>
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Closed">Closed</option>
+                    </select>
                   </td>
                 </tr>
               ))}
@@ -177,7 +178,11 @@ export default function TenantMaintenancePage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${r.priorityColor}`}>{r.priority}</span>
-                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${r.statusColor}`}>{statusIcon[r.status]} {r.status}</span>
+                <select value={r.status} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, status: e.target.value, statusColor: e.target.value === "Open" ? "bg-slate-100 text-slate-600" : e.target.value === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"} : req))} className={`text-xs font-semibold px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer ${r.statusColor}`}>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Closed">Closed</option>
+                </select>
               </div>
             </div>
           </div>
