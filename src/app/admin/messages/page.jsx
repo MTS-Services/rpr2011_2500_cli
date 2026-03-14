@@ -5,27 +5,76 @@ import { MessageSquare, Send, Search, ArrowLeft } from "lucide-react";
 
 const CONVERSATIONS = [
   {
-    id: 1, name: "Kevin Madden", role: "Tenant",
-    preview: "Hi, I've a question about my rent...", unread: 2,
+    id: 1,
+    name: "Kevin Madden",
+    role: "Tenant",
+    property: "Apt 5B Rosewood Close",
+    avatar_bg: "bg-teal-100 text-teal-700",
+    preview: "Your rent review is scheduled for May 2025…",
+    unread: 0,
     messages: [
-      { from: "tenant", name: "Kevin Madden", text: "Hi, I've a question about my rent.", time: "Feb 22 · 9:12 AM" },
-      { from: "admin",  name: "Admin",        text: "Hi Kevin — what's the question?",   time: "Feb 22 · 9:30 AM" },
-      { from: "tenant", name: "Kevin Madden", text: "Is the March rent still €1,950 or has it been reviewed?", time: "Feb 22 · 9:45 AM" },
+      { from: "tenant", name: "Kevin Madden", text: "Hi, just a reminder that my February rent payment is overdue. Please arrange payment at your earliest convenience.", time: "Feb 6 · 9:15 AM" },
+      { from: "admin", name: "McCann & Corran", text: "Thank you Kevin, appreciated. A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "Feb 7 · 10:00 AM" },
+      { from: "tenant", name: "Kevin Madden", text: "That works for me, I'll be home. Thanks for sorting that.", time: "Feb 7 · 10:22 AM" },
+      { from: "admin", name: "McCann & Corran", text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.", time: "Feb 10 · 2:00 PM" },
     ],
   },
   {
-    id: 2, name: "Joan Doyle", role: "Landlord",
-    preview: "Property 5B — maintenance update needed", unread: 0,
+    id: 2,
+    name: "Joan Doyle",
+    role: "Landlord",
+    property: "Multiple properties",
+    avatar_bg: "bg-purple-100 text-purple-700",
+    preview: "The RTB registration for Apt 22 Parkside Plaza is currently Pending…",
+    unread: 1,
     messages: [
       { from: "landlord", name: "Joan Doyle", text: "Please confirm the contractor visit date for Apt 5B.", time: "Feb 21 · 2:02 PM" },
-      { from: "admin",    name: "Admin",      text: "Hi Joan, the contractor is confirmed for Feb 28th, 10am–1pm.", time: "Feb 21 · 3:15 PM" },
+      { from: "admin", name: "McCann & Corran", text: "Hi Joan, the contractor is confirmed for Feb 28th, 10am–1pm.", time: "Feb 21 · 3:15 PM" },
+      { from: "landlord", name: "Joan Doyle", text: "What is the status of the RTB registration for Apt 22 Parkside Plaza?", time: "Feb 22 · 11:00 AM" },
+      { from: "admin", name: "McCann & Corran", text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details.", time: "Feb 22 · 11:45 AM" },
     ],
   },
   {
-    id: 3, name: "Edward O'Neill", role: "Landlord",
-    preview: "RTB registration query", unread: 1,
+    id: 3,
+    name: "Kevin Madden",
+    otherName: "Joan Doyle",
+    role: "Landlord-Tenant",
+    property: "Apt 5B Rosewood Close",
+    avatar_bg: "bg-blue-100 text-blue-700",
+    otherAvatar_bg: "bg-purple-100 text-purple-700",
+    preview: "I received your notice about the maintenance on Feb 28th",
+    unread: 0,
+    messages: [
+      { from: "landlord", name: "Joan Doyle", text: "Hi Kevin, just a reminder — the contractor will visit on Feb 28th between 10am–1pm for the boiler. Please ensure access.", time: "Feb 26 · 9:00 AM" },
+      { from: "tenant", name: "Kevin Madden", text: "I received your notice about the maintenance on Feb 28th. I'll be home to let them in.", time: "Feb 26 · 10:15 AM" },
+    ],
+  },
+  {
+    id: 4,
+    name: "Edward O'Neill",
+    role: "Landlord",
+    property: "Multiple properties",
+    avatar_bg: "bg-indigo-100 text-indigo-700",
+    preview: "Initial inquiry about RTB registration process",
+    unread: 0,
     messages: [
       { from: "landlord", name: "Edward O'Neill", text: "What is the status of the RTB registration for Apt 25, Grand Dock?", time: "Feb 20 · 11:00 AM" },
+      { from: "admin", name: "McCann & Corran", text: "Hi Edward, status is Pending. We're awaiting the tenant details.", time: "Feb 20 · 2:30 PM" },
+    ],
+  },
+  {
+    id: 5,
+    name: "Emma Collins",
+    otherName: "Joan Doyle",
+    role: "Landlord-Tenant",
+    property: "Apt 22 Parkside Plaza",
+    avatar_bg: "bg-pink-100 text-pink-700",
+    otherAvatar_bg: "bg-purple-100 text-purple-700",
+    preview: "Thanks for the update on the rent review timing",
+    unread: 0,
+    messages: [
+      { from: "landlord", name: "Joan Doyle", text: "Hi Emma, just to let you know we will be conducting the rent review in May as per your lease terms.", time: "Feb 18 · 2:30 PM" },
+      { from: "tenant", name: "Emma Collins", text: "Thanks for the update on the rent review timing. I appreciate the heads up.", time: "Feb 18 · 3:45 PM" },
     ],
   },
 ];
@@ -64,10 +113,11 @@ export default function AdminMessagesPage() {
     c.preview.toLowerCase().includes(search.toLowerCase())
   );
 
-  const roleBadge = (role) =>
-    role === "Tenant"
-      ? "bg-teal-100 text-teal-700"
-      : "bg-purple-100 text-purple-700";
+  const roleBadge = (role) => {
+    if (role === "Tenant") return "bg-teal-100 text-teal-700";
+    if (role === "Landlord") return "bg-purple-100 text-purple-700";
+    return "bg-blue-100 text-blue-700"; // Landlord-Tenant conversation
+  };
 
   return (
     <div className="space-y-4">
@@ -105,12 +155,21 @@ export default function AdminMessagesPage() {
                 onClick={() => { setActiveId(c.id); setShowChat(true); }}
                 className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 text-left transition ${c.id === activeId ? "bg-slate-50 border-l-2 border-purple-500" : "border-l-2 border-transparent"}`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${roleBadge(c.role)}`}>
-                  {c.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${c.avatar_bg}`}>
+                  {c.role === "Landlord-Tenant" ? (
+                    <div className="flex items-center gap-0.5">
+                      <span className="text-xs">{c.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+                      <span className="text-xs">{c.otherName.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+                    </div>
+                  ) : (
+                    c.name.split(" ").map((n) => n[0]).slice(0, 2).join("")
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
+                    <p className="text-sm font-semibold text-slate-800 truncate">
+                      {c.role === "Landlord-Tenant" ? `${c.name} ↔ ${c.otherName}` : c.name}
+                    </p>
                     {c.unread > 0 && (
                       <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center">
                         {c.unread}
@@ -118,6 +177,7 @@ export default function AdminMessagesPage() {
                     )}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{c.role}</p>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">{c.property}</p>
                   <p className="text-xs text-slate-500 truncate mt-0.5">{c.preview}</p>
                 </div>
               </button>
@@ -136,26 +196,39 @@ export default function AdminMessagesPage() {
             >
               <ArrowLeft size={18} />
             </button>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${roleBadge(active.role)}`}>
-              {active.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${active?.avatar_bg}`}>
+              {active?.role === "Landlord-Tenant" ? (
+                <div className="flex items-center gap-0.5">
+                  <span className="text-xs">{active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+                  <span className="text-xs">{active?.otherName.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+                </div>
+              ) : (
+                active?.name.split(" ").map((n) => n[0]).slice(0, 2).join("")
+              )}
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800">{active.name}</p>
-              <p className="text-xs text-purple-600">{active.role}</p>
+              <p className="text-sm font-semibold text-slate-800">
+                {active?.role === "Landlord-Tenant" ? `${active?.name} ↔ ${active?.otherName}` : active?.name}
+              </p>
+              <p className="text-xs text-purple-600">{active?.role}</p>
             </div>
           </div>
 
           {/* messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-            {active.messages.map((m, i) => {
+            {active?.messages.map((m, i) => {
               const isAdmin = m.from === "admin";
+              const isLandlord = m.from === "landlord";
+              const displayBg = isAdmin ? "bg-slate-200 text-slate-600" : 
+                               isLandlord ? active?.avatar_bg : 
+                               "bg-teal-100 text-teal-700";
               return (
-                <div key={i} className={`flex gap-3 ${isAdmin ? "flex-row-reverse" : ""}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isAdmin ? "bg-slate-200 text-slate-600" : roleBadge(active.role)}`}>
-                    {isAdmin ? "AD" : active.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                <div key={i} className={`flex gap-3 ${isAdmin || isLandlord ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${displayBg}`}>
+                    {isAdmin ? "AD" : isLandlord ? active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("") : active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}
                   </div>
-                  <div className={`max-w-[68%] flex flex-col ${isAdmin ? "items-end" : "items-start"}`}>
-                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${isAdmin ? "bg-purple-600 text-white rounded-tr-sm" : "bg-slate-100 text-slate-700 rounded-tl-sm"}`}>
+                  <div className={`max-w-[68%] flex flex-col ${isAdmin || isLandlord ? "items-end" : "items-start"}`}>
+                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${isAdmin ? "bg-purple-600 text-white rounded-tr-sm" : isLandlord ? "bg-slate-100 text-slate-700 rounded-tl-sm" : "bg-teal-100 text-teal-700 rounded-tl-sm"}`}>
                       {m.text}
                     </div>
                     <p className="text-xs text-slate-400 mt-1.5 px-1">{m.time}</p>
@@ -173,7 +246,7 @@ export default function AdminMessagesPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                placeholder={`Message ${active.name}…`}
+                placeholder={active?.role === "Landlord-Tenant" ? `Monitor conversation between ${active?.name} & ${active?.otherName}…` : `Message ${active?.name}…`}
                 className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400 transition resize-none"
               />
               <button
