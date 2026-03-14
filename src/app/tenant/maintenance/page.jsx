@@ -84,7 +84,6 @@ export default function TenantMaintenancePage() {
                 <option>Low</option>
                 <option>Medium</option>
                 <option>High</option>
-                <option>Emergency</option>
               </select>
             </div>
             <div>
