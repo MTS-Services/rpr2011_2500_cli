@@ -13,6 +13,7 @@ import {
   UserCheck,
   ClipboardList,
   Mail,
+  MessageSquare,
   BarChart2,
   Settings,
 } from "lucide-react";
@@ -29,6 +30,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose = () => {} })
     { href: "/admin/tenants", label: "Tenants", Icon: UserCheck },
     { href: "/admin/tenancies", label: "Tenancies", Icon: ClipboardList },
     { href: "/admin/messages",  label: "Messages",  Icon: Mail },
+    { href: "/admin/contact-submissions", label: "Contact Submissions", Icon: MessageSquare },
     { href: "/admin/reports",   label: "Reports",   Icon: BarChart2 },
     { href: "/admin/audit",     label: "Audit",     Icon: FolderOpen },
     { href: "/admin/settings",  label: "Settings",  Icon: Settings },
