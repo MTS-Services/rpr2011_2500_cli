@@ -54,7 +54,7 @@ export default function AdminPropertiesPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-800">Properties</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Properties</h1>
         <button onClick={() => setAddPropertyModalOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
           <Plus size={15} /> <span className="hidden sm:inline">Add Property</span>
         </button>
@@ -65,7 +65,7 @@ export default function AdminPropertiesPage() {
         {filtered.map((p) => (
           <div key={p.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
             <div className="flex items-center gap-3">
-              <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
+              {/* <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} /> */}
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-slate-800 text-sm truncate">{p.name}</p>
                 <p className="text-xs text-slate-400">{p.area}</p>
@@ -119,7 +119,7 @@ export default function AdminPropertiesPage() {
                 <input type="checkbox" checked={selected.length === filtered.length && filtered.length > 0} onChange={toggleAll} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
               </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
-                <span className="flex items-center gap-1">Photo </span>
+                <span className="flex items-center gap-1">Name </span>
               </th>
               <th className="w-48 px-3 py-3 text-center font-semibold text-slate-600 text-sm">
                 <span className="flex items-center justify-center gap-1">Status</span>
@@ -146,7 +146,7 @@ export default function AdminPropertiesPage() {
                 </td>
                 <td className="w-48 px-3 py-3">
                   <div className="flex items-center gap-4">
-                    <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
+                    {/* <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} /> */}
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-800 text-base leading-tight truncate">{p.name}</p>
                       <p className="text-sm text-slate-400">{p.area}</p>

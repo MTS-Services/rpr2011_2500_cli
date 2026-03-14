@@ -83,7 +83,7 @@ export default function AdminLandlordsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-800">Landlords</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Landlords</h1>
         <button onClick={openAdd} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
           <Plus size={15} /> <span className="hidden sm:inline">Add Landlord</span>
         </button>

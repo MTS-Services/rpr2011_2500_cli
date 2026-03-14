@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bell, Mail, Users2, ChevronDown, LogOut, Menu } from "lucide-react";
+import { Mail, Users2, ChevronDown, LogOut, Menu } from "lucide-react";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 
 export default function AdminTopbar({ onMenuClick, mobileOpen }) {
@@ -31,9 +31,6 @@ export default function AdminTopbar({ onMenuClick, mobileOpen }) {
 
       {/* Right icons */}
       <div className="flex items-center gap-4 ml-auto">
-        <button className="p-2 text-slate-500 hover:text-slate-800 relative transition">
-          <Bell size={20} />
-        </button>
         <button className="p-2 text-slate-500 hover:text-slate-800 transition">
           <Mail size={20} />
         </button>

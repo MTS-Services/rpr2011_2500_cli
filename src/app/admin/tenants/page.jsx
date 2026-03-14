@@ -115,7 +115,7 @@ export default function AdminTenantsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-900">Tenants</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Tenants</h1>
         <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 text-white text-sm font-semibold rounded-lg shadow-sm transition" aria-label="Add new tenant">
           <Plus size={15} aria-hidden="true" /> <span className="hidden sm:inline">Add Tenant</span>
         </button>

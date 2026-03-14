@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Bell, Mail, Globe, ChevronDown, Menu, LogOut } from "lucide-react";
+import { Mail, Globe, ChevronDown, Menu, LogOut } from "lucide-react";
 
 import { usePortalAuth } from "@/context/PortalAuthContext";
 import { useState } from "react";
@@ -34,9 +34,6 @@ export default function Topbar({ onMenuClick }) {
 
       {/* Right icons */}
       <div className="flex items-center gap-4 ml-auto">
-        <button className="p-2 text-slate-500 hover:text-slate-800 relative transition">
-          <Bell size={20} />
-        </button>
         <button className="p-2 text-slate-500 hover:text-slate-800 transition">
           <Mail size={20} />
         </button>

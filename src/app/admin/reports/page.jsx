@@ -89,7 +89,7 @@ export default function AdminReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-slate-800">Reports</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Reports</h1>
           <p className="text-base text-slate-500 mt-0.5">View and export system-wide financial and occupancy reports</p>
         </div>
 

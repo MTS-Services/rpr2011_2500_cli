@@ -43,7 +43,7 @@ export default function AdminAuditPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Audit Log</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Audit Log</h1>
           <p className="text-base text-slate-500 mt-0.5">Track all system actions and changes</p>
         </div>
         <button
