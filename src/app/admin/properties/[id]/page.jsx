@@ -7,7 +7,7 @@ import {
   ArrowLeft, Home, BadgeCheck, FileText, Wrench,
   StickyNote, ClipboardList, MapPin, Euro, Zap,
   AlertCircle, Download, Eye, Edit, Plus,
-  CalendarDays, Clock, User, Users, Shield,
+  CalendarDays, Clock, User, Users, Shield, TrendingUp,
 } from "lucide-react";
 
 /* ─── Mock data ─── */
@@ -62,6 +62,7 @@ const auditLog = [
 
 const TABS = [
   { key: "overview", label: "Overview", Icon: Home },
+  { key: "finances", label: "Finances", Icon: TrendingUp },
   { key: "tenancies", label: "Tenancies", Icon: Users },
   { key: "documents", label: "Documents", Icon: FileText },
   { key: "maintenance", label: "Maintenance", Icon: Wrench },
@@ -172,6 +173,44 @@ export default function AdminPropertyProfilePage() {
             <InfoRow label="Status">
               <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${property.statusColor}`}>{property.status}</span>
             </InfoRow>
+          </div>
+        </div>
+      )}
+
+      {/* ── Finances ── */}
+      {activeTab === "finances" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={20} className="text-teal-600" />Property Finances</h2>
+            <Link
+              href={`/admin/properties/${id}/finances`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition"
+            >
+              <TrendingUp size={14} /> View Details
+            </Link>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-slate-600 mb-4">Click the button above to view detailed finances for this property including:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <p className="text-2xl font-bold text-teal-600">€1,950</p>
+                <p className="text-sm text-slate-600">Monthly Rent</p>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <p className="text-2xl font-bold text-red-600">-€245</p>
+                <p className="text-sm text-slate-600">Avg Deductions</p>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <p className="text-2xl font-bold text-slate-800">€1,705</p>
+                <p className="text-sm text-slate-600">Net Amount</p>
+              </div>
+            </div>
+            <ul className="text-left mt-6 inline-block text-slate-600 text-sm space-y-2">
+              <li>✓ Monthly rent collected tracking</li>
+              <li>✓ Deductions management (maintenance, bills, taxes)</li>
+              <li>✓ Mark months as paid/pending</li>
+              <li>✓ Edit rent amounts and deductions</li>
+            </ul>
           </div>
         </div>
       )}

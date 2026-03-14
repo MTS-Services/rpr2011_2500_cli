@@ -65,11 +65,10 @@ export default function AdminTenantsPage() {
   const closeAdd = () => setAddOpen(false);
   const handleAdd = (formData) => {
     const nextId = tenants[tenants.length - 1]?.id || filtered[filtered.length - 1]?.id || 0;
-    const initials = ((formData.firstName || "") + (formData.lastName || "")).split(" ").map(n => n[0] || "").join("").slice(0, 2).toUpperCase();
-    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    const initials = formData.fullName.split(" ").map(n => n[0] || "").join("").slice(0, 2).toUpperCase();
     const tenant = {
       id: nextId + 1,
-      name: fullName || 'New Tenant',
+      name: formData.fullName || 'New Tenant',
       initials,
       color: 'bg-slate-400',
       sub: '',

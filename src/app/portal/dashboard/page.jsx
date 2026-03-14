@@ -1,8 +1,9 @@
 "use client";
 
 import PortalShell from "@/components/portal/PortalShell";
-import { AlertTriangle, Home, Users, Wrench, FileText, ArrowRight, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { AlertTriangle, Home, Users, Wrench, FileText, ArrowRight, CheckCircle2, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import Image from "next/image";
+import { PROPERTY_FINANCES, getLandlordSummary } from "@/data/finances";
 
 const kpis = [
   { label: "My Properties", value: "4", Icon: Home, color: "bg-amber-50 text-amber-600 border-amber-100" },
@@ -33,6 +34,10 @@ const activity = [
 ];
 
 export default function DashboardPage() {
+  // Get landlord's finances summary
+  const landlordId = "landlord-1"; // Joe's landlord ID
+  const financeSummary = getLandlordSummary(landlordId);
+
   return (
     <PortalShell>
       {/* Title */}
@@ -83,6 +88,44 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Finances Summary */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-3 lg:mb-5">
+        <div className="flex items-center gap-2 px-4 lg:px-6 py-3 lg:py-4 border-b border-slate-100">
+          <TrendingUp size={18} className="text-teal-600" />
+          <h3 className="text-base lg:text-lg font-bold text-slate-800">Finances Summary</h3>
+          <span className="ml-auto text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-700">
+            March 2026
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 lg:p-6">
+          <div className="flex flex-col gap-1">
+            <p className="text-xs lg:text-sm font-semibold text-slate-500">Total Rent</p>
+            <p className="text-lg lg:text-2xl font-bold text-slate-800">€{financeSummary.totalRent.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-1">From 4 properties</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs lg:text-sm font-semibold text-slate-500">Deductions</p>
+            <p className="text-lg lg:text-2xl font-bold text-rose-600">-€{financeSummary.totalDeductions.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-1">{Math.round((financeSummary.totalDeductions / financeSummary.totalRent) * 100)}% of rent</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs lg:text-sm font-semibold text-slate-500">Net Amount</p>
+            <p className="text-lg lg:text-2xl font-bold text-teal-600">€{financeSummary.totalNet.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-1">Payable</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs lg:text-sm font-semibold text-slate-500">Months Paid</p>
+            <p className="text-lg lg:text-2xl font-bold text-slate-800">{financeSummary.paidCount}/4</p>
+            <p className="text-xs text-slate-400 mt-1">This period</p>
+          </div>
+        </div>
+        <div className="px-4 lg:px-6 py-3 lg:py-4 border-t border-slate-100 text-center">
+          <a href="/portal/properties" className="text-sm lg:text-base text-teal-600 hover:text-teal-700 font-semibold flex items-center justify-center gap-1.5">
+            View Detailed Finances <ArrowRight size={16} />
+          </a>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Alerts + Properties */}

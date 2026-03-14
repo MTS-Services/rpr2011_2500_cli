@@ -6,8 +6,18 @@ import Link from "next/link";
 import {
   ArrowLeft, User, Home, FileText, ClipboardList,
   MapPin, Phone, Mail, CalendarDays, Shield, Plus,
-  Edit, Download, BadgeCheck, Key, AlertTriangle, CheckCircle2,
+  Edit, Download, BadgeCheck, Key, AlertTriangle, CheckCircle2, TrendingUp,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
+import { PROPERTY_FINANCES } from "@/data/finances";
 
 /* ─── Mock data (replace with Supabase query) ─── */
 const landlord = {
@@ -41,10 +51,22 @@ const auditLog = [
 const TABS = [
   { key: "overview",   label: "Overview",          Icon: User },
   { key: "properties", label: "Properties",         Icon: Home },
+  { key: "finances",   label: "Finances",           Icon: TrendingUp },
   { key: "rtb",        label: "RTB Registration",   Icon: Key },
   { key: "documents",  label: "Documents",          Icon: FileText },
   { key: "audit",      label: "Audit",              Icon: ClipboardList },
 ];
+
+const LANDLORD_FINANCE_MAP = {
+  "2": "landlord-1",
+};
+
+const PROPERTY_VALUATIONS = {
+  "1": 420000,
+  "2": 485000,
+  "3": 390000,
+  "4": 430000,
+};
 
 const rtbRegistrations = [
   { id: "1", property: "Apt 5B Rosewood Close", rtbNumber: "RTB-2022-10-456782", status: "Registered", regDate: "5 Nov 2022", expiryDate: "4 Nov 2026", tenant: "Kevin Madden", daysToExpiry: 238 },
@@ -74,6 +96,64 @@ export default function AdminLandlordProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [showPps, setShowPps] = useState(false);
+
+  const landlordFinanceId = LANDLORD_FINANCE_MAP[id] || "landlord-1";
+  const financeProperties = Object.values(PROPERTY_FINANCES).filter((p) => p.landlordId === landlordFinanceId);
+  const monthOptions = Array.from(new Set(financeProperties.flatMap((p) => p.months.map((m) => m.month))));
+  const [selectedMonth, setSelectedMonth] = useState(monthOptions[0] || "March 2026");
+
+  const monthlyTrend = monthOptions
+    .map((month) => {
+      const totals = financeProperties.reduce(
+        (acc, prop) => {
+          const row = prop.months.find((m) => m.month === month);
+          if (row) {
+            acc.rent += row.rentCollected;
+            acc.deductions += row.deductionTotal;
+            acc.net += row.netAmount;
+          }
+          return acc;
+        },
+        { rent: 0, deductions: 0, net: 0 }
+      );
+      return { month, ...totals };
+    })
+    .reverse();
+
+  const selectedMonthRows = financeProperties
+    .map((prop) => {
+      const row = prop.months.find((m) => m.month === selectedMonth);
+      return row
+        ? {
+            propertyId: prop.propertyId,
+            propertyName: prop.propertyName,
+            rentCollected: row.rentCollected,
+            deductionTotal: row.deductionTotal,
+            netAmount: row.netAmount,
+            status: row.status,
+            maintenanceCost: row.deductions
+              .filter((d) => d.type.toLowerCase() === "maintenance")
+              .reduce((sum, d) => sum + d.amount, 0),
+          }
+        : null;
+    })
+    .filter(Boolean);
+
+  const totals = selectedMonthRows.reduce(
+    (acc, row) => {
+      acc.rent += row.rentCollected;
+      acc.deductions += row.deductionTotal;
+      acc.net += row.netAmount;
+      acc.maintenance += row.maintenanceCost;
+      return acc;
+    },
+    { rent: 0, deductions: 0, net: 0, maintenance: 0 }
+  );
+
+  const portfolioValuation = selectedMonthRows.reduce(
+    (sum, row) => sum + (PROPERTY_VALUATIONS[row.propertyId] || 0),
+    0
+  );
 
   return (
     <div className="space-y-4">
@@ -191,6 +271,110 @@ export default function AdminLandlordProfilePage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Finances ── */}
+      {activeTab === "finances" && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+                <TrendingUp size={16} className="text-teal-600" /> Landlord Finances
+              </h2>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              >
+                {monthOptions.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                <p className="text-xs font-semibold text-slate-500 uppercase">Rent Collected</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">EUR {totals.rent.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl border border-rose-100 p-4 bg-rose-50/40">
+                <p className="text-xs font-semibold text-slate-500 uppercase">Total Deductions</p>
+                <p className="text-2xl font-bold text-rose-600 mt-1">-EUR {totals.deductions.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl border border-teal-100 p-4 bg-teal-50/40">
+                <p className="text-xs font-semibold text-slate-500 uppercase">Net Paid Out</p>
+                <p className="text-2xl font-bold text-teal-700 mt-1">EUR {totals.net.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl border border-amber-100 p-4 bg-amber-50/40">
+                <p className="text-xs font-semibold text-slate-500 uppercase">Portfolio Value</p>
+                <p className="text-2xl font-bold text-amber-700 mt-1">EUR {portfolioValuation.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-1">All units combined</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h3 className="text-sm font-bold text-slate-700 mb-3">Monthly Trend (Rent vs Net)</h3>
+            <div style={{ height: 260 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#eef2f7" />
+                  <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(value) => [`EUR ${value.toLocaleString()}`, ""]} />
+                  <Bar dataKey="rent" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="net" fill="#0f766e" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-700">Per-Property Breakdown ({selectedMonth})</h3>
+              <p className="text-sm text-slate-500">Maintenance: EUR {totals.maintenance.toLocaleString()}</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                    <th className="text-left px-5 py-3">Property</th>
+                    <th className="text-right px-5 py-3">Rent</th>
+                    <th className="text-right px-5 py-3">Deductions</th>
+                    <th className="text-right px-5 py-3">Maintenance</th>
+                    <th className="text-right px-5 py-3">Net</th>
+                    <th className="text-center px-5 py-3">Status</th>
+                    <th className="text-right px-5 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {selectedMonthRows.map((row) => (
+                    <tr key={row.propertyId} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{row.propertyName}</td>
+                      <td className="px-5 py-4 text-right text-slate-700">EUR {row.rentCollected.toLocaleString()}</td>
+                      <td className="px-5 py-4 text-right text-rose-600">-EUR {row.deductionTotal.toLocaleString()}</td>
+                      <td className="px-5 py-4 text-right text-amber-700">EUR {row.maintenanceCost.toLocaleString()}</td>
+                      <td className="px-5 py-4 text-right text-teal-700 font-semibold">EUR {row.netAmount.toLocaleString()}</td>
+                      <td className="px-5 py-4 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${row.status === "Paid" ? "bg-teal-100 text-teal-700" : "bg-amber-100 text-amber-700"}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <Link
+                          href={`/admin/properties/${row.propertyId}/finances`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"
+                        >
+                          <BadgeCheck size={13} /> View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

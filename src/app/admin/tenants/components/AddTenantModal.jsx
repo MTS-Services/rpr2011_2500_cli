@@ -4,8 +4,7 @@ import { X } from "lucide-react";
 
 export default function AddTenantModal({ isOpen, onClose, onSubmit }) {
     const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
+        fullName: "",
         dob: "",
         pps: "",
         email: "",
@@ -19,14 +18,13 @@ export default function AddTenantModal({ isOpen, onClose, onSubmit }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.mobile) {
+        if (!formData.fullName || !formData.email || !formData.mobile) {
             alert("Please fill in all required fields");
             return;
         }
         onSubmit(formData);
         setFormData({
-            firstName: "",
-            lastName: "",
+            fullName: "",
             dob: "",
             pps: "",
             email: "",
@@ -54,34 +52,19 @@ export default function AddTenantModal({ isOpen, onClose, onSubmit }) {
 
                 {/* Scrollable Content */}
                 <form id="addTenantForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                    {/* First Name & Last Name */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">
-                                First Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="firstName"
-                                value={formData.firstName}
-                                onChange={handleFormChange}
-                                placeholder="e.g., Sarah"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">
-                                Last Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="lastName"
-                                value={formData.lastName}
-                                onChange={handleFormChange}
-                                placeholder="e.g., Kelly"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            />
-                        </div>
+                    {/* Full Name */}
+                    <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">
+                            Full Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="fullName"
+                            value={formData.fullName}
+                            onChange={handleFormChange}
+                            placeholder="e.g., Sarah Kelly"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
                     </div>
 
                     {/* DOB & PPS */}
