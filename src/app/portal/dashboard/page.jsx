@@ -111,12 +111,12 @@ export default function DashboardPage() {
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-xs lg:text-sm font-semibold text-slate-500">Net Amount</p>
-            <p className="text-lg lg:text-2xl font-bold text-teal-600">€{financeSummary.netAmount.toLocaleString()}</p>
+            <p className="text-lg lg:text-2xl font-bold text-teal-600">€{financeSummary.totalNet.toLocaleString()}</p>
             <p className="text-xs text-slate-400 mt-1">Payable</p>
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-xs lg:text-sm font-semibold text-slate-500">Months Paid</p>
-            <p className="text-lg lg:text-2xl font-bold text-slate-800">{financeSummary.monthsPaid}/4</p>
+            <p className="text-lg lg:text-2xl font-bold text-slate-800">{financeSummary.paidCount}/4</p>
             <p className="text-xs text-slate-400 mt-1">This period</p>
           </div>
         </div>
