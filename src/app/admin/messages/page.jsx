@@ -73,7 +73,7 @@ export default function AdminMessagesPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-800">Messages</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Messages</h1>
         <p className="text-sm text-slate-500 mt-0.5">Respond to tenant and landlord enquiries</p>
       </div>
 

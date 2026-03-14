@@ -208,7 +208,7 @@ export default function AdminDashboardPage() {
 
       {/* Page header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Dashboard</h1>
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/admin/documents')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-lg shadow-sm transition">
             <Upload size={15} className="text-slate-500" />
