@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Mail, ChevronDown, Menu, LogOut } from "lucide-react";
+import { Mail, ChevronDown, Menu, LogOut } from "lucide-react";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 
 export default function TenantTopbar({ onMenuClick }) {
@@ -31,10 +31,6 @@ export default function TenantTopbar({ onMenuClick }) {
 
       {/* Right icons */}
       <div className="flex items-center gap-4 ml-auto">
-        <button className="p-2 text-slate-500 hover:text-slate-800 transition relative">
-          <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-        </button>
         <button className="p-2 text-slate-500 hover:text-slate-800 transition">
           <Mail size={20} />
         </button>
