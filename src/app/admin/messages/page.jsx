@@ -1,7 +1,31 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Send, Search, ArrowLeft } from "lucide-react";
+import { MessageSquare, Send, Search, ArrowLeft, Plus, Copy, Check } from "lucide-react";
+
+// Mock: All available tenants
+const ALL_TENANTS = [
+  { id: "tenant-1", name: "Sarah Kelly", initials: "SK", color: "bg-teal-100 text-teal-700", property: "Apt 39 Grand Canal Dock" },
+  { id: "tenant-2", name: "Kevin Madden", initials: "KM", color: "bg-indigo-100 text-indigo-700", property: "Apt 5B Rosewood Close" },
+  { id: "tenant-3", name: "Adam Walsh", initials: "AW", color: "bg-orange-100 text-orange-700", property: "Apt 65 Southern Cross" },
+  { id: "tenant-4", name: "Reginald Spencer", initials: "RS", color: "bg-sky-100 text-sky-700", property: "Apt 21C Harbour View" },
+  { id: "tenant-5", name: "Steven Keane", initials: "SK", color: "bg-emerald-100 text-emerald-700", property: "Apt 5 City Square" },
+  { id: "tenant-6", name: "Stephen Blake", initials: "SB", color: "bg-violet-100 text-violet-700", property: "Apt 30 Fairview Road" },
+  { id: "tenant-7", name: "Holly Quigley", initials: "HQ", color: "bg-pink-100 text-pink-700", property: "Apt 22 Parkside Plaza" },
+  { id: "tenant-8", name: "Peter Hughes", initials: "PH", color: "bg-amber-100 text-amber-700", property: "Apt 306 Fairview Road" },
+];
+
+// Mock: All available landlords
+const ALL_LANDLORDS = [
+  { id: "landlord-1", name: "Joan Doyle", initials: "JD", color: "bg-purple-100 text-purple-700", property: "Multiple properties" },
+  { id: "landlord-2", name: "Edward O'Neill", initials: "EO", color: "bg-indigo-100 text-indigo-700", property: "Multiple properties" },
+  { id: "landlord-3", name: "Leo Mohan", initials: "LM", color: "bg-orange-100 text-orange-700", property: "Multiple properties" },
+  { id: "landlord-4", name: "Mark Sheehan", initials: "MS", color: "bg-sky-100 text-sky-700", property: "Multiple properties" },
+  { id: "landlord-5", name: "Brendan Walsh", initials: "BW", color: "bg-emerald-100 text-emerald-700", property: "Multiple properties" },
+  { id: "landlord-6", name: "Tony Brennan", initials: "TB", color: "bg-violet-100 text-violet-700", property: "Multiple properties" },
+  { id: "landlord-7", name: "Emma Curran", initials: "EC", color: "bg-pink-100 text-pink-700", property: "Multiple properties" },
+  { id: "landlord-8", name: "Zoe Finnegan", initials: "ZF", color: "bg-amber-100 text-amber-700", property: "Multiple properties" },
+];
 
 const CONVERSATIONS = [
   {
@@ -80,14 +104,51 @@ const CONVERSATIONS = [
 ];
 
 export default function AdminMessagesPage() {
-  const [convos, setConvos]   = useState(CONVERSATIONS);
-  const [activeId, setActiveId] = useState(CONVERSATIONS[0].id);
-  const [text, setText]       = useState("");
-  const [search, setSearch]   = useState("");
-  const [showChat, setShowChat] = useState(false);
-  const scrollRef             = useRef(null);
+  const [convos, setConvos]         = useState(CONVERSATIONS);
+  const [activeId, setActiveId]     = useState(CONVERSATIONS[0].id);
+  const [text, setText]             = useState("");
+  const [search, setSearch]         = useState("");
+  const [showChat, setShowChat]     = useState(false);
+  const [startNewConvo, setStartNewConvo] = useState(false);
+  const [copiedId, setCopiedId]     = useState(null);
+  const scrollRef                   = useRef(null);
 
   const active = convos.find((c) => c.id === activeId);
+
+  // Search results when starting new conversation
+  const searchResults = startNewConvo && search.trim() 
+    ? [
+        ...ALL_TENANTS.filter(t => t.name.toLowerCase().includes(search.toLowerCase())),
+        ...ALL_LANDLORDS.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
+      ]
+    : [];
+
+  // Handle starting new conversation with a user
+  const startConversation = (user) => {
+    const roleLabel = ALL_TENANTS.some(t => t.id === user.id) ? "Tenant" : "Landlord";
+    const newConvo = {
+      id: Math.max(...convos.map(c => c.id), 0) + 1,
+      name: user.name,
+      userId: user.id,
+      role: roleLabel,
+      property: user.property,
+      avatar_bg: user.color,
+      preview: "Conversation started",
+      unread: 0,
+      messages: [],
+    };
+    setConvos(prev => [newConvo, ...prev]);
+    setActiveId(newConvo.id);
+    setStartNewConvo(false);
+    setSearch("");
+    setShowChat(true);
+  };
+
+  const copyToClipboard = (userId) => {
+    navigator.clipboard.writeText(userId);
+    setCopiedId(userId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -108,10 +169,12 @@ export default function AdminMessagesPage() {
     setText("");
   }
 
-  const filtered = convos.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.preview.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = !startNewConvo 
+    ? convos.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.preview.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
 
   const roleBadge = (role) => {
     if (role === "Tenant") return "bg-teal-100 text-teal-700";
@@ -133,7 +196,24 @@ export default function AdminMessagesPage() {
         style={{ height: "calc(100vh - 200px)", minHeight: 520 }}
       >
         {/* ── Left: conversation list ───────────────────────── */}
-        <div className={`${showChat ? 'hidden' : 'flex'} md:flex w-full md:w-72 shrink-0 border-r border-slate-100 flex-col`}>
+        <div className={`${showChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 shrink-0 border-r border-slate-100 flex-col`}>
+          {/* Header with New Message button */}
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-slate-800">
+              {startNewConvo ? "New Message" : "Messages"}
+            </h2>
+            <button
+              onClick={() => {
+                setStartNewConvo(!startNewConvo);
+                setSearch("");
+              }}
+              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition"
+              title={startNewConvo ? "Back to conversations" : "Start new conversation"}
+            >
+              {startNewConvo ? <ArrowLeft size={18} /> : <Plus size={18} />}
+            </button>
+          </div>
+
           {/* search */}
           <div className="p-4 border-b border-slate-100">
             <div className="relative">
@@ -141,47 +221,91 @@ export default function AdminMessagesPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search conversations…"
+                placeholder={startNewConvo ? "Search tenant/landlord…" : "Search conversations…"}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400/30"
               />
             </div>
           </div>
 
-          {/* list */}
+          {/* list or search results */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-50">
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => { setActiveId(c.id); setShowChat(true); }}
-                className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 text-left transition ${c.id === activeId ? "bg-slate-50 border-l-2 border-purple-500" : "border-l-2 border-transparent"}`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${c.avatar_bg}`}>
-                  {c.role === "Landlord-Tenant" ? (
-                    <div className="flex items-center gap-0.5">
-                      <span className="text-xs">{c.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
-                      <span className="text-xs">{c.otherName.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
-                    </div>
-                  ) : (
-                    c.name.split(" ").map((n) => n[0]).slice(0, 2).join("")
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className="text-sm font-semibold text-slate-800 truncate">
-                      {c.role === "Landlord-Tenant" ? `${c.name} ↔ ${c.otherName}` : c.name}
-                    </p>
-                    {c.unread > 0 && (
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center">
-                        {c.unread}
-                      </span>
+            {startNewConvo ? (
+              // ── START NEW CONVERSATION: Show search results ──
+              <>
+                {searchResults.length > 0 ? (
+                  searchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => startConversation(user)}
+                      className="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 text-left transition"
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${user.color}`}>
+                        {user.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{user.property}</p>
+                        <div className="mt-1.5 inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs font-mono text-slate-600 cursor-pointer hover:bg-slate-200 transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(user.id);
+                          }}>
+                          <span className="truncate">{user.id}</span>
+                          {copiedId === user.id ? (
+                            <Check size={12} className="shrink-0 text-teal-600" />
+                          ) : (
+                            <Copy size={12} className="shrink-0 opacity-50" />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                ) : search.trim() ? (
+                  <div className="p-4 text-center text-sm text-slate-500">
+                    No users found for "{search}"
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-slate-400">
+                    Type a name to search
+                  </div>
+                )}
+              </>
+            ) : (
+              // ── NORMAL MODE: Show conversations ──
+              filtered.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setActiveId(c.id); setShowChat(true); }}
+                  className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 text-left transition ${c.id === activeId ? "bg-slate-50 border-l-2 border-purple-500" : "border-l-2 border-transparent"}`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${c.avatar_bg}`}>
+                    {c.role === "Landlord-Tenant" ? (
+                      <div className="flex items-center gap-0.5">
+                        <span className="text-xs">{c.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+                        <span className="text-xs">{c.otherName.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+                      </div>
+                    ) : (
+                      c.name.split(" ").map((n) => n[0]).slice(0, 2).join("")
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">{c.role}</p>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">{c.property}</p>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">{c.preview}</p>
-                </div>
-              </button>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-sm font-semibold text-slate-800 truncate">
+                        {c.role === "Landlord-Tenant" ? `${c.name} ↔ ${c.otherName}` : c.name}
+                      </p>
+                      {c.unread > 0 && (
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center">
+                          {c.unread}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">{c.role}</p>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">{c.property}</p>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">{c.preview}</p>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
