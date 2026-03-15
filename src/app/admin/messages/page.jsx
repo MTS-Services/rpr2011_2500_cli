@@ -364,7 +364,7 @@ export default function AdminMessagesPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Messages</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Respond to tenant and landlord enquiries</p>
+        <p className="text-base text-slate-500 mt-0.5">Respond to tenant and landlord enquiries</p>
       </div>
 
       {/* Chat shell */}

@@ -156,6 +156,16 @@ export default function AdminDocumentsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search"
+            className="pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 w-full"
+          />
+        </div>
+
         <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400">
           <option>All Properties</option>
           {uniqueProperties.map((p) => (
@@ -176,20 +186,8 @@ export default function AdminDocumentsPage() {
           <option value="Invoice">Invoice</option>
           <option value="Statement">Statement</option>
         </select>
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
-            className="pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 w-36"
-          />
-        </div>
         {/* visibility select removed as requested */}
-        <div className="flex-1" />
-            <button onClick={openUpload} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 transition">
-          <Plus size={13} /> New
-        </button>
+        {/* <div className="flex-1" /> */}
         {/* actions select removed as requested */}
       </div>
 

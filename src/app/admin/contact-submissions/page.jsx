@@ -130,12 +130,6 @@ export default function ContactSubmissionsPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Contact Submissions</h1>
           <p className="text-slate-500 mt-1 text-sm lg:text-base">Manage inquiries from your landing page contact form</p>
         </div>
-        {unreadCount > 0 && !loading && (
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm">
-            <Mail size={16} />
-            {unreadCount} new
-          </div>
-        )}
       </div>
 
       {/* Error State */}
@@ -167,6 +161,16 @@ export default function ContactSubmissionsPage() {
         <>
           {/* Filters */}
           <div className="flex flex-wrap gap-2 lg:gap-3">
+            <div className="flex-1 min-w-[260px] relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search submissions…"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+              />
+            </div>
+
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -190,16 +194,6 @@ export default function ContactSubmissionsPage() {
               <option value="REPLIED">Replied</option>
               <option value="CLOSED">Closed</option>
             </select>
-
-            <div className="flex-1 min-w-[260px] relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search submissions…"
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
-              />
-            </div>
           </div>
 
           {/* Main Content */}
