@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Send, Search, ArrowLeft, Plus, Copy, Check } from "lucide-react";
+import { authenticatedFetch } from "@/utils/authFetch";
+import { usePortalAuth } from "@/context/PortalAuthContext";
 
-// Mock: All available tenants
+// Mock: All available tenants (for search fallback)
 const ALL_TENANTS = [
   { id: "tenant-1", name: "Sarah Kelly", initials: "SK", color: "bg-teal-100 text-teal-700", property: "Apt 39 Grand Canal Dock" },
   { id: "tenant-2", name: "Kevin Madden", initials: "KM", color: "bg-indigo-100 text-indigo-700", property: "Apt 5B Rosewood Close" },
@@ -27,96 +29,203 @@ const ALL_LANDLORDS = [
   { id: "landlord-8", name: "Zoe Finnegan", initials: "ZF", color: "bg-amber-100 text-amber-700", property: "Multiple properties" },
 ];
 
-const CONVERSATIONS = [
-  {
-    id: 1,
-    name: "Kevin Madden",
-    role: "Tenant",
-    property: "Apt 5B Rosewood Close",
-    avatar_bg: "bg-teal-100 text-teal-700",
-    preview: "Your rent review is scheduled for May 2025…",
-    unread: 0,
-    messages: [
-      { from: "tenant", name: "Kevin Madden", text: "Hi, just a reminder that my February rent payment is overdue. Please arrange payment at your earliest convenience.", time: "Feb 6 · 9:15 AM" },
-      { from: "admin", name: "McCann & Curran Realty", text: "Thank you Kevin, appreciated. A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "Feb 7 · 10:00 AM" },
-      { from: "tenant", name: "Kevin Madden", text: "That works for me, I'll be home. Thanks for sorting that.", time: "Feb 7 · 10:22 AM" },
-      { from: "admin", name: "McCann & Curran Realty", text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.", time: "Feb 10 · 2:00 PM" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Joan Doyle",
-    role: "Landlord",
-    property: "Multiple properties",
-    avatar_bg: "bg-purple-100 text-purple-700",
-    preview: "The RTB registration for Apt 22 Parkside Plaza is currently Pending…",
-    unread: 1,
-    messages: [
-      { from: "landlord", name: "Joan Doyle", text: "Please confirm the contractor visit date for Apt 5B.", time: "Feb 21 · 2:02 PM" },
-      { from: "admin", name: "McCann & Curran Realty", text: "Hi Joan, the contractor is confirmed for Feb 28th, 10am–1pm.", time: "Feb 21 · 3:15 PM" },
-      { from: "landlord", name: "Joan Doyle", text: "What is the status of the RTB registration for Apt 22 Parkside Plaza?", time: "Feb 22 · 11:00 AM" },
-      { from: "admin", name: "McCann & Curran Realty", text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details.", time: "Feb 22 · 11:45 AM" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Kevin Madden",
-    otherName: "Joan Doyle",
-    role: "Landlord-Tenant",
-    property: "Apt 5B Rosewood Close",
-    avatar_bg: "bg-blue-100 text-blue-700",
-    otherAvatar_bg: "bg-purple-100 text-purple-700",
-    preview: "I received your notice about the maintenance on Feb 28th",
-    unread: 0,
-    messages: [
-      { from: "landlord", name: "Joan Doyle", text: "Hi Kevin, just a reminder — the contractor will visit on Feb 28th between 10am–1pm for the boiler. Please ensure access.", time: "Feb 26 · 9:00 AM" },
-      { from: "tenant", name: "Kevin Madden", text: "I received your notice about the maintenance on Feb 28th. I'll be home to let them in.", time: "Feb 26 · 10:15 AM" },
-    ],
-  },
-  {
-    id: 4,
-    name: "Edward O'Neill",
-    role: "Landlord",
-    property: "Multiple properties",
-    avatar_bg: "bg-indigo-100 text-indigo-700",
-    preview: "Initial inquiry about RTB registration process",
-    unread: 0,
-    messages: [
-      { from: "landlord", name: "Edward O'Neill", text: "What is the status of the RTB registration for Apt 25, Grand Dock?", time: "Feb 20 · 11:00 AM" },
-      { from: "admin", name: "McCann & Curran Realty", text: "Hi Edward, status is Pending. We're awaiting the tenant details.", time: "Feb 20 · 2:30 PM" },
-    ],
-  },
-  {
-    id: 5,
-    name: "Emma Collins",
-    otherName: "Joan Doyle",
-    role: "Landlord-Tenant",
-    property: "Apt 22 Parkside Plaza",
-    avatar_bg: "bg-pink-100 text-pink-700",
-    otherAvatar_bg: "bg-purple-100 text-purple-700",
-    preview: "Thanks for the update on the rent review timing",
-    unread: 0,
-    messages: [
-      { from: "landlord", name: "Joan Doyle", text: "Hi Emma, just to let you know we will be conducting the rent review in May as per your lease terms.", time: "Feb 18 · 2:30 PM" },
-      { from: "tenant", name: "Emma Collins", text: "Thanks for the update on the rent review timing. I appreciate the heads up.", time: "Feb 18 · 3:45 PM" },
-    ],
-  },
-];
-
 export default function AdminMessagesPage() {
-  const [convos, setConvos]         = useState(CONVERSATIONS);
-  const [activeId, setActiveId]     = useState(CONVERSATIONS[0].id);
+  const { user: currentUser } = usePortalAuth();
+  const [convos, setConvos]         = useState([]);
+  const [activeId, setActiveId]     = useState(null);
   const [text, setText]             = useState("");
   const [search, setSearch]         = useState("");
   const [showChat, setShowChat]     = useState(false);
   const [startNewConvo, setStartNewConvo] = useState(false);
   const [copiedId, setCopiedId]     = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [sendError, setSendError]   = useState(null);
   const scrollRef                   = useRef(null);
 
   const active = convos.find((c) => c.id === activeId);
 
+  const asText = (value, fallback = "") => {
+    if (typeof value === "string") return value;
+    if (typeof value === "number") return String(value);
+    if (value && typeof value === "object") {
+      if (typeof value.text === "string") return value.text;
+      if (typeof value.content === "string") return value.content;
+    }
+    return fallback;
+  };
+
+  // Fetch conversations on mount
+  useEffect(() => {
+    const fetchConvos = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations`);
+        if (!response.ok) throw new Error(`Failed to fetch conversations: ${response.statusText}`);
+        const data = await response.json();
+        
+        console.log("Conversations API response:", data); // Debug log
+
+        // Transform API response to UI format
+        let convosArray = [];
+        if (Array.isArray(data)) {
+          convosArray = data;
+        } else if (data.data && Array.isArray(data.data)) {
+          convosArray = data.data;
+        } else if (data.conversations && Array.isArray(data.conversations)) {
+          convosArray = data.conversations;
+        }
+
+        // Transform API response to UI format
+        const formattedConvos = convosArray.map((c) => {
+          const participant = Array.isArray(c.participants) && c.participants.length > 0
+            ? c.participants[0]
+            : null;
+          const rawRole = c.participantRole || c.participant?.role || c.role || participant?.role;
+          const normalizedRole = asText(rawRole, "USER").toUpperCase();
+          const displayRole = normalizedRole === "TENANT"
+            ? "Tenant"
+            : normalizedRole === "LANDLORD"
+              ? "Landlord"
+              : "User";
+          const previewSource = c.lastMessage?.text || c.lastMessage?.content || c.lastMessage || c.preview;
+
+          return {
+            id: c.id || c.conversationId,
+            name: asText(c.participantName || c.participant?.name || c.name || participant?.name, "Unknown"),
+            participantId: c.participantId || c.participant?.id || participant?.userId,
+            role: displayRole,
+            property: asText(c.property, ""),
+            avatar_bg: getAvatarColor(rawRole),
+            preview: asText(previewSource, "No messages"),
+            unread: Number(c.unreadCount || c.unread || 0),
+            messages: formatMessages(c.messages, currentUser?.id) || [],
+          };
+        });
+
+        setConvos(formattedConvos);
+        if (formattedConvos.length > 0) {
+          setActiveId(formattedConvos[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConvos();
+  }, []);
+
+  // Fetch messages for active conversation
+  useEffect(() => {
+    if (!activeId) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations/${activeId}/messages`
+        );
+        if (!response.ok) throw new Error(`Failed to fetch messages: ${response.statusText}`);
+        const data = await response.json();
+        
+        console.log("Messages API response:", data); // Debug log
+
+        // Handle different response formats
+        let messagesArray = [];
+        if (Array.isArray(data)) {
+          messagesArray = data;
+        } else if (data.data && Array.isArray(data.data)) {
+          messagesArray = data.data;
+        } else if (data.messages && Array.isArray(data.messages)) {
+          messagesArray = data.messages;
+        }
+
+        // Transform and update messages
+        const formattedMessages = formatMessages(messagesArray, currentUser?.id);
+
+        // Update messages for active conversation
+        setConvos((prev) =>
+          prev.map((c) =>
+            c.id === activeId
+              ? {
+                  ...c,
+                  messages: formattedMessages,
+                }
+              : c
+          )
+        );
+
+        // Mark as read if unread
+        if (active?.unread > 0) {
+          await authenticatedFetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations/${activeId}/read`,
+            { method: "PATCH" }
+          );
+          setConvos((prev) =>
+            prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    fetchMessages();
+  }, [activeId, active?.unread]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [active?.messages]);
+
+  // Helper to get avatar color based on role
+  const getAvatarColor = (role) => {
+    const normalizedRole = asText(role).toUpperCase();
+    if (normalizedRole === "TENANT") return "bg-teal-100 text-teal-700";
+    if (normalizedRole === "LANDLORD") return "bg-purple-100 text-purple-700";
+    if (role === "Tenant") return "bg-teal-100 text-teal-700";
+    if (role === "Landlord") return "bg-purple-100 text-purple-700";
+    return "bg-blue-100 text-blue-700";
+  };
+
+  // Helper to transform raw messages to UI format
+  const formatMessages = (messagesArray, currentUserId) => {
+    if (!Array.isArray(messagesArray)) return [];
+    
+    // Sort messages by timestamp (oldest first, so newest appear at bottom)
+    const sortedMessages = [...messagesArray].sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.timestamp || 0).getTime();
+      const timeB = new Date(b.createdAt || b.timestamp || 0).getTime();
+      return timeA - timeB;
+    });
+    
+    return sortedMessages.map((m) => {
+      const content = m.content || m.text || '';
+      const timestamp = m.createdAt || m.timestamp || new Date().toISOString();
+      const senderId = m.senderId || m.sender_id || '';
+      const senderRole = m.sender?.role || m.senderRole || '';
+      
+      const timeStr = new Date(timestamp).toLocaleDateString("en-GB", { month: "short", day: "numeric" }) +
+                      " · " +
+                      new Date(timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      
+      // Message is from admin if sender role is ADMIN (uppercase from backend)
+      const isAdmin = senderRole.toUpperCase() === 'ADMIN';
+      
+      return {
+        from: isAdmin ? 'admin' : 'participant',
+        name: m.sender?.name || m.senderName || m.sender_name || 'User',
+        text: String(content),
+        time: timeStr,
+      };
+    });
+  };
+
   // Search results when starting new conversation
-  const searchResults = startNewConvo && search.trim() 
+  const searchResults = startNewConvo && search.trim()
     ? [
         ...ALL_TENANTS.filter(t => t.name.toLowerCase().includes(search.toLowerCase())),
         ...ALL_LANDLORDS.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
@@ -124,24 +233,42 @@ export default function AdminMessagesPage() {
     : [];
 
   // Handle starting new conversation with a user
-  const startConversation = (user) => {
-    const roleLabel = ALL_TENANTS.some(t => t.id === user.id) ? "Tenant" : "Landlord";
-    const newConvo = {
-      id: Math.max(...convos.map(c => c.id), 0) + 1,
-      name: user.name,
-      userId: user.id,
-      role: roleLabel,
-      property: user.property,
-      avatar_bg: user.color,
-      preview: "Conversation started",
-      unread: 0,
-      messages: [],
-    };
-    setConvos(prev => [newConvo, ...prev]);
-    setActiveId(newConvo.id);
-    setStartNewConvo(false);
-    setSearch("");
-    setShowChat(true);
+  const startConversation = async (user) => {
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ participantId: user.id }),
+        }
+      );
+
+      if (!response.ok) throw new Error(`Failed to start conversation: ${response.statusText}`);
+      const newConvo = await response.json();
+      const createdConvo = newConvo?.data || newConvo;
+
+      const roleLabel = ALL_TENANTS.some(t => t.id === user.id) ? "Tenant" : "Landlord";
+      const formattedConvo = {
+        id: createdConvo?.id || createdConvo?.conversationId,
+        name: user.name,
+        participantId: user.id,
+        role: roleLabel,
+        property: user.property,
+        avatar_bg: user.color,
+        preview: "Conversation started",
+        unread: 0,
+        messages: [],
+      };
+
+      setConvos(prev => [formattedConvo, ...prev]);
+      setActiveId(formattedConvo.id);
+      setStartNewConvo(false);
+      setSearch("");
+      setShowChat(true);
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+    }
   };
 
   const copyToClipboard = (userId) => {
@@ -154,33 +281,83 @@ export default function AdminMessagesPage() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [activeId, convos]);
 
-  function sendMessage() {
-    if (!text.trim()) return;
-    const now = new Date();
-    const label = now.toLocaleDateString("en-GB", { month: "short", day: "numeric" }) + " · " +
-      now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-    setConvos((prev) =>
-      prev.map((c) =>
-        c.id === activeId
-          ? { ...c, preview: text.trim(), messages: [...c.messages, { from: "admin", name: "Admin", text: text.trim(), time: label }] }
-          : c
-      )
-    );
-    setText("");
-  }
+  const sendMessage = async () => {
+    if (!text.trim() || !activeId) return;
+
+    try {
+      setSendingMessage(true);
+      setSendError(null);
+
+      // Try common payload shapes used by chat APIs.
+      const payloadAttempts = [
+        { content: text.trim() },
+        { text: text.trim() },
+        { message: text.trim() },
+      ];
+
+      let response = null;
+      let lastErrorMessage = "";
+
+      for (const payload of payloadAttempts) {
+        response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations/${activeId}/messages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (response.ok) break;
+
+        const errorBody = await response.json().catch(() => ({}));
+        lastErrorMessage = errorBody?.message || response.statusText || "Request failed";
+
+        // Stop retrying on auth/permission errors.
+        if (response.status === 401 || response.status === 403) break;
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(lastErrorMessage || `Failed to send message (${response?.status || "unknown"})`);
+      }
+
+      const now = new Date();
+      const label = now.toLocaleDateString("en-GB", { month: "short", day: "numeric" }) + " · " +
+        now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+      const newMessage = {
+        from: "admin",
+        name: "Admin",
+        text: text.trim(),
+        time: label,
+      };
+
+      setConvos((prev) =>
+        prev.map((c) =>
+          c.id === activeId
+            ? {
+                ...c,
+                preview: text.trim(),
+                messages: [...c.messages, newMessage],
+              }
+            : c
+        )
+      );
+      setText("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setSendError(error.message || "Failed to send message. Please try again.");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   const filtered = !startNewConvo 
     ? convos.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.preview.toLowerCase().includes(search.toLowerCase())
+        asText(c.name).toLowerCase().includes(search.toLowerCase()) ||
+        asText(c.preview).toLowerCase().includes(search.toLowerCase())
       )
     : [];
-
-  const roleBadge = (role) => {
-    if (role === "Tenant") return "bg-teal-100 text-teal-700";
-    if (role === "Landlord") return "bg-purple-100 text-purple-700";
-    return "bg-blue-100 text-blue-700"; // Landlord-Tenant conversation
-  };
 
   return (
     <div className="space-y-4">
@@ -272,115 +449,116 @@ export default function AdminMessagesPage() {
               </>
             ) : (
               // ── NORMAL MODE: Show conversations ──
-              filtered.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => { setActiveId(c.id); setShowChat(true); }}
-                  className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 text-left transition ${c.id === activeId ? "bg-slate-50 border-l-2 border-purple-500" : "border-l-2 border-transparent"}`}
-                >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${c.avatar_bg}`}>
-                    {c.role === "Landlord-Tenant" ? (
-                      <div className="flex items-center gap-0.5">
-                        <span className="text-xs">{c.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
-                        <span className="text-xs">{c.otherName.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
-                      </div>
-                    ) : (
-                      c.name.split(" ").map((n) => n[0]).slice(0, 2).join("")
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <p className="text-sm font-semibold text-slate-800 truncate">
-                        {c.role === "Landlord-Tenant" ? `${c.name} ↔ ${c.otherName}` : c.name}
-                      </p>
-                      {c.unread > 0 && (
-                        <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center">
-                          {c.unread}
-                        </span>
-                      )}
+              loading ? (
+                <div className="p-4 text-center text-sm text-slate-500">Loading conversations...</div>
+              ) : filtered.length > 0 ? (
+                filtered.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setActiveId(c.id); setShowChat(true); }}
+                    className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 text-left transition ${c.id === activeId ? "bg-slate-50 border-l-2 border-purple-500" : "border-l-2 border-transparent"}`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${c.avatar_bg}`}>
+                      {c.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">{c.role}</p>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">{c.property}</p>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">{c.preview}</p>
-                  </div>
-                </button>
-              ))
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
+                        {c.unread > 0 && (
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center">
+                            {c.unread}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">{c.role}</p>
+                      {c.property && <p className="text-xs text-slate-500 truncate mt-0.5">{c.property}</p>}
+                      <p className="text-xs text-slate-500 truncate mt-0.5">{c.preview}</p>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="p-4 text-center text-sm text-slate-500">
+                  No conversations yet. Start a new one!
+                </div>
+              )
             )}
           </div>
         </div>
 
         {/* ── Right: chat area ──────────────────────────────── */}
         <div className={`${showChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-w-0`}>
-          {/* chat header */}
-          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-b border-slate-100 shrink-0">
-            <button
-              onClick={() => setShowChat(false)}
-              className="md:hidden p-1.5 -ml-1 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
-              aria-label="Back to conversations"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${active?.avatar_bg}`}>
-              {active?.role === "Landlord-Tenant" ? (
-                <div className="flex items-center gap-0.5">
-                  <span className="text-xs">{active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
-                  <span className="text-xs">{active?.otherName.split(" ").map((n) => n[0]).slice(0, 1).join("")}</span>
+          {active ? (
+            <>
+              {/* chat header */}
+              <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-b border-slate-100 shrink-0">
+                <button
+                  onClick={() => setShowChat(false)}
+                  className="md:hidden p-1.5 -ml-1 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
+                  aria-label="Back to conversations"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${active?.avatar_bg}`}>
+                  {active?.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
                 </div>
-              ) : (
-                active?.name.split(" ").map((n) => n[0]).slice(0, 2).join("")
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">
-                {active?.role === "Landlord-Tenant" ? `${active?.name} ↔ ${active?.otherName}` : active?.name}
-              </p>
-              <p className="text-xs text-purple-600">{active?.role}</p>
-            </div>
-          </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{active?.name}</p>
+                  <p className="text-xs text-purple-600">{active?.role}</p>
+                </div>
+              </div>
 
-          {/* messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-            {active?.messages.map((m, i) => {
-              const isAdmin = m.from === "admin";
-              const isLandlord = m.from === "landlord";
-              const displayBg = isAdmin ? "bg-slate-200 text-slate-600" : 
-                               isLandlord ? active?.avatar_bg : 
-                               "bg-teal-100 text-teal-700";
-              return (
-                <div key={i} className={`flex gap-3 ${isAdmin || isLandlord ? "flex-row-reverse" : ""}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${displayBg}`}>
-                    {isAdmin ? "AD" : isLandlord ? active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("") : active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}
-                  </div>
-                  <div className={`max-w-[68%] flex flex-col ${isAdmin || isLandlord ? "items-end" : "items-start"}`}>
-                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${isAdmin ? "bg-purple-600 text-white rounded-tr-sm" : isLandlord ? "bg-slate-100 text-slate-700 rounded-tl-sm" : "bg-teal-100 text-teal-700 rounded-tl-sm"}`}>
-                      {m.text}
+              {/* messages */}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                {active?.messages.map((m, i) => {
+                  const isAdmin = m.from === "admin";
+                  const displayBg = isAdmin ? "bg-slate-200 text-slate-600" : "bg-teal-100 text-teal-700";
+                  return (
+                    <div key={i} className={`flex gap-3 ${isAdmin ? "flex-row-reverse" : ""}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${displayBg}`}>
+                        {isAdmin ? "AD" : active?.name.split(" ").map((n) => n[0]).slice(0, 1).join("")}
+                      </div>
+                      <div className={`max-w-[68%] flex flex-col ${isAdmin ? "items-end" : "items-start"}`}>
+                        <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${isAdmin ? "bg-purple-600 text-white rounded-tr-sm" : "bg-teal-100 text-teal-700 rounded-tl-sm"}`}>
+                          {m.text}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1.5 px-1">{m.time}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1.5 px-1">{m.time}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
 
-          {/* compose */}
-          <div className="px-5 py-3 border-t border-slate-100 shrink-0">
-            <div className="flex items-end gap-3">
-              <textarea
-                rows={2}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                placeholder={active?.role === "Landlord-Tenant" ? `Monitor conversation between ${active?.name} & ${active?.otherName}…` : `Message ${active?.name}…`}
-                className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400 transition resize-none"
-              />
-              <button
-                onClick={sendMessage}
-                className="w-11 h-11 flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition shrink-0"
-              >
-                <Send size={16} />
-              </button>
+              {/* compose */}
+              <div className="px-5 py-3 border-t border-slate-100 shrink-0">
+                {sendError && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    {sendError}
+                  </div>
+                )}
+                <div className="flex items-end gap-3">
+                  <textarea
+                    rows={2}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                    placeholder={`Message ${active?.name}…`}
+                    className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400 transition resize-none"
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={sendingMessage}
+                    className="w-11 h-11 flex items-center justify-center bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl transition shrink-0"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-slate-500">
+              <p>Select a conversation to start messaging</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

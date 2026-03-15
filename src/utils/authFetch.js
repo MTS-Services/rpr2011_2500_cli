@@ -1,57 +1,36 @@
-import { redirect } from "next/navigation";
-
 let getAuthToken;
-let refreshAuthToken;
 let logoutUser;
 
 export function initializeAuthUtils({ get, refresh, logout }) {
   getAuthToken = get;
-  refreshAuthToken = refresh;
   logoutUser = logout;
-}
-
-async function handle401(request, options) {
-  try {
-    const newAccessToken = await refreshAuthToken();
-    if (!newAccessToken) {
-      logoutUser();
-      if (typeof window !== "undefined") window.location.href = "/login";
-      return new Response(JSON.stringify({ message: "Session expired. Please log in again." }), { status: 401 });
-    }
-
-    const newOptions = { ...options };
-    newOptions.headers.Authorization = `Bearer ${newAccessToken}`;
-    return fetch(request, newOptions);
-  } catch (error) {
-    logoutUser();
-    if (typeof window !== "undefined") window.location.href = "/login";
-    return new Response(JSON.stringify({ message: "Session expired. Please log in again." }), { status: 401 });
-  }
+  // Note: refresh token is not used - backend doesn't support it
 }
 
 export async function authenticatedFetch(url, options = {}) {
-  const token = getAuthToken();
+  let token = getAuthToken ? getAuthToken() : null;
 
+  // Fallback for edge cases where context state is not yet hydrated.
+  if (!token && typeof window !== "undefined") {
+    token = window.localStorage.getItem("auth_access_token");
+  }
+
+  // Do not force navigation here; callers can decide how to handle auth failures.
   if (!token) {
-    logoutUser();
-    if (typeof window !== "undefined") window.location.href = "/login";
     return new Response(JSON.stringify({ message: "Session expired. Please log in again." }), { status: 401 });
   }
 
   const defaultOptions = {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
     ...options,
+    headers: {
+      ...(options.headers || {}),
+      "Content-Type":
+        options.headers?.["Content-Type"] || options.headers?.["content-type"] || "application/json",
+      Authorization: `Bearer ${token}`,
+    },
   };
 
+  // Just return the response - let components handle 401/errors
   const response = await fetch(url, defaultOptions);
-
-  if (response.status === 401) {
-    return handle401(url, defaultOptions);
-  }
-
   return response;
 }
