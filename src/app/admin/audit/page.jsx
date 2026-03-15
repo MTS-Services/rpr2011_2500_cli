@@ -56,6 +56,15 @@ export default function AdminAuditPage() {
 
       {/* Filters */}
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+        <div className="relative col-span-2 sm:flex-1 sm:min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search logs…"
+            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+          />
+        </div>
         <select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
@@ -76,15 +85,6 @@ export default function AdminAuditPage() {
           onChange={(e) => setDateFrom(e.target.value)}
           className="w-full sm:w-auto col-span-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
         />
-        <div className="relative col-span-2 sm:flex-1 sm:min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search logs…"
-            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
-          />
-        </div>
       </div>
 
       {/* Table lg+ */}

@@ -2,7 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Plus,
+  Plus, Search,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown, CheckCircle2, Clock, CreditCard
 } from "lucide-react";
@@ -34,6 +34,10 @@ function AdminTenanciesInner() {
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
   const [tenancies, setTenancies] = useState([]);
   const [tenants, setTenants] = useState([]);
+  const [search, setSearch] = useState("");
+  const [countyFilter, setCountyFilter] = useState("All County/City");
+  const [propertyFilter, setPropertyFilter] = useState("All Properties");
+  const [statusFilter, setStatusFilter] = useState("All Statuses");
   // Local override map: { [tenancy.id]: "Paid" | "Overdue" | "Pending" }
   // In production this would write to Supabase
   const [rentOverrides, setRentOverrides] = useState({});
@@ -53,6 +57,8 @@ function AdminTenanciesInner() {
   // Build status options from source data so we stay in sync
   const STATUS_OPTIONS = Array.from(new Set(tenancies.map((x) => x.statusLet).filter(Boolean)));
   const STATUS_VALUES = STATUS_OPTIONS.length > 0 ? STATUS_OPTIONS : ["Let", "Notice", "Active"];
+  const uniqueCounties = Array.from(new Set(tenancies.map((t) => t.county).filter(Boolean))).slice(0, 50);
+  const uniqueProperties = Array.from(new Set(tenancies.map((t) => t.property).filter(Boolean))).slice(0, 50);
 
   const handleAddTenancy = (formData) => {
     const tenancy = addTenancyToDirectory(formData);
@@ -70,13 +76,22 @@ function AdminTenanciesInner() {
   const in30 = new Date(); in30.setDate(today.getDate() + 30);
 
   const filtered = tenancies.filter((t) => {
+    const matchSearch = 
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.landlord.toLowerCase().includes(search.toLowerCase()) ||
+      t.property.toLowerCase().includes(search.toLowerCase());
+    const matchCounty = countyFilter === "All County/City" || t.county === countyFilter;
+    const matchProperty = propertyFilter === "All Properties" || t.property === propertyFilter;
+    const matchStatus = statusFilter === "All Statuses" || t.statusLet === statusFilter;
+    
     if (filterParam === "rtb-missing") return !t.rtb || t.rtb === "N/A";
     if (filterParam === "rent-reviews") {
       if (!t.rentReviewDate) return false;
       const d = new Date(t.rentReviewDate);
       return d >= today && d <= in30;
     }
-    return true;
+    
+    return matchSearch && matchCounty && matchProperty && matchStatus;
   });
 
   const toggleAll = () =>
@@ -94,7 +109,32 @@ function AdminTenanciesInner() {
         </button>
       </div>
 
-      {/* Mobile cards — visible below lg */}
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tenancies…"
+            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+            aria-label="Search tenancies by tenant, landlord, or property"
+          />
+        </div>
+
+        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by county or city">
+          <option>All County/City</option>
+          {uniqueCounties.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by property">
+          <option>All Properties</option>
+          {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by status">
+          <option>All Statuses</option>
+          {STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
       <div className="lg:hidden space-y-3">
         {filtered.map((t) => (
           <div key={t.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">

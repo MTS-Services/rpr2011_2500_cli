@@ -115,6 +115,17 @@ export default function AdminTenantsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tenants…"
+            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+            aria-label="Search tenants by name, email, phone, or PPS"
+          />
+        </div>
+
         <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by county or city">
           <option>All County/City</option>
           {uniqueSubs.map(s => <option key={s} value={s}>{s}</option>)}
@@ -126,16 +137,6 @@ export default function AdminTenantsPage() {
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by status">
           {statuses.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <div className="flex-1 min-w-[200px] relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tenants…"
-            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-            aria-label="Search tenants by name, email, phone, or PPS"
-          />
-        </div>
       </div>
 
       {/* Mobile cards — visible below lg */}

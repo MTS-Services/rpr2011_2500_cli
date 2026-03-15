@@ -91,12 +91,8 @@ export default function AdminLandlordsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
-          <option>All County/City</option>
-          {uniqueSubs.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
         <div className="flex-1 min-w-0">
-          <div className="relative max-w-xl ml-2">
+          <div className="relative max-w-xl">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
@@ -106,7 +102,10 @@ export default function AdminLandlordsPage() {
             />
           </div>
         </div>
-        
+        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+          <option>All County/City</option>
+          {uniqueSubs.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
 
       {/* Mobile cards — visible below lg */}

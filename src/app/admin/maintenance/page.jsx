@@ -121,6 +121,16 @@ export default function AdminMaintenancePage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex-1 min-w-[180px] relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by tenant, issue or property…"
+            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          />
+        </div>
+
         <div className="relative">
           <select
             value={statusFilter}
@@ -147,15 +157,6 @@ export default function AdminMaintenancePage() {
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
-        <div className="flex-1 min-w-[180px] relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by tenant, issue or property…"
-            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
-          />
-        </div>
         {/* three-dots removed per request */}
       </div>
 
