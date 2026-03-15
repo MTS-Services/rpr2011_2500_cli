@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Privacy Policy — McCann & Corran",
-  description: "How McCann & Corran Realty Limited collects, uses, and protects your personal data.",
+  title: "Privacy Policy — McCann & Curran Realty",
+  description: "How McCann & Curran Realty Realty Limited collects, uses, and protects your personal data.",
 };
 
 export default function PrivacyPolicyPage() {

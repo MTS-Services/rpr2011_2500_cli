@@ -3,6 +3,7 @@
 import { useState } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
 import { Wrench, Plus, Clock, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { usePortalAuth } from "@/context/PortalAuthContext";
 
 const statusIcon = {
   "In Progress": <Clock size={14} className="text-blue-600" />,
@@ -11,7 +12,9 @@ const statusIcon = {
 };
 
 export default function TenantMaintenancePage() {
+  const { user } = usePortalAuth();
   const [showForm, setShowForm] = useState(false);
+  const isReadOnly = user?.role?.toLowerCase() === "tenant";
   const [requests, setRequests] = useState([
     {
       id: "MR-001",
@@ -145,11 +148,17 @@ export default function TenantMaintenancePage() {
                     </span>
                   </td>
                   <td className="px-5 py-5">
-                    <select value={r.status} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, status: e.target.value, statusColor: e.target.value === "Open" ? "bg-slate-100 text-slate-600" : e.target.value === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"} : req))} className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer ${r.statusColor}`}>
-                      <option value="Open">Open</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Closed">Closed</option>
-                    </select>
+                    {isReadOnly ? (
+                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${r.statusColor}`}>
+                        {r.status}
+                      </span>
+                    ) : (
+                      <select value={r.status} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, status: e.target.value, statusColor: e.target.value === "Open" ? "bg-slate-100 text-slate-600" : e.target.value === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"} : req))} className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer ${r.statusColor}`}>
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -177,11 +186,17 @@ export default function TenantMaintenancePage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${r.priorityColor}`}>{r.priority}</span>
-                <select value={r.status} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, status: e.target.value, statusColor: e.target.value === "Open" ? "bg-slate-100 text-slate-600" : e.target.value === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"} : req))} className={`text-xs font-semibold px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer ${r.statusColor}`}>
-                  <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Closed">Closed</option>
-                </select>
+                {isReadOnly ? (
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${r.statusColor}`}>
+                    {r.status}
+                  </span>
+                ) : (
+                  <select value={r.status} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, status: e.target.value, statusColor: e.target.value === "Open" ? "bg-slate-100 text-slate-600" : e.target.value === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"} : req))} className={`text-xs font-semibold px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer ${r.statusColor}`}>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                )}
               </div>
             </div>
           </div>
