@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
-export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties }) {
+export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties = [], tenants = [] }) {
     const [formData, setFormData] = useState({
+        tenantId: "",
         property: "",
         status: "",
         startDate: "",
@@ -14,17 +15,27 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
+        if (name === "tenantId") {
+            const selectedTenant = tenants.find((tenant) => String(tenant.id) === String(value));
+            setFormData((prev) => ({
+                ...prev,
+                tenantId: value,
+                property: prev.property || selectedTenant?.property || "",
+            }));
+            return;
+        }
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.property || !formData.status || !formData.rent || !formData.rentDueDay) {
+        if (!formData.tenantId || !formData.property || !formData.status || !formData.rent || !formData.rentDueDay) {
             alert("Please fill in all required fields");
             return;
         }
         onSubmit(formData);
         setFormData({
+            tenantId: "",
             property: "",
             status: "",
             startDate: "",
@@ -36,6 +47,11 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
     };
 
     if (!isOpen) return null;
+
+    const propertyOptions = Array.from(new Set([
+        ...properties,
+        formData.property,
+    ].filter(Boolean)));
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -54,6 +70,23 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
 
                 {/* Scrollable Content */}
                 <form id="addTenancyForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">
+                            Tenant <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            name="tenantId"
+                            value={formData.tenantId}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        >
+                            <option value="">Select a tenant</option>
+                            {tenants.map((tenant) => (
+                                <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* Property */}
                     <div>
                         <label className="block text-base font-medium text-slate-700 mb-1">
@@ -66,16 +99,9 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         >
                             <option value="">Select a property</option>
-                            <option value="Apt 12, Grand Canal...">Apt 12, Grand Canal...</option>
-                            <option value="Apt 5B, Rosewood Close">Apt 5B, Rosewood Close</option>
-                            <option value="Apt 4, Lis Na Dara">Apt 4, Lis Na Dara</option>
-                            <option value="Apt 21C, Harbour View">Apt 21C, Harbour View</option>
-                            <option value="Apt 65, Southern Cross">Apt 65, Southern Cross</option>
-                            <option value="Apt 306, Fairview Road">Apt 306, Fairview Road</option>
-                            <option value="Apt 7D, Hanover Quay">Apt 7D, Hanover Quay</option>
-                            <option value="Apt 104, Elmwood Grove">Apt 104, Elmwood Grove</option>
-                            <option value="Apt 5, City Square">Apt 5, City Square</option>
-                            <option value="Apt 399, Pearse Street">Apt 399, Pearse Street</option>
+                            {propertyOptions.map((property) => (
+                                <option key={property} value={property}>{property}</option>
+                            ))}
                         </select>
                     </div>
 

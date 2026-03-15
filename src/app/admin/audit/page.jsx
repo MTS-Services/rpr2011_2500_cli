@@ -29,8 +29,8 @@ export default function AdminAuditPage() {
   });
 
   const handleExport = () => {
-    const header = "Timestamp,Admin ID,User,Action Type,Action,Target,IP Address";
-    const rows = filtered.map((l) => `${l.ts},${l.adminId},${l.user},${l.actionType},${l.action},${l.target},${l.ip}`);
+    const header = "Timestamp,Admin ID,User,Action Type,Action,Target";
+    const rows = filtered.map((l) => `${l.ts},${l.adminId},${l.user},${l.actionType},${l.action},${l.target}`);
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -98,7 +98,6 @@ export default function AdminAuditPage() {
               <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Action Type</th>
               <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Action</th>
               <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Target</th>
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">IP Address</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -117,7 +116,6 @@ export default function AdminAuditPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-700">{l.action}</td>
                 <td className="px-4 py-3 text-slate-500">{l.target}</td>
-                <td className="px-4 py-3 font-mono text-slate-400">{l.ip}</td>
               </tr>
             ))}
           </tbody>
@@ -141,7 +139,6 @@ export default function AdminAuditPage() {
             <p className="text-sm font-semibold text-slate-700">{l.user} <span className="font-mono text-slate-400">·{l.adminId}</span></p>
             <div className="flex items-center justify-between text-sm text-slate-400">
               <span className="font-mono">{l.ts}</span>
-              <span className="font-mono">{l.ip}</span>
             </div>
           </div>
         ))}

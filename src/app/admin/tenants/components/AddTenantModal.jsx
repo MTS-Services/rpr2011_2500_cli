@@ -9,6 +9,9 @@ export default function AddTenantModal({ isOpen, onClose, onSubmit }) {
         pps: "",
         email: "",
         mobile: "",
+        property: "",
+        moveIn: "",
+        status: "Active",
     });
 
     const handleFormChange = (e) => {
@@ -29,6 +32,9 @@ export default function AddTenantModal({ isOpen, onClose, onSubmit }) {
             pps: "",
             email: "",
             mobile: "",
+            property: "",
+            moveIn: "",
+            status: "Active",
         });
         onClose();
     };
@@ -120,6 +126,43 @@ export default function AddTenantModal({ isOpen, onClose, onSubmit }) {
                             placeholder="e.g., 087-965-6692"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">Property</label>
+                        <input
+                            type="text"
+                            name="property"
+                            value={formData.property}
+                            onChange={handleFormChange}
+                            placeholder="e.g., Apt 12, Grand Canal Dock"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-base font-medium text-slate-700 mb-1">Move-In Date</label>
+                            <input
+                                type="date"
+                                name="moveIn"
+                                value={formData.moveIn}
+                                onChange={handleFormChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-base font-medium text-slate-700 mb-1">Status</label>
+                            <select
+                                name="status"
+                                value={formData.status}
+                                onChange={handleFormChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            >
+                                <option value="Active">Active</option>
+                                <option value="Notice">Notice</option>
+                            </select>
+                        </div>
                     </div>
                 </form>
 

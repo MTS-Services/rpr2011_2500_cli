@@ -1,5 +1,5 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
 import AddTenancyModal from "./components/AddTenancyModal";
-import TENANCIES from "@/data/tenancies";
+import { addTenancyToDirectory, loadDirectoryData, saveDirectoryData } from "@/utils/mockDirectoryStore";
 
 const RENT_STYLE = {
   Paid: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
@@ -32,6 +32,8 @@ const RTB_STATUS = {
 function AdminTenanciesInner() {
   const [selected, setSelected] = useState([]);
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
+  const [tenancies, setTenancies] = useState([]);
+  const [tenants, setTenants] = useState([]);
   // Local override map: { [tenancy.id]: "Paid" | "Overdue" | "Pending" }
   // In production this would write to Supabase
   const [rentOverrides, setRentOverrides] = useState({});
@@ -42,12 +44,23 @@ function AdminTenanciesInner() {
   const getStatus = (t) => statusOverrides[t.id] ?? t.statusLet;
   const setStatus = (id, value) => setStatusOverrides((prev) => ({ ...prev, [id]: value }));
 
+  useEffect(() => {
+    const state = loadDirectoryData();
+    setTenancies(state.tenancies || []);
+    setTenants(state.tenants || []);
+  }, []);
+
   // Build status options from source data so we stay in sync
-  const STATUS_OPTIONS = Array.from(new Set(TENANCIES.map((x) => x.statusLet)));
+  const STATUS_OPTIONS = Array.from(new Set(tenancies.map((x) => x.statusLet).filter(Boolean)));
+  const STATUS_VALUES = STATUS_OPTIONS.length > 0 ? STATUS_OPTIONS : ["Let", "Notice", "Active"];
 
   const handleAddTenancy = (formData) => {
-    console.log("New tenancy:", formData);
-    // TODO: Add API call to save the tenancy
+    const tenancy = addTenancyToDirectory(formData);
+    const state = loadDirectoryData();
+    setTenancies([tenancy, ...state.tenancies.filter((entry) => entry.id !== tenancy.id)]);
+    setTenants(state.tenants);
+    setAddTenancyModalOpen(false);
+    alert("Tenancy created");
   };
 
   const searchParams = useSearchParams();
@@ -56,7 +69,7 @@ function AdminTenanciesInner() {
   const today = new Date();
   const in30 = new Date(); in30.setDate(today.getDate() + 30);
 
-  const filtered = TENANCIES.filter((t) => {
+  const filtered = tenancies.filter((t) => {
     if (filterParam === "rtb-missing") return !t.rtb || t.rtb === "N/A";
     if (filterParam === "rent-reviews") {
       if (!t.rentReviewDate) return false;
@@ -96,10 +109,19 @@ function AdminTenanciesInner() {
               <div className="flex-shrink-0">
                 <select
                   value={getStatus(t)}
-                  onChange={(e) => setStatus(t.id, e.target.value)}
+                  onChange={(e) => {
+                    const nextStatus = e.target.value;
+                    setStatus(t.id, nextStatus);
+                    const nextTenancies = tenancies.map((entry) => (
+                      entry.id === t.id ? { ...entry, statusLet: nextStatus } : entry
+                    ));
+                    setTenancies(nextTenancies);
+                    const state = loadDirectoryData();
+                    saveDirectoryData({ ...state, tenancies: nextTenancies });
+                  }}
                   className="text-xs rounded-full px-2 py-1 border border-slate-200 bg-white"
                 >
-                  {STATUS_OPTIONS.map((s) => (
+                  {STATUS_VALUES.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
@@ -204,10 +226,19 @@ function AdminTenanciesInner() {
                   <div className="flex items-center gap-2">
                     <select
                       value={getStatus(t)}
-                      onChange={(e) => setStatus(t.id, e.target.value)}
+                      onChange={(e) => {
+                        const nextStatus = e.target.value;
+                        setStatus(t.id, nextStatus);
+                        const nextTenancies = tenancies.map((entry) => (
+                          entry.id === t.id ? { ...entry, statusLet: nextStatus } : entry
+                        ));
+                        setTenancies(nextTenancies);
+                        const state = loadDirectoryData();
+                        saveDirectoryData({ ...state, tenancies: nextTenancies });
+                      }}
                       className="rounded-md border border-slate-200 px-2 py-1 text-sm bg-white"
                     >
-                      {STATUS_OPTIONS.map((s) => (
+                      {STATUS_VALUES.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
@@ -271,6 +302,8 @@ function AdminTenanciesInner() {
         isOpen={addTenancyModalOpen}
         onClose={() => setAddTenancyModalOpen(false)}
         onSubmit={handleAddTenancy}
+        tenants={tenants}
+        properties={Array.from(new Set(tenants.map((tenant) => tenant.property).filter(Boolean)))}
       />
     </div>
   );
