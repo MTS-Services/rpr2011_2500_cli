@@ -40,6 +40,10 @@ export default function AdminDocumentsPage() {
   const [propertyFilter, setPropertyFilter] = useState("All Properties");
   const [tenancyFilter, setTenancyFilter] = useState("All Tenancies");
   const [docs, setDocs] = useState(DOCUMENTS);
+  const [uploadName, setUploadName] = useState("");
+  const [uploadType, setUploadType] = useState("Lease");
+  const [uploadProperty, setUploadProperty] = useState("All Properties");
+  const [uploadVisibility, setUploadVisibility] = useState({ TENANT: true, LANDLORD: true, ADMIN: true });
 
   const filtered = docs.filter(
     (d) =>
@@ -60,6 +64,10 @@ export default function AdminDocumentsPage() {
     setUploadFile(null);
     setPreviewUrl(null);
     setPreviewType(null);
+    setUploadName("");
+    setUploadType("Lease");
+    setUploadProperty("All Properties");
+    setUploadVisibility({ TENANT: true, LANDLORD: false, ADMIN: false });
   };
 
   useEffect(() => {
@@ -191,114 +199,146 @@ export default function AdminDocumentsPage() {
         {/* actions select removed as requested */}
       </div>
 
-      {/* Upload modal (mock) */}
+      {/* Upload modal */}
       {uploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/40" onClick={closeUpload} />
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
-            <div className="flex items-start justify-between">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-6">
               <div>
-                <h3 className="text-xl font-semibold text-slate-800">Upload Document</h3>
-                <p className="text-sm text-slate-500 mt-1">This is a mock upload form (client-side).</p>
+                <h3 className="text-xl font-semibold text-slate-900">Upload Document</h3>
+                <p className="text-sm text-slate-500 mt-1">Add a new document to the system</p>
               </div>
-              <button aria-label="Close" onClick={closeUpload} className="text-slate-500 hover:text-slate-700">✕</button>
+              <button aria-label="Close" onClick={closeUpload} className="text-slate-500 hover:text-slate-700 text-2xl leading-none">×</button>
             </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                // client-side mock: add doc entry
+                if (!uploadFile) {
+                  alert('Please select a file');
+                  return;
+                }
                 const newId = Math.max(0, ...docs.map((d) => d.id)) + 1;
-                const type = e.target.elements[1]?.value || "Lease";
-                const name = uploadFile ? uploadFile.name : `Document ${newId}`;
+                const name = uploadName || uploadFile.name;
+                const visArray = Object.keys(uploadVisibility).filter(k => uploadVisibility[k]);
                 const newDoc = {
                   id: newId,
                   icon: "teal",
                   name,
-                  sub: propertyFilter === "All Properties" ? "Unknown" : propertyFilter,
-                  type: type,
-                  typeStyle: type === "Statement" ? "bg-indigo-100 text-indigo-700" : "bg-teal-100 text-teal-700",
-                  property: propertyFilter === "All Properties" ? "Unknown" : propertyFilter,
-                  visibility: ["Tenant"],
+                  sub: uploadProperty === "All Properties" ? "Unknown" : uploadProperty,
+                  type: uploadType,
+                  typeStyle: uploadType === "Statement" ? "bg-indigo-100 text-indigo-700" : "bg-teal-100 text-teal-700",
+                  property: uploadProperty === "All Properties" ? "Unknown" : uploadProperty,
+                  visibility: visArray.length > 0 ? visArray : ["TENANT"],
                   uploader: "You",
                   age: "just now",
                 };
                 setDocs((d) => [newDoc, ...d]);
                 closeUpload();
               }}
-              className="mt-4 space-y-3"
+              className="space-y-4"
             >
+              {/* File Upload */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1">File</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">File *</label>
                 <div
                   onDragOver={(e) => e.preventDefault()}
-                  onDragEnter={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2','ring-teal-300'); }}
-                  onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('ring-2','ring-teal-300'); }}
+                  onDragEnter={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2','ring-teal-400'); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('ring-2','ring-teal-400'); }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove('ring-2','ring-teal-300');
-                    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                    e.currentTarget.classList.remove('ring-2','ring-teal-400');
+                    const f = e.dataTransfer?.files?.[0];
                     if (f) {
-                      // enforce PDF only
-                      if (f.type !== 'application/pdf') {
-                        alert('Please upload a PDF file');
-                        return;
-                      }
-                      // reuse onFileChange logic
                       const fakeEvent = { target: { files: [f] } };
                       onFileChange(fakeEvent);
                     }
                   }}
-                  className="border-dashed border-2 border-slate-200 rounded-lg p-6 text-center bg-white cursor-pointer"
+                  className="border-dashed border-2 border-slate-300 rounded-lg p-6 text-center bg-slate-50 cursor-pointer hover:border-teal-400 transition"
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-full">
+                  {uploadFile ? (
+                    <div className="flex items-center gap-3 justify-center">
+                      <FileText size={20} className="text-teal-600" />
+                      <div className="text-left">
+                        <p className="font-medium text-slate-800 text-sm">{uploadFile.name}</p>
+                        <p className="text-xs text-slate-500">{Math.round(uploadFile.size / 1024)} KB</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
                       <input
                         type="file"
-                        accept="application/pdf"
-                        required
                         onChange={onFileChange}
                         className="hidden"
                         id="doc-file-input"
                       />
-                      <label htmlFor="doc-file-input" className="inline-block px-4 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-700 cursor-pointer hover:bg-slate-50">
+                      <label htmlFor="doc-file-input" className="inline-block px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg cursor-pointer transition">
                         Browse Files
                       </label>
-                    </div>
-                    <div className="text-xs text-slate-400">OR</div>
-                    <div className="text-sm text-slate-500">Drag & Drop Files Here</div>
-                    {/* <div className="text-sm text-slate-500 truncate max-w-full">{uploadFile ? uploadFile.name : 'No file chosen'}</div> */}
-                  </div>
-                </div>
-              </div>
-
-              {uploadFile && (
-                <div className="border border-slate-200 rounded-md p-3 bg-slate-50">
-                  {previewType === "image" && previewUrl ? (
-                    <img src={previewUrl} alt="preview" className="max-h-60 w-auto mx-auto rounded-md object-contain" />
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <FileText size={20} className="text-teal-600" />
-                      <div>
-                        <p className="font-medium text-slate-800">{uploadFile.name}</p>
-                        <p className="text-sm text-slate-500">{Math.round(uploadFile.size / 1024)} KB • {uploadFile.type || 'Unknown'}</p>
-                      </div>
+                      <p className="text-xs text-slate-500">or drag and drop</p>
                     </div>
                   )}
                 </div>
-              )}
-
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Type</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                  <option>Lease</option>
-                  <option>Invoice</option>
-                  <option>Statement</option>
-                </select>
               </div>
 
-              <div className="flex items-center gap-2 justify-end mt-4">
-                <button type="button" onClick={closeUpload} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Upload</button>
+              {/* Document Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Name *</label>
+                <input
+                  type="text"
+                  value={uploadName}
+                  onChange={(e) => setUploadName(e.target.value)}
+                  placeholder={uploadFile?.name || "Enter name"}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  required
+                />
+              </div>
+
+              {/* Type & Property Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Type *</label>
+                  <select
+                    value={uploadType}
+                    onChange={(e) => setUploadType(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  >
+                    <option>Lease</option>
+                    <option>Invoice</option>
+                    <option>Statement</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Property *</label>
+                  <select
+                    value={uploadProperty}
+                    onChange={(e) => setUploadProperty(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  >
+                    <option>All Properties</option>
+                    {uniqueProperties.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 justify-end mt-6 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={closeUpload}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!uploadFile}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Upload Document
+                </button>
               </div>
             </form>
           </div>
