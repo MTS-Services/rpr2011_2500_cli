@@ -7,18 +7,18 @@ import { Send, Search, ArrowLeft } from "lucide-react";
 const CONVERSATIONS = [
   {
     id: 1,
-    name: "McCann & Corran",
+    name: "McCann & Curran Realty",
     type: "staff",
     avatar: "MC",
     avatar_bg: "bg-teal-100 text-teal-700",
     preview: "The RTB registration for Apt 22 Parkside Plaza is currently Pending…",
     unread: 0,
     messages: [
-      { from: "agency", name: "McCann & Corran", text: "Hi Joan, just to confirm the contractor visit for Apt 5B is scheduled for Feb 28th between 10am–1pm. Please ensure the tenant is aware.", time: "Feb 21, 2025 · 3:15 PM" },
+      { from: "agency", name: "McCann & Curran Realty", text: "Hi Joan, just to confirm the contractor visit for Apt 5B is scheduled for Feb 28th between 10am–1pm. Please ensure the tenant is aware.", time: "Feb 21, 2025 · 3:15 PM" },
       { from: "landlord", name: "Joan Doyle", text: "Thanks for confirming. I've let Kevin know. Please send over the invoice once the work is done.", time: "Feb 21, 2025 · 4:02 PM" },
-      { from: "agency", name: "McCann & Corran", text: "Will do. We'll upload it to your documents section as well.", time: "Feb 21, 2025 · 4:20 PM" },
+      { from: "agency", name: "McCann & Curran Realty", text: "Will do. We'll upload it to your documents section as well.", time: "Feb 21, 2025 · 4:20 PM" },
       { from: "landlord", name: "Joan Doyle", text: "What is the status of the RTB registration for Apt 22 Parkside Plaza?", time: "Feb 22, 2025 · 11:00 AM" },
-      { from: "agency", name: "McCann & Corran", text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details. We'll update you as soon as it moves to Registered.", time: "Feb 22, 2025 · 11:45 AM" },
+      { from: "agency", name: "McCann & Curran Realty", text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details. We'll update you as soon as it moves to Registered.", time: "Feb 22, 2025 · 11:45 AM" },
     ],
   },
   {
@@ -126,7 +126,7 @@ export default function LandlordMessagesPage() {
                     <p className="font-semibold text-slate-800 truncate text-sm">{c.name}</p>
                     {c.unread > 0 && <span className="shrink-0 w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold">{c.unread}</span>}
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">{c.type === "staff" ? "McCann & Corran Staff" : `Tenant • ${c.property}`}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{c.type === "staff" ? "McCann & Curran Realty Staff" : `Tenant • ${c.property}`}</p>
                   <p className="text-xs text-slate-500 truncate mt-1">{c.preview}</p>
                 </div>
               </button>

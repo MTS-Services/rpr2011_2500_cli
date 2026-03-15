@@ -15,7 +15,7 @@ export default function Hero() {
             <span className="text-xs font-semibold text-primary-700 tracking-wide">RTB Compliant &amp; Fully Regulated</span>
           </div>
 
-          <h1 className="animate-fade-up-1 text-[2.8rem] lg:text-[3.6rem] leading-[1.08] font-bold text-dark-950 mb-6">
+          <h1 className="animate-fade-up-1 text-[2.4rem] sm:text-[2.8rem] lg:text-[3.6rem] leading-[1.08] font-bold text-dark-950 mb-6">
             Professional
             <br />
             <span className="text-primary-600">Property Management.</span>
@@ -30,7 +30,7 @@ export default function Hero() {
 
           <div className="animate-fade-up-3 flex flex-wrap items-center gap-3 mb-10">
             <Link
-              href="/contact"
+              href="/login"
               className="inline-flex items-center gap-2 px-7 py-3.5 text-[0.9rem] font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-md shadow-primary-600/30 transition-all"
             >
               Client Login

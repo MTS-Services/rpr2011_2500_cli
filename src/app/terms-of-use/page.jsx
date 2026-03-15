@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Terms of Use — McCann & Corran",
-  description: "Terms and conditions governing use of the McCann & Corran website and client portal.",
+  title: "Terms of Use — McCann & Curran Realty",
+  description: "Terms and conditions governing use of the McCann & Curran Realty website and client portal.",
 };
 
 export default function TermsOfUsePage() {

@@ -12,7 +12,7 @@ const details = [
   { label: "RTB Status",        value: "Registered" },
   { label: "MPRN",              value: "10623847501" },
   { label: "Landlord",          value: "Joe Landlord" },
-  { label: "Managing Agent",    value: "McCann & Corran Realty" },
+  { label: "Managing Agent",    value: "McCann & Curran Realty Realty" },
   { label: "Agent Phone",       value: "049-899-1111" },
   { label: "Agent Email",       value: "info@mccannandcorran.com" },
 ];

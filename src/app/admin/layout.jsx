@@ -1,7 +1,7 @@
 import AdminShell from "@/components/admin/AdminShell";
 
 export const metadata = {
-  title: "Admin Portal — McCann & Corran",
+  title: "Admin Portal — McCann & Curran Realty",
 };
 
 export default function AdminLayout({ children }) {

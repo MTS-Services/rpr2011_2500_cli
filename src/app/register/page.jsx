@@ -80,7 +80,7 @@ export default function RegisterPage() {
 
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
-                    <Image src="/logo.png" alt="McCann & Corran" width={40} height={40} />
+                    <Image src="/logo.png" alt="McCann & Curran Realty" width={40} height={40} />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-slate-800">McCann &amp; Corran</h2>

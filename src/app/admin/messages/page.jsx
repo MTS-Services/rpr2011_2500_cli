@@ -14,9 +14,9 @@ const CONVERSATIONS = [
     unread: 0,
     messages: [
       { from: "tenant", name: "Kevin Madden", text: "Hi, just a reminder that my February rent payment is overdue. Please arrange payment at your earliest convenience.", time: "Feb 6 · 9:15 AM" },
-      { from: "admin", name: "McCann & Corran", text: "Thank you Kevin, appreciated. A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "Feb 7 · 10:00 AM" },
+      { from: "admin", name: "McCann & Curran Realty", text: "Thank you Kevin, appreciated. A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "Feb 7 · 10:00 AM" },
       { from: "tenant", name: "Kevin Madden", text: "That works for me, I'll be home. Thanks for sorting that.", time: "Feb 7 · 10:22 AM" },
-      { from: "admin", name: "McCann & Corran", text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.", time: "Feb 10 · 2:00 PM" },
+      { from: "admin", name: "McCann & Curran Realty", text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.", time: "Feb 10 · 2:00 PM" },
     ],
   },
   {
@@ -29,9 +29,9 @@ const CONVERSATIONS = [
     unread: 1,
     messages: [
       { from: "landlord", name: "Joan Doyle", text: "Please confirm the contractor visit date for Apt 5B.", time: "Feb 21 · 2:02 PM" },
-      { from: "admin", name: "McCann & Corran", text: "Hi Joan, the contractor is confirmed for Feb 28th, 10am–1pm.", time: "Feb 21 · 3:15 PM" },
+      { from: "admin", name: "McCann & Curran Realty", text: "Hi Joan, the contractor is confirmed for Feb 28th, 10am–1pm.", time: "Feb 21 · 3:15 PM" },
       { from: "landlord", name: "Joan Doyle", text: "What is the status of the RTB registration for Apt 22 Parkside Plaza?", time: "Feb 22 · 11:00 AM" },
-      { from: "admin", name: "McCann & Corran", text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details.", time: "Feb 22 · 11:45 AM" },
+      { from: "admin", name: "McCann & Curran Realty", text: "The RTB registration for Apt 22 Parkside Plaza is currently Pending — we are waiting on the tenant's confirmation details.", time: "Feb 22 · 11:45 AM" },
     ],
   },
   {
@@ -59,7 +59,7 @@ const CONVERSATIONS = [
     unread: 0,
     messages: [
       { from: "landlord", name: "Edward O'Neill", text: "What is the status of the RTB registration for Apt 25, Grand Dock?", time: "Feb 20 · 11:00 AM" },
-      { from: "admin", name: "McCann & Corran", text: "Hi Edward, status is Pending. We're awaiting the tenant details.", time: "Feb 20 · 2:30 PM" },
+      { from: "admin", name: "McCann & Curran Realty", text: "Hi Edward, status is Pending. We're awaiting the tenant details.", time: "Feb 20 · 2:30 PM" },
     ],
   },
   {

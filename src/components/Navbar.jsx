@@ -64,13 +64,13 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2.5">
           <Image
             src="/logo.png"
-            alt="McCann & Corran"
+            alt="McCann & Curran Realty"
             width={38}
             height={38}
             priority
           />
-          <span className="text-[1.1rem] font-bold text-dark-900 tracking-tight">
-            McCann <span className="text-dark-900">&amp;</span> Corran
+          <span className="text-[1.1rem] font-bold text-dark-900 tracking-tighter">
+            McCann <span className="text-dark-900">&amp;</span> Curran Realty
           </span>
         </Link>
 

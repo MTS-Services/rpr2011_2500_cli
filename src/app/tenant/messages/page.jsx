@@ -7,18 +7,18 @@ import { Send, Search, ArrowLeft } from "lucide-react";
 const CONVERSATIONS = [
   {
     id: 1,
-    name: "McCann & Corran",
+    name: "McCann & Curran Realty",
     type: "staff",
     avatar: "MC",
     avatar_bg: "bg-teal-100 text-teal-700",
     preview: "Your rent review is scheduled for May 2025. We will be in touch…",
     unread: 0,
     messages: [
-      { from: "agency", name: "McCann & Corran", text: "Hi Kevin, just a reminder that your February rent payment is now overdue. Please arrange payment at your earliest convenience.", time: "Feb 6, 2025 · 9:15 AM" },
+      { from: "agency", name: "McCann & Curran Realty", text: "Hi Kevin, just a reminder that your February rent payment is now overdue. Please arrange payment at your earliest convenience.", time: "Feb 6, 2025 · 9:15 AM" },
       { from: "tenant", name: "Kevin Madden", text: "Hi, apologies for the delay — I'll arrange the bank transfer by end of week.", time: "Feb 6, 2025 · 11:42 AM" },
-      { from: "agency", name: "McCann & Corran", text: "Thank you Kevin, appreciated. Also, a maintenance engineer will visit on Feb 24th between 10am–1pm to look at the boiler. Please ensure access.", time: "Feb 7, 2025 · 10:00 AM" },
+      { from: "agency", name: "McCann & Curran Realty", text: "Thank you Kevin, appreciated. Also, a maintenance engineer will visit on Feb 24th between 10am–1pm to look at the boiler. Please ensure access.", time: "Feb 7, 2025 · 10:00 AM" },
       { from: "tenant", name: "Kevin Madden", text: "That works for me, I'll be home. Thanks for sorting that.", time: "Feb 7, 2025 · 10:22 AM" },
-      { from: "agency", name: "McCann & Corran", text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.", time: "Feb 10, 2025 · 2:00 PM" },
+      { from: "agency", name: "McCann & Curran Realty", text: "Your rent review is scheduled for May 2025. We will be in touch with more details closer to the time.", time: "Feb 10, 2025 · 2:00 PM" },
     ],
   },
   {
@@ -136,7 +136,7 @@ export default function TenantMessagesPage() {
             </div>
             <div>
               <p className="font-semibold text-slate-800 text-sm">{active?.name}</p>
-              <p className="text-xs text-teal-600 mt-0.5">{active?.type === "staff" ? "McCann & Corran Staff" : `Landlord • ${active?.property}`}</p>
+              <p className="text-xs text-teal-600 mt-0.5">{active?.type === "staff" ? "McCann & Curran Realty Staff" : `Landlord • ${active?.property}`}</p>
             </div>
           </div>
 

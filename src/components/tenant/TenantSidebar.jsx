@@ -44,7 +44,7 @@ export default function TenantSidebar({ mobileOpen, onClose }) {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 px-6 h-[72px] border-b border-slate-100">
-          <Image src="/logo.png" alt="McCann & Corran" width={36} height={36} />
+          <Image src="/logo.png" alt="McCann & Curran Realty" width={36} height={36} />
           <div className="leading-tight">
             <span className="text-sm font-bold text-slate-800 tracking-tight block">
               McCann &amp; Corran

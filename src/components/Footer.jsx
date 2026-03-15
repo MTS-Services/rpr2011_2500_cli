@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="flex items-center gap-2.5">
             <Image
               src="/logo.png"
-              alt="McCann & Corran"
+              alt="McCann & Curran Realty"
               width={36}
               height={36}
             />

@@ -6,7 +6,7 @@ import { Save, X } from "lucide-react";
 const STORAGE_KEY = "admin_settings_v1";
 
 const DEFAULTS = {
-  companyName: "McCann & Corran",
+  companyName: "McCann & Curran Realty",
   contactEmail: "admin@example.com",
 };
 
