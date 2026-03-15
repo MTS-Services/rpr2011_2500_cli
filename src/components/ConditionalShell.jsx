@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SmoothScroll from "@/app/components/LenisInit";
-import { PortalAuthProvider } from "@/context/PortalAuthContext";
 
 export default function ConditionalShell({ children }) {
   const pathname = usePathname();
@@ -18,7 +17,7 @@ export default function ConditionalShell({ children }) {
   }
 
   if (isAdmin) {
-    return <PortalAuthProvider>{children}</PortalAuthProvider>;
+    return <>{children}</>;
   }
 
   return (

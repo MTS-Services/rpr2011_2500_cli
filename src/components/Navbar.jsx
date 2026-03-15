@@ -6,13 +6,23 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { usePortalAuth } from "@/context/PortalAuthContext";
 
-export default function Navbar() {
+function getDashboardHref(user) {
+  if (!user) return "/login";
+  const role = (user.role ?? "").toUpperCase();
+  if (role === "ADMIN") return "/admin/dashboard";
+  if (role === "TENANT") return "/tenant/dashboard";
+  return "/portal/dashboard";
+}
+
+function NavbarContent() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const [portalLoggedIn, setPortalLoggedIn] = useState(false);
+  const { user, logout } = usePortalAuth();
+  const [dashboardHref, setDashboardHref] = useState("/login");
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
@@ -21,30 +31,10 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => setOpen(false), [pathname]);
-  useEffect(() => {
-    const anyToken = () => Boolean(
-      localStorage.getItem("admin_token") ||
-      localStorage.getItem("landlord_token") ||
-      localStorage.getItem("tenant_token")
-    );
-    setPortalLoggedIn(anyToken());
-  }, [pathname]);
 
   useEffect(() => {
-    const anyToken = () => Boolean(
-      localStorage.getItem("admin_token") ||
-      localStorage.getItem("landlord_token") ||
-      localStorage.getItem("tenant_token")
-    );
-    setPortalLoggedIn(anyToken());
-    const onStorage = (e) => {
-      if (["admin_token", "landlord_token", "tenant_token"].includes(e.key)) {
-        setPortalLoggedIn(anyToken());
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+    setDashboardHref(getDashboardHref(user));
+  }, [user]);
 
   const links = [
     { href: "/", label: "Home" },
@@ -89,22 +79,17 @@ export default function Navbar() {
               </span>
             </Link>
           ))}
-          {portalLoggedIn ? (
+          {user ? (
             <div className="ml-4 flex items-center gap-3">
               <Link
-                href={
-                  localStorage.getItem("admin_token") ? "/admin/dashboard"
-                  : localStorage.getItem("tenant_token") ? "/tenant/dashboard"
-                  : "/portal/dashboard"
-                }
+                href={dashboardHref}
                 className="px-4 py-2 text-[0.85rem] font-semibold text-white bg-[#079489] rounded-lg hover:bg-slate-200 transition-colors"
               >
                 Dashboard
               </Link>
               <button
                 onClick={() => {
-                  ["admin_token", "admin_user", "landlord_token", "landlord_user", "tenant_token", "tenant_user"].forEach(k => localStorage.removeItem(k));
-                  setPortalLoggedIn(false);
+                  logout();
                   router.push("/");
                 }}
                 className="px-4 py-2 text-[0.85rem] font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
@@ -147,14 +132,10 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          {portalLoggedIn ? (
+          {user ? (
             <div className="mt-2 flex gap-3">
               <Link
-                href={
-                  localStorage.getItem("admin_token") ? "/admin/dashboard"
-                  : localStorage.getItem("tenant_token") ? "/tenant/dashboard"
-                  : "/portal/dashboard"
-                }
+                href={dashboardHref}
                 onClick={() => setOpen(false)}
                 className="flex-1 px-4 py-3 text-center text-[0.95rem] font-semibold text-dark-800 bg-slate-100 rounded-lg"
               >
@@ -162,8 +143,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={() => {
-                  ["admin_token", "admin_user", "landlord_token", "landlord_user", "tenant_token", "tenant_user"].forEach(k => localStorage.removeItem(k));
-                  setPortalLoggedIn(false);
+                  logout();
                   setOpen(false);
                   router.push("/");
                 }}
@@ -185,4 +165,8 @@ export default function Navbar() {
       )}
     </nav>
   );
+}
+
+export default function Navbar() {
+  return <NavbarContent />;
 }

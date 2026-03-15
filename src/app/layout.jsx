@@ -1,5 +1,6 @@
 import "./globals.css";
 import ConditionalShell from "@/components/ConditionalShell";
+import { PortalAuthProvider } from "@/context/PortalAuthContext";
 
 export const metadata = {
   title: "McCann & Curran Realty | Professional Property Management",
@@ -26,7 +27,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <ConditionalShell>{children}</ConditionalShell>
+        <PortalAuthProvider>
+          <ConditionalShell>{children}</ConditionalShell>
+        </PortalAuthProvider>
       </body>
     </html>
   );
