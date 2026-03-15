@@ -16,7 +16,7 @@ export default function Footer() {
               height={36}
             />
             <span className="text-base font-bold text-dark-900 tracking-tight">
-              McCann &amp; Corran
+              McCann &amp; Curran Realty
             </span>
           </div>
 
