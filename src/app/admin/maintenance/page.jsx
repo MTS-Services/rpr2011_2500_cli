@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  Plus, ChevronDown, Search, ArrowUpDown, Eye, Edit
+  Plus, ChevronDown, Search, ArrowUpDown, Eye, Edit, CheckCircle2
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
 import Swal from "sweetalert2";
@@ -197,8 +197,18 @@ export default function AdminMaintenancePage() {
                 <option value="In Progress">In Progress</option>
                 <option value="Closed">Closed</option>
               </select>
-              <button onClick={() => openCostModal(r.id)} className="p-1.5 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition" title="Record cost">
-                <Edit size={13} />
+              {getCostForRequest(r.id) ? (
+                <div className="flex items-center gap-1">
+                  {/* <CheckCircle2 size={13} className="text-green-600" /> */}
+                  <span className="text-xs font-medium text-green-700">€{getCostForRequest(r.id).amount.toFixed(2)}</span>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400">No cost</span>
+              )}
+            </div>
+            <div className="flex items-center justify-end pt-2">
+              <button onClick={() => openCostModal(r.id)} className="p-2 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition" title="Record cost">
+                <Edit size={14} />
               </button>
             </div>
           </div>
@@ -260,9 +270,7 @@ export default function AdminMaintenancePage() {
                 <td className="px-4 py-3">
                   {getCostForRequest(r.id) ? (
                     <div className="flex items-center gap-1.5">
-                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                        <DollarSign size={13} className="text-green-600" />
-                      </div>
+                      
                       <span className="text-sm font-medium text-green-700">€{getCostForRequest(r.id).amount.toFixed(2)}</span>
                     </div>
                   ) : (
