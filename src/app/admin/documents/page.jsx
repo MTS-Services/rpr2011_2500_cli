@@ -72,7 +72,9 @@ export default function AdminDocumentsPage() {
   const [previewType, setPreviewType] = useState(null);
   const [propertyFilter, setPropertyFilter] = useState("All Properties");
   const [docs, setDocs] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uploadName, setUploadName] = useState("");
   const [uploadType, setUploadType] = useState("LEASE");
@@ -106,23 +108,41 @@ export default function AdminDocumentsPage() {
     fetchDocuments();
   }, []);
 
+  // Fetch properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setPropertiesLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch properties: ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          const propList = data.data.map(prop => ({
+            id: prop.id,
+            name: prop.name,
+          }));
+          setProperties(propList);
+        }
+      } catch (err) {
+        console.error("Error fetching properties:", err);
+      } finally {
+        setPropertiesLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
   const filtered = docs.filter(
     (d) =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.property.toLowerCase().includes(search.toLowerCase())
   ).filter((d) => (propertyFilter === "All Properties" ? true : d.property.includes(propertyFilter)))
     .filter((d) => (typeFilter === 'All' ? true : d.type === typeFilter));
-
-  const uniqueProperties = Array.from(
-    new Map(
-      docs
-        .filter((d) => d.propertyId && d.property)
-        .map((d) => [d.propertyId, d.property])
-    ).entries()
-  )
-    .map(([id, name]) => ({ id, name }))
-    .slice(0, 50);
-  
 
   const openUpload = () => setUploadOpen(true);
   const closeUpload = () => {
@@ -317,7 +337,7 @@ export default function AdminDocumentsPage() {
 
         <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400">
           <option>All Properties</option>
-          {uniqueProperties.map((p) => (
+          {properties.map((p) => (
             <option key={p.id} value={p.name}>{p.name}</option>
           ))}
         </select>
@@ -334,8 +354,8 @@ export default function AdminDocumentsPage() {
       </div>
       )}
 
-      {/* Content - only show when not loading, no error and have data */}
-      {!loading && !error && filtered.length > 0 && (
+      {/* Content - show when there is data OR when upload modal is open */}
+      {!loading && !error && (filtered.length > 0 || uploadOpen) && (
       <div>
       {/* Upload modal */}
       {uploadOpen && (
@@ -494,7 +514,7 @@ export default function AdminDocumentsPage() {
                     required
                   >
                     <option value="">Select Property</option>
-                    {uniqueProperties.map((p) => (
+                    {properties.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
@@ -549,7 +569,6 @@ export default function AdminDocumentsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!uploadFile}
                   className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Upload Document
