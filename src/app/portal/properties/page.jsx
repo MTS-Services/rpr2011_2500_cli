@@ -1,17 +1,125 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import PortalShell from "@/components/portal/PortalShell";
 import { Eye } from "lucide-react";
 import Link from "next/link";
+import { authenticatedFetch } from "@/utils/authFetch";
+import { usePortalAuth } from "@/context/PortalAuthContext";
 
-const properties = [
-  { id: "1", status: "Notice Served", statusColor: "bg-red-100 text-red-700", address: "Apt 5B Rosewood Close", tenant: "Kevin Madden", rent: "€1,750", rentBadge: "Rent 5 Days Late", rtb: "Registered", rtbExpiry: "2025-08-15", mprn: "10623847501" },
-  { id: "2", status: "Let", statusColor: "bg-teal-100 text-teal-700", address: "Apt 306 Fairview Rd", tenant: "Stephen Blake", rent: "€1,850", rentBadge: null, rtb: "Registered", rtbExpiry: "2026-12-20", mprn: "10234762819" },
-  { id: "3", status: "Notice Served", statusColor: "bg-amber-100 text-amber-700", address: "Apt 22 Parkside Plaza", tenant: "Reginald Spencer", rent: "€1,500", rentBadge: null, rtb: "Pending", rtbExpiry: null, mprn: "10987654321" },
-  { id: "4", status: "Let", statusColor: "bg-teal-100 text-teal-700", address: "Apt 104 Elmwood Grove", tenant: "Adam Walsh", rent: "€1,600", rentBadge: null, rtb: "Registered", rtbExpiry: "2026-05-10", mprn: "10543218765" },
-];
+// Transform API response to UI format
+function transformProperty(apiProp) {
+  const statusMap = {
+    "LET": "Let",
+    "VACANT": "Vacant",
+    "NOTICE_SERVED": "Notice Served",
+  };
+  
+  const status = statusMap[apiProp.status] || apiProp.status;
+  
+  const statusColorMap = {
+    "Let": "bg-teal-100 text-teal-700",
+    "Vacant": "bg-slate-100 text-slate-600",
+    "Notice Served": "bg-orange-100 text-orange-600",
+  };
+
+  return {
+    id: apiProp.id,
+    status: status,
+    statusColor: statusColorMap[status] || "bg-slate-100 text-slate-600",
+    address: apiProp.address || "Unknown Address",
+    tenant: "–", // Will fetch from tenancies if available
+    rent: `€${apiProp.rent || "0"}`,
+    rtb: apiProp.rtbRegistration === "REGISTERED" ? "Registered" : (apiProp.rtbRegistration === "PENDING" ? "Pending" : "Unknown"),
+    rtbExpiry: apiProp.rtbNumber ? null : null, // Will need to calculate from backend if available
+    mprn: apiProp.mprn || "N/A",
+    bedrooms: apiProp.bedrooms,
+    bathrooms: apiProp.bathrooms,
+    county: apiProp.county,
+    eircode: apiProp.eircode,
+    propertyType: apiProp.propertyType,
+    rtbNumber: apiProp.rtbNumber,
+  };
+}
 
 export default function PropertiesPage() {
+  const { user, loading: authLoading } = usePortalAuth();
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      if (authLoading) return;
+
+      if (!user) {
+        setError("Session expired. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setError(null);
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/my`
+        );
+        if (!response.ok) {
+          let message = "Failed to fetch properties";
+          let errData = null;
+          try {
+            errData = await response.json();
+            message = errData?.message || errData?.error || message;
+          } catch {
+            if (response.status === 401) {
+              message = "Session expired. Please log in again.";
+            } else if (response.status) {
+              message = `Failed to fetch properties (HTTP ${response.status})`;
+            }
+          }
+
+          // Fallback: some accounts may not have a landlord profile row,
+          // but can still access properties via the generic properties endpoint.
+          if ((response.status === 404 || response.status === 400) && /landlord profile not found/i.test(message)) {
+            const fallbackRes = await authenticatedFetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
+            );
+
+            if (fallbackRes.ok) {
+              const fallbackData = await fallbackRes.json();
+              const allProps = Array.isArray(fallbackData?.data) ? fallbackData.data : [];
+              const mine = allProps.filter(
+                (prop) =>
+                  prop?.landlord?.userId === user?.id ||
+                  prop?.landlordId === user?.id ||
+                  prop?.landlord?.id === user?.id
+              );
+
+              setProperties(mine.map((prop) => transformProperty(prop)));
+              return;
+            }
+          }
+
+          setError(message);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.success && data.data) {
+          const transformed = data.data.map(prop => transformProperty(prop));
+          setProperties(transformed);
+        }
+      } catch (err) {
+        console.warn("Properties fetch warning:", err?.message || err);
+        setError(err.message || "Failed to load properties");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [authLoading, user]);
   const getRTBExpiryColor = (expiryDate) => {
     if (!expiryDate) return "";
     const today = new Date();
@@ -30,13 +138,40 @@ export default function PropertiesPage() {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("en-IE", { year: "numeric", month: "short", day: "numeric" });
   };
+
   return (
     <PortalShell>
       <div className="mb-3 xl:mb-5">
         <h1 className="text-2xl xl:text-3xl font-bold text-slate-800">My Properties</h1>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            <span className="ml-3 text-slate-600">Loading properties...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-4">
+          <p className="text-red-800 font-medium">Error: {error}</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && properties.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No properties found. You don't have any properties yet.</p>
+        </div>
+      )}
+
+      {/* Properties Display */}
+      {!loading && !error && properties.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         {/* Mobile / tablet cards */}
         <div className="xl:hidden divide-y divide-slate-100">
           {properties.map((p, i) => (
@@ -126,6 +261,7 @@ export default function PropertiesPage() {
           </table>
         </div>
       </div>
+      )}
     </PortalShell>
   );
 }

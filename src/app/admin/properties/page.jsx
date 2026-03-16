@@ -1,35 +1,68 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, ChevronDown, Eye, X,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown
+  ArrowUpDown, Edit2, Trash2
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
 import AddPropertyModal from "./components/AddPropertyModal";
+import { authenticatedFetch } from "@/utils/authFetch";
+import Swal from "sweetalert2";
 
-const PROPERTIES = [
-  { id: 1, img: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60", name: "Apt 12, Grand Canal...", area: "Dublin · 10:2", statusProp: "Let", statusRTB: "Let", landlord: "Edward O'Neill", landlordSub: "John Dyea", tenant: "Sarah Kelly", rent: "€2,200", mprn: "100093319", rtb: "Missing", rtbStyle: "text-slate-500" },
-  { id: 2, img: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=80&q=60", name: "Apt 5B, Rosewood Close", area: "Dublin · 10:5", statusProp: "Notice", statusRTB: "Notice", landlord: "Joan Doyle", landlordSub: "Kem hetan", tenant: "Kevin Madden", rent: "€1,950", mprn: "100093357", rtb: "Pending", rtbStyle: "text-amber-600" },
-  { id: 3, img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=80&q=60", name: "Apt 4, Lis Na Dara", area: "Dublin · 10:9", statusProp: "Vacant", statusRTB: null, landlord: "Zoe Finnegan", landlordSub: "Emma Curran", tenant: "–", rent: "€1,850", mprn: "100093352", rtb: "Unknown", rtbStyle: "text-slate-500" },
-  { id: 4, img: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=80&q=60", name: "Apt 21C, Harbour View", area: "Dublin · 10:68", statusProp: "Let", statusRTB: "Let", landlord: "Edward O'Neill", landlordSub: "John Dyea", tenant: "Reginald Spencer", rent: "€2,350", mprn: "100093118", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 5, img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=80&q=60", name: "Apt 65, Southern Cross", area: "Dublin · 10:11", statusProp: "Let", statusRTB: "Let", landlord: "Brendan Walsh", landlordSub: "Deancer", tenant: "Adam Walsh", rent: "€2,400", mprn: "1000989721", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 6, img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&q=60", name: "Apt 306, Fairview Road", area: "Dublin · 10:65", statusProp: "Let", statusRTB: "Let", landlord: "Mary Bennett", landlordSub: "Mary Surran", tenant: "Peter Hughes", rent: "€2,100", mprn: "1000992929", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 7, img: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=80&q=60", name: "Apt 7D, Hanover Quay", area: "Dublin · 10:46", statusProp: "Let", statusRTB: "Let", landlord: "Mark Sheehan", landlordSub: "Mark Sheehan", tenant: "Emma Curran", rent: "€2,250", mprn: "1000992654", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 8, img: "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=80&q=60", name: "Apt 104, Elmwood Grove", area: "Dublin · 10:69", statusProp: "Notice Served", statusRTB: "Let", landlord: "Edward O'Neill", landlordSub: "Mark Sheehan", tenant: "Leanne Byrne", rent: "€1,800", mprn: "1000993381", rtb: "Pending", rtbStyle: "text-amber-600" },
-  { id: 9, img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=80&q=60", name: "Apt 5, City Square", area: "Dublin · 10:57", statusProp: "Let", statusRTB: "Let", landlord: "Joan Doyle", landlordSub: "John Doyle", tenant: "Steven Keane", rent: "€2,100", mprn: "1000932619", rtb: "Registered", rtbStyle: "text-teal-600" },
-  { id: 10, img: "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=80&q=60", name: "Apt 399, Pearse Street", area: "Dublin · 10:23", statusProp: "Notice", statusRTB: "Notice", landlord: "Tony Brennan", landlordSub: "Leo Mohan", tenant: "Dean Lyons", rent: "€1,650", mprn: "1000993537", rtb: "Unknown", rtbStyle: "text-slate-500" },
-];
+// Status mapping helper
+function getStatusFromString(statusStr) {
+  const statusLower = (statusStr || "").toLowerCase();
+  if (statusLower === "let") return "Let";
+  if (statusLower === "vacant") return "Vacant";
+  if (statusLower.includes("notice")) return "Notice Served";
+  return "Unknown";
+}
+
+// Transform API response to UI format
+function transformProperty(apiProp) {
+  const statusProp = getStatusFromString(apiProp.status);
+  const rtbNumber = apiProp.rtbNumber;
+  let rtb = "Unknown";
+  let rtbStyle = "text-slate-500";
+  
+  if (apiProp.rtbRegistration === "REGISTERED") {
+    rtb = "Registered";
+    rtbStyle = "text-teal-600";
+  } else if (apiProp.rtbRegistration === "UNKNOWN") {
+    rtb = "Unknown";
+    rtbStyle = "text-slate-500";
+  } else if (apiProp.rtbRegistration === "PENDING") {
+    rtb = "Pending";
+    rtbStyle = "text-amber-600";
+  }
+
+  return {
+    id: apiProp.id,
+    img: apiProp.image || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60",
+    name: apiProp.name,
+    area: `${apiProp.county || "Dublin"} · ${apiProp.bedrooms || "0"}+${apiProp.bathrooms || "0"}`,
+    statusProp,
+    statusRTB: statusProp,
+    landlord: apiProp.landlord?.name || "Unknown",
+    tenant: "–", // Will need to fetch from tenancies if available
+    rent: `€${apiProp.rent || "0"}`,
+    mprn: apiProp.mprn || "N/A",
+    rtb,
+    rtbStyle,
+    bedrooms: apiProp.bedrooms,
+    bathrooms: apiProp.bathrooms,
+    address: apiProp.address,
+    eircode: apiProp.eircode,
+    propertyType: apiProp.propertyType,
+  };
+}
 
 const PROP_STATUS = {
   Let: "bg-teal-500 text-white",
   "Notice Served": "bg-orange-100 text-orange-600 border border-orange-300",
   Vacant: "bg-slate-100 text-slate-600",
-};
-const RTB_STATUS = {
-  Let: "bg-teal-500 text-white",
-  Notice: "bg-orange-400 text-white",
 };
 
 export default function AdminPropertiesPage() {
@@ -37,8 +70,43 @@ export default function AdminPropertiesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeProp, setActiveProp] = useState(null);
   const [addPropertyModalOpen, setAddPropertyModalOpen] = useState(false);
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingProp, setEditingProp] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
-  const filtered = PROPERTIES;
+  // Fetch properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch properties: ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          const transformed = data.data.map(prop => transformProperty(prop));
+          setProperties(transformed);
+        }
+      } catch (err) {
+        console.error("Error fetching properties:", err);
+        setError(err.message || "Failed to load properties");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  const filtered = properties;
 
   const toggleAll = () =>
     setSelected(selected.length === filtered.length ? [] : filtered.map((p) => p.id));
@@ -50,6 +118,133 @@ export default function AdminPropertiesPage() {
     // TODO: Add API call to save the property
   };
 
+  const openEditModal = (prop) => {
+    setEditingProp(prop);
+    setEditFormData({
+      name: prop.name,
+      bedrooms: prop.bedrooms,
+      bathrooms: prop.bathrooms,
+      address: prop.address,
+      county: prop.area.split(" · ")[0],
+      eircode: prop.eircode,
+      propertyType: prop.propertyType,
+      rent: prop.rent.replace("€", "").trim(),
+      rtbNumber: prop.rtb === "Registered" ? "RTB789012" : "",
+    });
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingProp(null);
+    setEditFormData({});
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingProp) return;
+
+    try {
+      setEditLoading(true);
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/${editingProp.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: editFormData.name,
+            bedrooms: parseInt(editFormData.bedrooms) || 0,
+            bathrooms: parseInt(editFormData.bathrooms) || 0,
+            address: editFormData.address,
+            county: editFormData.county,
+            eircode: editFormData.eircode,
+            propertyType: editFormData.propertyType,
+            rent: parseFloat(editFormData.rent) || 0,
+            rtbNumber: editFormData.rtbNumber || null,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update property");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Property Updated!",
+          text: "Property has been updated successfully.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        // Refresh properties list
+        const propResponse = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
+        );
+        const propData = await propResponse.json();
+        if (propData.success && propData.data) {
+          const transformed = propData.data.map((prop) => transformProperty(prop));
+          setProperties(transformed);
+        }
+        closeEditModal();
+      }
+    } catch (err) {
+      console.error("Error updating property:", err);
+      Swal.fire("Error", err.message || "Failed to update property", "error");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteProperty = async (propId, propName) => {
+    const result = await Swal.fire({
+      title: "Delete Property?",
+      text: `Are you sure you want to delete "${propName}"? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setDeleteLoading(propId);
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/${propId}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete property");
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Property Deleted!",
+        text: "Property has been deleted successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // Remove from list
+      setProperties((prev) => prev.filter((p) => p.id !== propId));
+    } catch (err) {
+      console.error("Error deleting property:", err);
+      Swal.fire("Error", err.message || "Failed to delete property", "error");
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -59,6 +254,30 @@ export default function AdminPropertiesPage() {
           <Plus size={15} /> <span className="hidden sm:inline">Add Property</span>
         </button>
       </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            <span className="ml-3 text-slate-600">Loading properties...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-4">
+          <p className="text-red-800 font-medium">Error: {error}</p>
+        </div>
+      )}
+
+      {/* No Properties State */}
+      {!loading && !error && filtered.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No properties found. Add your first property to get started.</p>
+        </div>
+      )}
 
       {/* Mobile cards — visible below lg */}
       <div className="lg:hidden space-y-3">
@@ -95,18 +314,31 @@ export default function AdminPropertiesPage() {
                 </p>
               </div>
             </div>
-            <div className="pt-1 border-t border-slate-100">
+            <div className="pt-1 border-t border-slate-100 flex gap-2">
               <Link
                 href={`/admin/properties/${p.id}`}
-                className="w-full h-9 inline-flex items-center justify-center gap-2 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs font-medium"
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs font-medium"
               >
-                <Eye size={14} /> View Details
+                <Eye size={14} /> View
               </Link>
+              <button
+                onClick={() => openEditModal(p)}
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition text-xs font-medium"
+              >
+                <Edit2 size={14} /> Edit
+              </button>
+              <button
+                onClick={() => handleDeleteProperty(p.id, p.name)}
+                disabled={deleteLoading === p.id}
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition text-xs font-medium disabled:opacity-50"
+              >
+                <Trash2 size={14} /> {deleteLoading === p.id ? "..." : "Delete"}
+              </button>
             </div>
           </div>
         ))}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <Pagination total={PROPERTIES.length} />
+          <Pagination total={filtered.length} />
         </div>
       </div>
 
@@ -163,10 +395,6 @@ export default function AdminPropertiesPage() {
                 </td>
                 <td className="w-48 px-3 py-3">
                   <p className="text-slate-800 font-medium text-base truncate">{p.landlord}</p>
-                  <p className="text-sm text-slate-400 flex items-center gap-1 mt-0.5 truncate">
-                    <span className="inline-block w-3 h-3 rounded-sm bg-slate-200" />
-                    {p.landlordSub}
-                  </p>
                 </td>
                 <td className="w-48 px-3 py-3">
                   <p className="text-slate-700 text-base font-medium truncate">{p.tenant}</p>
@@ -180,7 +408,7 @@ export default function AdminPropertiesPage() {
                   </span>
                 </td>
                 <td className="w-48 px-3 py-3 text-right">
-                  <div>
+                  <div className="flex items-center justify-end gap-2">
                     <Link
                       href={`/admin/properties/${p.id}`}
                       aria-label="View"
@@ -188,13 +416,28 @@ export default function AdminPropertiesPage() {
                     >
                       <Eye size={16} />
                     </Link>
+                    <button
+                      onClick={() => openEditModal(p)}
+                      aria-label="Edit"
+                      className="w-9 h-9 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-700 text-blue-700 hover:text-white rounded-md transition"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProperty(p.id, p.name)}
+                      disabled={deleteLoading === p.id}
+                      aria-label="Delete"
+                      className="w-9 h-9 inline-flex items-center justify-center bg-red-100 hover:bg-red-700 text-red-700 hover:text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <Pagination total={PROPERTIES.length} />
+        <Pagination total={filtered.length} />
       </div>
 
       {/* Modal: Property details */}
@@ -214,7 +457,7 @@ export default function AdminPropertiesPage() {
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <img src={activeProp.img} alt={activeProp.name} className="w-full h-40 object-cover rounded-md sm:col-span-1" />
               <div className="sm:col-span-2 space-y-2">
-                <p className="text-sm"><strong>Landlord:</strong> {activeProp.landlord} <span className="text-xs text-slate-400">({activeProp.landlordSub})</span></p>
+                <p className="text-sm"><strong>Landlord:</strong> {activeProp.landlord}</p>
                 <p className="text-sm"><strong>Tenant:</strong> {activeProp.tenant}</p>
                 <p className="text-sm"><strong>Rent:</strong> {activeProp.rent}</p>
                 <p className="text-sm"><strong>MPRN:</strong> {activeProp.mprn}</p>
@@ -234,6 +477,131 @@ export default function AdminPropertiesPage() {
         onClose={() => setAddPropertyModalOpen(false)}
         onSubmit={handleAddProperty}
       />
+
+      {/* Edit Property Modal */}
+      {editModalOpen && editingProp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={closeEditModal} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 p-6">
+            <div className="flex items-start justify-between mb-6">
+              <h3 className="text-xl font-semibold text-slate-800">Edit Property</h3>
+              <button aria-label="Close" onClick={closeEditModal} className="text-slate-500 hover:text-slate-700">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Property Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Property Type</label>
+                  <input
+                    type="text"
+                    name="propertyType"
+                    value={editFormData.propertyType || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bedrooms</label>
+                  <input
+                    type="number"
+                    name="bedrooms"
+                    value={editFormData.bedrooms || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bathrooms</label>
+                  <input
+                    type="number"
+                    name="bathrooms"
+                    value={editFormData.bathrooms || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={editFormData.address || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">County</label>
+                  <input
+                    type="text"
+                    name="county"
+                    value={editFormData.county || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Eircode</label>
+                  <input
+                    type="text"
+                    name="eircode"
+                    value={editFormData.eircode || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Rent (€)</label>
+                  <input
+                    type="number"
+                    name="rent"
+                    value={editFormData.rent || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">RTB Number</label>
+                  <input
+                    type="text"
+                    name="rtbNumber"
+                    value={editFormData.rtbNumber || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -72,7 +72,9 @@ export default function DocumentsPage() {
   const [uploadPropertyId, setUploadPropertyId] = useState("");
   const [uploadVisibility, setUploadVisibility] = useState({ TENANT: true, LANDLORD: true });
   const [allDocs, setAllDocs] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [error, setError] = useState(null);
 
   
@@ -102,6 +104,32 @@ export default function DocumentsPage() {
     fetchDocuments();
   }, []);
 
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setPropertiesLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/my`
+        );
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error(`API Error ${response.status}:`, errText);
+          throw new Error(`Failed to fetch properties (${response.status})`);
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          const propList = data.data.map(prop => ({id: prop.id, name: prop.name}));
+          setProperties(propList);
+        }
+      } catch (err) {
+        console.error("Error fetching properties:", err);
+      } finally {
+        setPropertiesLoading(false);
+      }
+    };
+    fetchProperties();
+  }, []);
+
   const openUpload = () => setUploadOpen(true);
   const closeUpload = () => {
     setUploadOpen(false);
@@ -129,70 +157,6 @@ export default function DocumentsPage() {
         .map((d) => [d.property, d.property])
     ).values()
   );
-
-  const handleUploadDocument = async (e) => {
-    e.preventDefault();
-    if (!uploadFile) {
-      Swal.fire("Error", "Please select a file", "error");
-      return;
-    }
-    if (!uploadName) {
-      Swal.fire("Error", "Please enter a document name", "error");
-      return;
-    }
-    if (!uploadPropertyId) {
-      Swal.fire("Error", "Please select a property", "error");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("file", uploadFile);
-      formData.append("name", uploadName);
-      formData.append("type", uploadType);
-      formData.append("propertyId", uploadPropertyId);
-      
-      // Build visibility string (TENANT, LANDLORD only - no ADMIN for landlord)
-      const visArray = Object.keys(uploadVisibility).filter(k => uploadVisibility[k]);
-      formData.append("visibility", visArray.join(","));
-
-      console.log("Uploading document:", {
-        name: uploadName,
-        type: uploadType,
-        propertyId: uploadPropertyId,
-        visibility: visArray.join(","),
-        fileSize: uploadFile.size,
-      });
-
-      const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMsg = errorData.message || `Upload failed (${response.status})`;
-        throw new Error(errorMsg);
-      }
-
-      const data = await response.json();
-      if (data.success && data.data) {
-        const newDoc = transformDocument(data.data);
-        setAllDocs((d) => [newDoc, ...d]);
-        Swal.fire({ icon: "success", title: "Uploaded!", timer: 2000, showConfirmButton: false });
-      } else {
-        throw new Error(data.message || "Upload failed");
-      }
-
-      closeUpload();
-    } catch (err) {
-      console.error("Error uploading document:", err);
-      Swal.fire("Error", err.message || "Failed to upload document", "error");
-    }
-  };
 
   const handleDownload = async (doc) => {
     try {
@@ -330,11 +294,11 @@ export default function DocumentsPage() {
                 <span>{d.size}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => handleDownload(d)} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                  <Download size={13} /> Download
+                <button onClick={() => handleDownload(d)} className="flex-1 flex items-center justify-center p-2 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition" title="Download">
+                  <Download size={16} />
                 </button>
-                <button onClick={() => handleDeleteDocument(d)} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition">
-                  <Trash2 size={13} /> Delete
+                <button onClick={() => handleDeleteDocument(d)} className="flex-1 flex items-center justify-center p-2 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition" title="Delete">
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
@@ -375,11 +339,11 @@ export default function DocumentsPage() {
                   <td className="px-5 py-5 text-base text-slate-400">{d.size}</td>
                   <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleDownload(d)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                        <Download size={16} /> Download
+                      <button onClick={() => handleDownload(d)} className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition" title="Download">
+                        <Download size={16} />
                       </button>
-                      <button onClick={() => handleDeleteDocument(d)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition">
-                        <Trash2 size={16} /> Delete
+                      <button onClick={() => handleDeleteDocument(d)} className="inline-flex items-center justify-center p-2.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition" title="Delete">
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -413,7 +377,61 @@ export default function DocumentsPage() {
               </div>
               <button aria-label="Close" onClick={closeUpload} className="text-slate-500 hover:text-slate-700 text-lg">✕</button>
             </div>
-            <form onSubmit={handleUploadDocument} className="space-y-4">
+            <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!uploadFile) {
+                  Swal.fire("Error", "Please select a file", "error");
+                  return;
+                }
+                if (!uploadName) {
+                  Swal.fire("Error", "Please enter a document name", "error");
+                  return;
+                }
+                if (!uploadPropertyId) {
+                  Swal.fire("Error", "Please select a property", "error");
+                  return;
+                }
+
+                try {
+                  const formData = new FormData();
+                  formData.append("file", uploadFile);
+                  formData.append("name", uploadName);
+                  formData.append("type", uploadType);
+                  formData.append("propertyId", uploadPropertyId);
+                  
+                  // Append visibility
+                  const visArray = Object.keys(uploadVisibility).filter(k => uploadVisibility[k]);
+                  formData.append("visibility", visArray.join(","));
+
+                  const response = await authenticatedFetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents`,
+                    {
+                      method: "POST",
+                      body: formData,
+                    }
+                  );
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.message || `Upload failed (${response.status})`;
+                    throw new Error(errorMsg);
+                  }
+
+                  const data = await response.json();
+                  if (data.success && data.data) {
+                    const newDoc = transformDocument(data.data);
+                    setAllDocs((d) => [newDoc, ...d]);
+                    Swal.fire({ icon: "success", title: "Uploaded!", timer: 2000, showConfirmButton: false });
+                  } else {
+                    throw new Error(data.message || "Upload failed");
+                  }
+
+                  closeUpload();
+                } catch (err) {
+                  console.error("Error uploading document:", err);
+                  Swal.fire("Error", err.message || "Failed to upload document", "error");
+                }
+              }} className="space-y-4">
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">File *</label>
@@ -493,8 +511,8 @@ export default function DocumentsPage() {
                     required
                   >
                     <option value="">Select Property</option>
-                    {uniqueProperties.map((prop) => (
-                      <option key={prop} value={prop}>{prop}</option>
+                    {properties.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </div>
