@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Plus, ChevronDown, Search, ArrowUpDown, Eye
+  Plus, ChevronDown, Search, ArrowUpDown, Eye, Edit
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import Swal from "sweetalert2";
 
 const REQUESTS = [
   // Open
@@ -41,7 +42,72 @@ export default function AdminMaintenancePage() {
   const [requests, setRequests] = useState(REQUESTS);
   const [propertyFilter, setPropertyFilter] = useState("All Properties");
   const [priorityFilter, setPriorityFilter] = useState("All");
-  const [newOpen, setNewOpen] = useState(false);
+  const [costModalOpen, setCostModalOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [costAmount, setCostAmount] = useState("");
+  const [costVendor, setCostVendor] = useState("");
+  const [costDate, setCostDate] = useState("");
+  const [costs, setCosts] = useState({});
+
+  // Load costs from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("maintenanceCosts");
+    if (stored) setCosts(JSON.parse(stored));
+  }, []);
+
+  // Save costs to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("maintenanceCosts", JSON.stringify(costs));
+  }, [costs]);
+
+  const openCostModal = (requestId) => {
+    setSelectedRequestId(requestId);
+    const existing = costs[requestId];
+    if (existing) {
+      setCostAmount(existing.amount || "");
+      setCostVendor(existing.vendor || "");
+      setCostDate(existing.date || "");
+    } else {
+      setCostAmount("");
+      setCostVendor("");
+      setCostDate("");
+    }
+    setCostModalOpen(true);
+  };
+
+  const closeCostModal = () => {
+    setCostModalOpen(false);
+    setSelectedRequestId(null);
+    setCostAmount("");
+    setCostVendor("");
+    setCostDate("");
+  };
+
+  const handleSaveCost = async (e) => {
+    e.preventDefault();
+    if (!costAmount || !costDate) {
+      Swal.fire("Error", "Amount and Date are required", "error");
+      return;
+    }
+    try {
+      const newCosts = {
+        ...costs,
+        [selectedRequestId]: {
+          amount: parseFloat(costAmount),
+          vendor: costVendor,
+          date: costDate,
+          savedAt: new Date().toISOString(),
+        },
+      };
+      setCosts(newCosts);
+      Swal.fire({ icon: "success", title: "Cost saved!", timer: 2000, showConfirmButton: false });
+      closeCostModal();
+    } catch (err) {
+      Swal.fire("Error", "Failed to save cost", "error");
+    }
+  };
+
+  const getCostForRequest = (requestId) => costs[requestId];
 
   const uniqueProperties = Array.from(new Set(REQUESTS.map((r) => r.property))).slice(0, 50);
 
@@ -61,63 +127,9 @@ export default function AdminMaintenancePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Maintenance</h1>
-        <button onClick={() => setNewOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-          <Plus size={15} /> <span className="hidden sm:inline">New Request</span>
-        </button>
       </div>
 
-      {/* New Request modal (client-side) */}
-      {newOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setNewOpen(false)} />
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 z-50 p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-800">New Maintenance Request</h3>
-                <p className="text-sm text-slate-500 mt-1">Create a mock request (client-side).</p>
-              </div>
-              <button aria-label="Close" onClick={() => setNewOpen(false)} className="text-slate-500 hover:text-slate-700">✕</button>
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.target;
-              const title = form.title.value || 'New issue';
-              const name = form.name.value || 'Unknown';
-              const property = form.property.value || uniqueProperties[0] || 'Unknown property';
-              const priority = form.priority.value || 'Medium';
-              setRequests((prev) => [{ id: (prev[0]?.id || REQUESTS.length) + 1, col: 'Open', title, priority, assignee: { initials: name.split(' ').map(n=>n[0]).join('').slice(0,2), color: 'bg-slate-400' }, name, property, age: 'just now' }, ...prev]);
-              setNewOpen(false);
-            }} className="mt-4 space-y-3">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Issue</label>
-                <input name="title" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Tenant name</label>
-                <input name="name" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Property</label>
-                <select name="property" className="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                  {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Priority</label>
-                <select name="priority" className="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                  <option>High</option>
-                  <option>Medium</option>
-                  <option>Low</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2 justify-end mt-4">
-                <button type="button" onClick={() => setNewOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* New Request button and modal removed */}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
@@ -185,7 +197,9 @@ export default function AdminMaintenancePage() {
                 <option value="In Progress">In Progress</option>
                 <option value="Closed">Closed</option>
               </select>
-              <span className="text-xs text-slate-400">{r.age}</span>
+              <button onClick={() => openCostModal(r.id)} className="p-1.5 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition" title="Record cost">
+                <Edit size={13} />
+              </button>
             </div>
           </div>
         ))}
@@ -210,6 +224,7 @@ export default function AdminMaintenancePage() {
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Priority</th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Reported</th>
+              <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Cost</th>
               <th className="px-4 py-3 text-right font-semibold text-base text-slate-600">Action</th>
             </tr>
           </thead>
@@ -242,9 +257,21 @@ export default function AdminMaintenancePage() {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-slate-400">{r.age}</td>
+                <td className="px-4 py-3">
+                  {getCostForRequest(r.id) ? (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                        <DollarSign size={13} className="text-green-600" />
+                      </div>
+                      <span className="text-sm font-medium text-green-700">€{getCostForRequest(r.id).amount.toFixed(2)}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400">No cost</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right">
-                  <button className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-300 hover:text-gray-800 text-teal-700 rounded-md transition">
-                    <Eye size={15} />
+                  <button onClick={() => openCostModal(r.id)} className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-300 hover:text-gray-800 text-teal-700 rounded-md transition" title="Record cost">
+                    <Edit size={15} />
                   </button>
                 </td>
               </tr>
@@ -253,6 +280,72 @@ export default function AdminMaintenancePage() {
         </table>
         <Pagination total={filtered.length} />
       </div>
+
+      {/* Record Cost Modal */}
+      {costModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={closeCostModal} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 z-50 p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Record Maintenance Cost</h3>
+                <p className="text-sm text-slate-500 mt-1">Add cost details for this maintenance request.</p>
+              </div>
+              <button aria-label="Close" onClick={closeCostModal} className="text-slate-500 hover:text-slate-700 text-lg">✕</button>
+            </div>
+            <form onSubmit={handleSaveCost} className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Amount (€) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={costAmount}
+                  onChange={(e) => setCostAmount(e.target.value)}
+                  placeholder="e.g., 150.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Vendor / Contractor</label>
+                <input
+                  type="text"
+                  value={costVendor}
+                  onChange={(e) => setCostVendor(e.target.value)}
+                  placeholder="e.g., Local Plumber Ltd"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Date *</label>
+                <input
+                  type="date"
+                  value={costDate}
+                  onChange={(e) => setCostDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-3 justify-end pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={closeCostModal}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition"
+                >
+                  Save Cost
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

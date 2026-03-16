@@ -130,7 +130,7 @@ export default function AdminSettingsPage() {
             <div className="p-5 border border-slate-200 rounded-lg bg-slate-50  transition duration-200">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <p className="font-bold text-slate-900 text-base">Manager</p>
+                  <p className="font-bold text-slate-900 text-base">Landlords</p>
                   <p className="text-sm text-slate-600 mt-1">Limited admin</p>
                 </div>
                 <button disabled className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-md bg-white border border-slate-200 text-slate-700 transition">Non-Editable</button>
