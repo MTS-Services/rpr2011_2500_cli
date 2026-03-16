@@ -20,14 +20,21 @@ export async function authenticatedFetch(url, options = {}) {
     return new Response(JSON.stringify({ message: "Session expired. Please log in again." }), { status: 401 });
   }
 
+  // Don't set Content-Type for FormData - let browser set it automatically with boundary
+  const isFormData = options.body instanceof FormData;
+  const defaultHeaders = {
+    ...(options.headers || {}),
+    Authorization: `Bearer ${token}`,
+  };
+
+  // Only set Content-Type if not FormData
+  if (!isFormData && !defaultHeaders["Content-Type"] && !defaultHeaders["content-type"]) {
+    defaultHeaders["Content-Type"] = "application/json";
+  }
+
   const defaultOptions = {
     ...options,
-    headers: {
-      ...(options.headers || {}),
-      "Content-Type":
-        options.headers?.["Content-Type"] || options.headers?.["content-type"] || "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: defaultHeaders,
   };
 
   // Just return the response - let components handle 401/errors

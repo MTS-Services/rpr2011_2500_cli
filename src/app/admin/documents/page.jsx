@@ -45,6 +45,7 @@ function transformDocument(apiDoc) {
   const typeUpper = (apiDoc.type || "").toUpperCase();
   return {
     id: apiDoc.id,
+    propertyId: apiDoc.property?.id || "",
     icon: "teal",
     name: apiDoc.name,
     sub: apiDoc.property?.name || "Unknown Property",
@@ -75,8 +76,8 @@ export default function AdminDocumentsPage() {
   const [error, setError] = useState(null);
   const [uploadName, setUploadName] = useState("");
   const [uploadType, setUploadType] = useState("LEASE");
-  const [uploadProperty, setUploadProperty] = useState("All Properties");
-  const [uploadVisibility, setUploadVisibility] = useState({ TENANT: true, LANDLORD: true, ADMIN: false });
+  const [uploadPropertyId, setUploadPropertyId] = useState("");
+  const [uploadVisibility, setUploadVisibility] = useState({ TENANT: true, LANDLORD: true, ADMIN: true });
 
   // Fetch documents from API
   useEffect(() => {
@@ -112,7 +113,15 @@ export default function AdminDocumentsPage() {
   ).filter((d) => (propertyFilter === "All Properties" ? true : d.property.includes(propertyFilter)))
     .filter((d) => (typeFilter === 'All' ? true : d.type === typeFilter));
 
-  const uniqueProperties = Array.from(new Set(docs.map((d) => d.property))).slice(0, 20);
+  const uniqueProperties = Array.from(
+    new Map(
+      docs
+        .filter((d) => d.propertyId && d.property)
+        .map((d) => [d.propertyId, d.property])
+    ).entries()
+  )
+    .map(([id, name]) => ({ id, name }))
+    .slice(0, 50);
   
 
   const openUpload = () => setUploadOpen(true);
@@ -123,9 +132,9 @@ export default function AdminDocumentsPage() {
     setPreviewUrl(null);
     setPreviewType(null);
     setUploadName("");
-    setUploadType("Lease");
-    setUploadProperty("All Properties");
-    setUploadVisibility({ TENANT: true, LANDLORD: false, ADMIN: false });
+    setUploadType("LEASE");
+    setUploadPropertyId("");
+    setUploadVisibility({ TENANT: true, LANDLORD: true, ADMIN: true });
   };
 
   useEffect(() => {
@@ -309,7 +318,7 @@ export default function AdminDocumentsPage() {
         <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400">
           <option>All Properties</option>
           {uniqueProperties.map((p) => (
-            <option key={p} value={p}>{p}</option>
+            <option key={p.id} value={p.name}>{p.name}</option>
           ))}
         </select>
 
@@ -341,29 +350,68 @@ export default function AdminDocumentsPage() {
               <button aria-label="Close" onClick={closeUpload} className="text-slate-500 hover:text-slate-700 text-2xl leading-none">×</button>
             </div>
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (!uploadFile) {
-                  alert('Please select a file');
+                  Swal.fire("Error", "Please select a file", "error");
                   return;
                 }
-                const newId = Math.max(0, ...docs.map((d) => d.id)) + 1;
-                const name = uploadName || uploadFile.name;
-                const visArray = Object.keys(uploadVisibility).filter(k => uploadVisibility[k]);
-                const newDoc = {
-                  id: newId,
-                  icon: "teal",
-                  name,
-                  sub: uploadProperty === "All Properties" ? "Unknown" : uploadProperty,
-                  type: uploadType,
-                  typeStyle: uploadType === "Statement" ? "bg-indigo-100 text-indigo-700" : "bg-teal-100 text-teal-700",
-                  property: uploadProperty === "All Properties" ? "Unknown" : uploadProperty,
-                  visibility: visArray.length > 0 ? visArray : ["TENANT"],
-                  uploader: "You",
-                  age: "just now",
-                };
-                setDocs((d) => [newDoc, ...d]);
-                closeUpload();
+                if (!uploadName) {
+                  Swal.fire("Error", "Please enter a document name", "error");
+                  return;
+                }
+                if (!uploadPropertyId) {
+                  Swal.fire("Error", "Please select a property", "error");
+                  return;
+                }
+
+                try {
+                  const formData = new FormData();
+                  formData.append("file", uploadFile);
+                  formData.append("name", uploadName);
+                  formData.append("type", uploadType);
+                  formData.append("propertyId", uploadPropertyId);
+                  
+                  // Append visibility - ADMIN is always included
+                  const visArray = Object.keys(uploadVisibility).filter(k => uploadVisibility[k]);
+                  formData.append("visibility", visArray.join(","));
+
+                  console.log("Uploading document:", {
+                    name: uploadName,
+                    type: uploadType,
+                    propertyId: uploadPropertyId,
+                    visibility: visArray.join(","),
+                    fileSize: uploadFile.size,
+                  });
+
+                  const response = await authenticatedFetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents`,
+                    {
+                      method: "POST",
+                      body: formData,
+                    }
+                  );
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.message || `Upload failed (${response.status})`;
+                    throw new Error(errorMsg);
+                  }
+
+                  const data = await response.json();
+                  if (data.success && data.data) {
+                    const newDoc = transformDocument(data.data);
+                    setDocs((d) => [newDoc, ...d]);
+                    Swal.fire({ icon: "success", title: "Uploaded!", timer: 2000, showConfirmButton: false });
+                  } else {
+                    throw new Error(data.message || "Upload failed");
+                  }
+
+                  closeUpload();
+                } catch (err) {
+                  console.error("Error uploading document:", err);
+                  Swal.fire("Error", err.message || "Failed to upload document", "error");
+                }
               }}
               className="space-y-4"
             >
@@ -432,23 +480,61 @@ export default function AdminDocumentsPage() {
                     onChange={(e) => setUploadType(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
                   >
-                    <option>Lease</option>
-                    <option>Invoice</option>
-                    <option>Statement</option>
+                    <option value="LEASE">Lease</option>
+                    <option value="INVOICE">Invoice</option>
+                    <option value="STATEMENT">Statement</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Property *</label>
                   <select
-                    value={uploadProperty}
-                    onChange={(e) => setUploadProperty(e.target.value)}
+                    value={uploadPropertyId}
+                    onChange={(e) => setUploadPropertyId(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                    required
                   >
-                    <option>All Properties</option>
+                    <option value="">Select Property</option>
                     {uniqueProperties.map((p) => (
-                      <option key={p} value={p}>{p}</option>
+                      <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Visibility Section */}
+              <div className="border-t border-slate-200 pt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-3">Document Visibility</label>
+                <div className="space-y-2">
+                  {/* TENANT */}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={uploadVisibility.TENANT}
+                      onChange={(e) => setUploadVisibility({ ...uploadVisibility, TENANT: e.target.checked })}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-slate-700">Tenant</span>
+                  </label>
+                  {/* LANDLORD */}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={uploadVisibility.LANDLORD}
+                      onChange={(e) => setUploadVisibility({ ...uploadVisibility, LANDLORD: e.target.checked })}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-slate-700">Landlord</span>
+                  </label>
+                  {/* ADMIN - Always checked and disabled */}
+                  <label className="flex items-center gap-2 cursor-not-allowed">
+                    <input
+                      type="checkbox"
+                      checked={uploadVisibility.ADMIN}
+                      disabled
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-not-allowed opacity-75"
+                    />
+                    <span className="text-sm text-slate-700">Admin <span className="text-xs text-slate-500">(always selected)</span></span>
+                  </label>
                 </div>
               </div>
 
