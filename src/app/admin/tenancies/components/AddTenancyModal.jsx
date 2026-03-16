@@ -2,46 +2,78 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
-export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties = [], tenants = [] }) {
+export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties = [], tenants = [], propertyMap = {} }) {
     const [formData, setFormData] = useState({
         tenantId: "",
         property: "",
+        propertyId: "",
         status: "",
         startDate: "",
         endDate: "",
         rent: "",
         rentDueDay: "",
+        rentStatus: "PAID",
+        rtbNumber: "",
+        rtbStatus: "",
+        rtbRegistration: "",
+        rentReviewDate: "",
     });
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
         if (name === "tenantId") {
             const selectedTenant = tenants.find((tenant) => String(tenant.id) === String(value));
+            const selectedProperty = selectedTenant?.property || "";
             setFormData((prev) => ({
                 ...prev,
                 tenantId: value,
-                property: prev.property || selectedTenant?.property || "",
+                property: prev.property || selectedProperty,
+                propertyId: prev.propertyId || propertyMap[prev.property || selectedProperty] || "",
+            }));
+            return;
+        }
+        if (name === "property") {
+            // Get propertyId from the propertyMap
+            const propertyId = propertyMap[value] || "";
+            setFormData((prev) => ({
+                ...prev,
+                property: value,
+                propertyId: propertyId,
             }));
             return;
         }
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.tenantId || !formData.property || !formData.status || !formData.rent || !formData.rentDueDay) {
             alert("Please fill in all required fields");
             return;
         }
-        onSubmit(formData);
+        const resolvedPropertyId = formData.propertyId || propertyMap[formData.property] || "";
+        if (!resolvedPropertyId) {
+            alert("Selected property is missing an ID. Please reselect property.");
+            return;
+        }
+
+        const didSucceed = await onSubmit({ ...formData, propertyId: resolvedPropertyId });
+        if (!didSucceed) return;
+
         setFormData({
             tenantId: "",
             property: "",
+            propertyId: "",
             status: "",
             startDate: "",
             endDate: "",
             rent: "",
             rentDueDay: "",
+            rentStatus: "PAID",
+            rtbNumber: "",
+            rtbStatus: "",
+            rtbRegistration: "",
+            rentReviewDate: "",
         });
         onClose();
     };
@@ -182,6 +214,80 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                                 <option value="28">28th</option>
                                 <option value="30">30th</option>
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Rent Status */}
+                    <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">
+                            Rent Status
+                        </label>
+                        <select
+                            name="rentStatus"
+                            value={formData.rentStatus}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        >
+                            <option value="PAID">Paid</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="OVERDUE">Overdue</option>
+                        </select>
+                    </div>
+
+                    {/* RTB Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Number</label>
+                            <input
+                                type="text"
+                                name="rtbNumber"
+                                value={formData.rtbNumber}
+                                onChange={handleFormChange}
+                                placeholder="e.g., 1234598"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Status</label>
+                            <select
+                                name="rtbStatus"
+                                value={formData.rtbStatus}
+                                onChange={handleFormChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            >
+                                <option value="">Select status</option>
+                                <option value="Active">Active</option>
+                                <option value="Notice">Notice</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* RTB Registration & Rent Review Date */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Registration</label>
+                            <select
+                                name="rtbRegistration"
+                                value={formData.rtbRegistration}
+                                onChange={handleFormChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            >
+                                <option value="">Select registration</option>
+                                <option value="REGISTERED">Registered</option>
+                                <option value="UNREGISTERED">Unregistered</option>
+                                <option value="UNKNOWN">Unknown</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-base font-medium text-slate-700 mb-1">Rent Review Date</label>
+                            <input
+                                type="date"
+                                name="rentReviewDate"
+                                value={formData.rentReviewDate}
+                                onChange={handleFormChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            />
                         </div>
                     </div>
                 </form>

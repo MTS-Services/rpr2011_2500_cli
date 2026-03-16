@@ -4,11 +4,12 @@ import { useSearchParams } from "next/navigation";
 import {
   Plus, Search,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, CheckCircle2, Clock, CreditCard
+  ArrowUpDown, CheckCircle2, Clock, CreditCard, Trash2
 } from "lucide-react";
+import Swal from "sweetalert2";
 import Pagination from "@/components/portal/Pagination";
 import AddTenancyModal from "./components/AddTenancyModal";
-import { addTenancyToDirectory, loadDirectoryData, saveDirectoryData } from "@/utils/mockDirectoryStore";
+import { authenticatedFetch } from "@/utils/authFetch";
 
 const RENT_STYLE = {
   Paid: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
@@ -29,17 +30,64 @@ const RTB_STATUS = {
   Notice: "bg-orange-400 text-white",
 };
 
+const COLOR_PALETTE = [
+  "bg-teal-500", "bg-orange-400", "bg-slate-500", "bg-sky-600",
+  "bg-emerald-500", "bg-teal-700", "bg-slate-400", "bg-indigo-400",
+  "bg-pink-400", "bg-violet-400"
+];
+
+// Transform API response to UI format
+function transformTenancy(apiTenancy, colorIndex) {
+  const tenant = apiTenancy.tenant || {};
+  const property = apiTenancy.property || {};
+  const landlord = apiTenancy.landlord || {};
+  
+  // Extract initials from tenant name
+  const initials = (tenant.name || "?")
+    .split(" ")
+    .map(part => part[0])
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
+  
+  return {
+    id: apiTenancy.id,
+    propertyId: property.id || "",
+    tenantId: tenant.id || "",
+    initials,
+    color: COLOR_PALETTE[colorIndex % COLOR_PALETTE.length],
+    name: tenant.name || "Unknown Tenant",
+    sub: `${property.name || "Unknown"} · ${property.county || ""}`,
+    property: property.name || "Unknown",
+    statusLet: apiTenancy.status === "ACTIVE" ? "Let" : "Notice",
+    statusBadge: null,
+    county: property.county || null,
+    landlord: landlord.name || "Unknown",
+    landlordSub: landlord.county || "",
+    startDate: apiTenancy.startDate?.split("T")[0] || "",
+    endDate: apiTenancy.endDate?.split("T")[0] || "",
+    rent: `€${apiTenancy.rent}`,
+    rtb: apiTenancy.rtbNumber || "N/A",
+    rtbDate: apiTenancy.rtbRegistration?.split("T")[0] || null,
+    rtbStatus: apiTenancy.rtbStatus || "Unknown",
+    rtbReg: apiTenancy.rtbRegistration || null,
+    rentReviewDate: apiTenancy.rentReviewDate?.split("T")[0] || null,
+    rentStatus: apiTenancy.rentStatus || "Pending",
+  };
+}
+
 function AdminTenanciesInner() {
   const [selected, setSelected] = useState([]);
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
   const [tenancies, setTenancies] = useState([]);
   const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [countyFilter, setCountyFilter] = useState("All County/City");
   const [propertyFilter, setPropertyFilter] = useState("All Properties");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   // Local override map: { [tenancy.id]: "Paid" | "Overdue" | "Pending" }
-  // In production this would write to Supabase
   const [rentOverrides, setRentOverrides] = useState({});
   const getRentStatus = (t) => rentOverrides[t.id] ?? t.rentStatus;
   const markPaid = (id) => setRentOverrides((prev) => ({ ...prev, [id]: "Paid" }));
@@ -48,10 +96,47 @@ function AdminTenanciesInner() {
   const getStatus = (t) => statusOverrides[t.id] ?? t.statusLet;
   const setStatus = (id, value) => setStatusOverrides((prev) => ({ ...prev, [id]: value }));
 
+  // Fetch tenancies from API
   useEffect(() => {
-    const state = loadDirectoryData();
-    setTenancies(state.tenancies || []);
-    setTenants(state.tenants || []);
+    const fetchTenancies = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tenancies: ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          const transformed = data.data.map((tenancy, idx) =>
+            transformTenancy(tenancy, idx)
+          );
+          setTenancies(transformed);
+          // Extract unique tenants for AddTenancyModal
+          const uniqueTenants = Array.from(
+            new Map(
+              data.data.map((t) => [
+                t.tenant.id,
+                {
+                  id: t.tenant.id,
+                  name: t.tenant.name,
+                  property: t.property.name,
+                },
+              ])
+            ).values()
+          );
+          setTenants(uniqueTenants);
+        }
+      } catch (err) {
+        console.error("Error fetching tenancies:", err);
+        setError(err.message || "Failed to load tenancies");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTenancies();
   }, []);
 
   // Build status options from source data so we stay in sync
@@ -60,13 +145,174 @@ function AdminTenanciesInner() {
   const uniqueCounties = Array.from(new Set(tenancies.map((t) => t.county).filter(Boolean))).slice(0, 50);
   const uniqueProperties = Array.from(new Set(tenancies.map((t) => t.property).filter(Boolean))).slice(0, 50);
 
-  const handleAddTenancy = (formData) => {
-    const tenancy = addTenancyToDirectory(formData);
-    const state = loadDirectoryData();
-    setTenancies([tenancy, ...state.tenancies.filter((entry) => entry.id !== tenancy.id)]);
-    setTenants(state.tenants);
-    setAddTenancyModalOpen(false);
-    alert("Tenancy created");
+  const handleAddTenancy = async (formData) => {
+    try {
+      // Map form data to backend format
+      const statusMap = { "Let": "ACTIVE", "Notice": "NOTICE", "Active": "ACTIVE" };
+      
+      // Parse rent value - remove currency symbols and spaces
+      let rentValue = formData.rent;
+      rentValue = rentValue.replace(/[€$,\s]/g, "");
+      rentValue = parseInt(rentValue) || 0;
+      
+      const payload = {
+        propertyId: formData.propertyId,
+        tenantId: formData.tenantId,
+        status: statusMap[formData.status] || "ACTIVE",
+        startDate: formData.startDate || null,
+        endDate: formData.endDate || null,
+        rent: rentValue,
+        rentDueDay: parseInt(formData.rentDueDay) || 1,
+        rentStatus: formData.rentStatus || "PAID",
+        rtbNumber: formData.rtbNumber || null,
+        rtbStatus: formData.rtbStatus || null,
+        rtbRegistration: formData.rtbRegistration || null,
+        rentReviewDate: formData.rentReviewDate || null,
+      };
+
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to create tenancy: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Add the new tenancy to the list
+      if (data.success && data.data) {
+        const newTenancy = transformTenancy(data.data, tenancies.length);
+        setTenancies([newTenancy, ...tenancies]);
+      }
+
+      setAddTenancyModalOpen(false);
+
+      // Show success alert
+      await Swal.fire({
+        icon: "success",
+        title: "Created!",
+        text: "Tenancy has been created successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return true;
+    } catch (err) {
+      console.error("Error adding tenancy:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to create tenancy. Please try again.",
+      });
+      return false;
+    }
+  };
+
+  const handleDeleteTenancy = async (tenancyId) => {
+    // Show confirmation dialog
+    const result = await Swal.fire({
+      title: "Delete Tenancy?",
+      text: "Are you sure you want to delete this tenancy? This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/${tenancyId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete tenancy: ${response.statusText}`);
+      }
+
+      // Remove from local state after successful deletion
+      setTenancies((prev) => prev.filter((t) => t.id !== tenancyId));
+
+      // Show success alert
+      await Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "Tenancy has been deleted successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.error("Error deleting tenancy:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to delete tenancy. Please try again.",
+      });
+    }
+  };
+
+  const handleUpdateRentStatus = async (tenancyId, newStatus) => {
+    try {
+      const statusMap = {
+        "Paid": "PAID",
+        "Pending": "PENDING",
+        "Overdue": "OVERDUE",
+      };
+      
+      const apiStatus = statusMap[newStatus] || newStatus;
+      
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/${tenancyId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ rentStatus: apiStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update rent status: ${response.statusText}`);
+      }
+
+      // Update local state
+      setRentOverrides((prev) => ({ ...prev, [tenancyId]: newStatus }));
+
+      // Show success alert
+      await Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: `Rent status updated to ${newStatus}`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.error("Error updating rent status:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update rent status. Please try again.",
+      });
+    }
   };
 
   const searchParams = useSearchParams();
@@ -101,71 +347,82 @@ function AdminTenanciesInner() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Tenancies</h1>
-        <button onClick={() => setAddTenancyModalOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-          <Plus size={15} /> <span className="hidden sm:inline">New Tenancy</span>
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex-1 min-w-[200px] relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tenancies…"
-            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-            aria-label="Search tenancies by tenant, landlord, or property"
-          />
+      {/* Error state */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 font-medium">Error loading tenancies: {error}</p>
         </div>
+      )}
+      
+      {/* Loading state */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">Loading tenancies...</p>
+        </div>
+      )}
+      
+      {!loading && !error && tenancies.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No tenancies found.</p>
+        </div>
+      )}
+      
+      {!loading && !error && tenancies.length > 0 && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Tenancies</h1>
+            <button onClick={() => setAddTenancyModalOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+              <Plus size={15} /> <span className="hidden sm:inline">New Tenancy</span>
+            </button>
+          </div>
 
-        <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by county or city">
-          <option>All County/City</option>
-          {uniqueCounties.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by property">
-          <option>All Properties</option>
-          {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by status">
-          <option>All Statuses</option>
-          {STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex-1 min-w-[200px] relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tenancies…"
+                className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                aria-label="Search tenancies by tenant, landlord, or property"
+              />
+            </div>
+
+            <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by county or city">
+              <option>All County/City</option>
+              {uniqueCounties.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by property">
+              <option>All Properties</option>
+              {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by status">
+              <option>All Statuses</option>
+              {STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
       <div className="lg:hidden space-y-3">
         {filtered.map((t) => (
           <div key={t.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-                {t.initials}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                  {t.initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-slate-800 text-sm truncate">{t.name}</p>
+                  <p className="text-xs text-slate-400 truncate">{t.sub}</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-800 text-sm truncate">{t.name}</p>
-                <p className="text-xs text-slate-400 truncate">{t.sub}</p>
-              </div>
-              <div className="flex-shrink-0">
-                <select
-                  value={getStatus(t)}
-                  onChange={(e) => {
-                    const nextStatus = e.target.value;
-                    setStatus(t.id, nextStatus);
-                    const nextTenancies = tenancies.map((entry) => (
-                      entry.id === t.id ? { ...entry, statusLet: nextStatus } : entry
-                    ));
-                    setTenancies(nextTenancies);
-                    const state = loadDirectoryData();
-                    saveDirectoryData({ ...state, tenancies: nextTenancies });
-                  }}
-                  className="text-xs rounded-full px-2 py-1 border border-slate-200 bg-white"
-                >
-                  {STATUS_VALUES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+              <button
+                onClick={() => handleDeleteTenancy(t.id)}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition flex-shrink-0"
+                aria-label="Delete tenancy"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-slate-50 rounded-lg p-2">
@@ -192,10 +449,8 @@ function AdminTenanciesInner() {
                   value={getRentStatus(t)}
                   onChange={(e) => {
                     const v = e.target.value;
-                    if (v === "mark-paid") {
-                      markPaid(t.id);
-                    } else {
-                      setRentOverrides((prev) => ({ ...prev, [t.id]: v }));
+                    if (v !== getRentStatus(t)) {
+                      handleUpdateRentStatus(t.id, v);
                     }
                   }}
                   className="w-full max-w-xs rounded-md border border-slate-200 px-3 py-2 text-sm bg-white"
@@ -203,7 +458,6 @@ function AdminTenanciesInner() {
                   <option value="Paid">Paid</option>
                   <option value="Pending">Pending</option>
                   <option value="Overdue">Overdue</option>
-                  <option value="mark-paid">Mark Paid</option>
                 </select>
               </div>
             </div>
@@ -230,9 +484,6 @@ function AdminTenanciesInner() {
                 <span className="flex items-center gap-1">Tenant <ArrowUpDown size={12} className="text-slate-400" /></span>
               </th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">Status <ArrowUpDown size={12} className="text-slate-400" /></span>
-              </th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">
                 <span className="flex items-center gap-1">County/City <ArrowUpDown size={12} className="text-slate-400" /></span>
               </th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">
@@ -240,9 +491,8 @@ function AdminTenanciesInner() {
               </th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent Status</th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">RTB #</th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">RTB Date</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">RTB Status</th>
+              <th className="px-3 py-3 text-left font-semibold text-slate-600">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -262,28 +512,6 @@ function AdminTenanciesInner() {
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={getStatus(t)}
-                      onChange={(e) => {
-                        const nextStatus = e.target.value;
-                        setStatus(t.id, nextStatus);
-                        const nextTenancies = tenancies.map((entry) => (
-                          entry.id === t.id ? { ...entry, statusLet: nextStatus } : entry
-                        ));
-                        setTenancies(nextTenancies);
-                        const state = loadDirectoryData();
-                        saveDirectoryData({ ...state, tenancies: nextTenancies });
-                      }}
-                      className="rounded-md border border-slate-200 px-2 py-1 text-sm bg-white"
-                    >
-                      {STATUS_VALUES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                </td>
                 <td className="px-3 py-3 text-slate-600 text-sm">{t.county}</td>
                 <td className="px-3 py-3">
                   <p className="text-slate-800 font-medium text-sm">{t.landlord}</p>
@@ -296,10 +524,8 @@ function AdminTenanciesInner() {
                       value={getRentStatus(t)}
                       onChange={(e) => {
                         const v = e.target.value;
-                        if (v === "mark-paid") {
-                          markPaid(t.id);
-                        } else {
-                          setRentOverrides((prev) => ({ ...prev, [t.id]: v }));
+                        if (v !== getRentStatus(t)) {
+                          handleUpdateRentStatus(t.id, v);
                         }
                       }}
                       className="rounded-md border border-slate-200 px-2.5 py-1 text-sm bg-white"
@@ -307,21 +533,8 @@ function AdminTenanciesInner() {
                       <option value="Paid">Paid</option>
                       <option value="Pending">Pending</option>
                       <option value="Overdue">Overdue</option>
-                      <option value="mark-paid">Mark Paid</option>
                     </select>
                   </div>
-                </td>
-                <td className="px-3 py-3">
-                  <p className="text-slate-600 text-sm">{t.rtb}</p>
-                  {t.rtbReg && (
-                    <p className="text-sm text-teal-600 flex items-center gap-1 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block" />
-                      {t.rtbReg}
-                    </p>
-                  )}
-                </td>
-                <td className="px-3 py-3 text-slate-500 text-sm font-mono">
-                  {t.rtbDate ?? <span className="text-slate-300">—</span>}
                 </td>
                 <td className="px-3 py-3">
                   <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-md transition ${t.rtbStatus === "Notice"
@@ -329,6 +542,15 @@ function AdminTenanciesInner() {
                       : "bg-teal-600 hover:bg-teal-700"
                     }`}>
                     {t.rtbStatus}
+                  </button>
+                </td>
+                <td className="px-3 py-3">
+                  <button
+                    onClick={() => handleDeleteTenancy(t.id)}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
+                    aria-label="Delete tenancy"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </td>
               </tr>
@@ -343,8 +565,14 @@ function AdminTenanciesInner() {
         onClose={() => setAddTenancyModalOpen(false)}
         onSubmit={handleAddTenancy}
         tenants={tenants}
-        properties={Array.from(new Set(tenants.map((tenant) => tenant.property).filter(Boolean)))}
+        tenancies={tenancies}
+        propertyMap={Object.fromEntries(
+          tenancies.map((t) => [t.property, t.propertyId]).filter(([name]) => name)
+        )}
+        properties={Array.from(new Set(tenancies.map((t) => t.property).filter(Boolean)))}
       />
+        </>
+      )}
     </div>
   );
 }
