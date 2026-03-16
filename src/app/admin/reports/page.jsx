@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Download, TrendingUp, Banknote, Wrench, Building2 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 
-const STAT_CARDS = [
+const BASE_STAT_CARDS = [
   { label: "Total Rent Collected",  value: "€1,245,600", sub: "Year to date",      Icon: Banknote,   iconBg: "bg-teal-50",   iconColor: "text-teal-600",   trend: "+4.2%" },
   { label: "Outstanding Balance",   value: "€42,300",    sub: "Across 18 units",  Icon: TrendingUp,  iconBg: "bg-rose-50",   iconColor: "text-rose-500",   trend: "-1.1%" },
   { label: "Maintenance Costs",     value: "€18,750",    sub: "Last 12 months",   Icon: Wrench,      iconBg: "bg-orange-50", iconColor: "text-orange-500", trend: "+2.8%" },
@@ -57,6 +57,40 @@ export default function AdminReportsPage() {
   });
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0,10));
   const [property, setProperty] = useState("All Properties");
+  const [statCards, setStatCards] = useState(BASE_STAT_CARDS);
+
+  // Load maintenance costs from localStorage and update stat cards
+  useEffect(() => {
+    const stored = localStorage.getItem("maintenanceCosts");
+    if (stored) {
+      try {
+        const costs = JSON.parse(stored);
+        const totalMaintenanceCost = Object.values(costs).reduce((sum, cost) => {
+          const costDate = new Date(cost.date);
+          const fromDateObj = new Date(fromDate);
+          const toDateObj = new Date(toDate);
+          if (costDate >= fromDateObj && costDate <= toDateObj) {
+            return sum + (cost.amount || 0);
+          }
+          return sum;
+        }, 0);
+
+        setStatCards((prev) =>
+          prev.map((card) =>
+            card.label === "Maintenance Costs"
+              ? {
+                  ...card,
+                  value: `€${totalMaintenanceCost.toLocaleString("en-IE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                  sub: `From recorded costs (${Object.keys(costs).length} items)`,
+                }
+              : card
+          )
+        );
+      } catch (err) {
+        console.error("Error loading maintenance costs:", err);
+      }
+    }
+  }, [fromDate, toDate]);
 
   const properties = useMemo(() => ["All Properties", "Parkside Plaza", "Grand Dock", "Harbour View"], []);
 
@@ -75,7 +109,7 @@ export default function AdminReportsPage() {
     rows.push(["Filter", `Property: ${property}`, `From: ${fromDate}`, `To: ${toDate}`]);
     rows.push([]);
     rows.push(["Metric", "Value", "Notes"]);
-    STAT_CARDS.forEach((s) => rows.push([s.label, s.value, s.sub]));
+    statCards.forEach((s) => rows.push([s.label, s.value, s.sub]));
     rows.push([]);
     rows.push(["Month", "Value (k)"]);
     RENT_DATA.forEach((v, i) => {
@@ -113,7 +147,7 @@ export default function AdminReportsPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {STAT_CARDS.map((s) => (
+        {statCards.map((s) => (
           <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col gap-2 shadow-sm">
             <div className="flex items-start justify-between">
               <p className="text-sm font-semibold text-slate-500 leading-tight">{s.label}</p>
