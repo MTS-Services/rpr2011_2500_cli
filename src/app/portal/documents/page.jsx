@@ -75,7 +75,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch documents from API
+  
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
