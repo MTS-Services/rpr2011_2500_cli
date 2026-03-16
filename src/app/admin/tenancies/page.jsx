@@ -52,6 +52,8 @@ function transformTenancy(apiTenancy, colorIndex) {
   
   return {
     id: apiTenancy.id,
+    propertyId: property.id || "",
+    tenantId: tenant.id || "",
     initials,
     color: COLOR_PALETTE[colorIndex % COLOR_PALETTE.length],
     name: tenant.name || "Unknown Tenant",
@@ -145,25 +147,72 @@ function AdminTenanciesInner() {
 
   const handleAddTenancy = async (formData) => {
     try {
-      // TODO: Wire to POST /api/v1/tenancies when backend endpoint is ready
-      // For now, just refresh the list
-      alert("Tenancy creation submitted. Backend endpoint needed.");
+      // Map form data to backend format
+      const statusMap = { "Let": "ACTIVE", "Notice": "NOTICE", "Active": "ACTIVE" };
+      
+      // Parse rent value - remove currency symbols and spaces
+      let rentValue = formData.rent;
+      rentValue = rentValue.replace(/[€$,\s]/g, "");
+      rentValue = parseInt(rentValue) || 0;
+      
+      const payload = {
+        propertyId: formData.propertyId,
+        tenantId: formData.tenantId,
+        status: statusMap[formData.status] || "ACTIVE",
+        startDate: formData.startDate || null,
+        endDate: formData.endDate || null,
+        rent: rentValue,
+        rentDueDay: parseInt(formData.rentDueDay) || 1,
+        rentStatus: formData.rentStatus || "PAID",
+        rtbNumber: formData.rtbNumber || null,
+        rtbStatus: formData.rtbStatus || null,
+        rtbRegistration: formData.rtbRegistration || null,
+        rentReviewDate: formData.rentReviewDate || null,
+      };
+
       const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          const transformed = data.data.map((tenancy, idx) =>
-            transformTenancy(tenancy, idx)
-          );
-          setTenancies(transformed);
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to create tenancy: ${response.statusText}`);
       }
+
+      const data = await response.json();
+      
+      // Add the new tenancy to the list
+      if (data.success && data.data) {
+        const newTenancy = transformTenancy(data.data, tenancies.length);
+        setTenancies([newTenancy, ...tenancies]);
+      }
+
       setAddTenancyModalOpen(false);
+
+      // Show success alert
+      await Swal.fire({
+        icon: "success",
+        title: "Created!",
+        text: "Tenancy has been created successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return true;
     } catch (err) {
       console.error("Error adding tenancy:", err);
-      alert("Failed to add tenancy");
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to create tenancy. Please try again.",
+      });
+      return false;
     }
   };
 
@@ -516,7 +565,11 @@ function AdminTenanciesInner() {
         onClose={() => setAddTenancyModalOpen(false)}
         onSubmit={handleAddTenancy}
         tenants={tenants}
-        properties={Array.from(new Set(tenants.map((tenant) => tenant.property).filter(Boolean)))}
+        tenancies={tenancies}
+        propertyMap={Object.fromEntries(
+          tenancies.map((t) => [t.property, t.propertyId]).filter(([name]) => name)
+        )}
+        properties={Array.from(new Set(tenancies.map((t) => t.property).filter(Boolean)))}
       />
         </>
       )}
