@@ -34,7 +34,7 @@ export default function Topbar({ onMenuClick }) {
 
       {/* Right icons */}
       <div className="flex items-center gap-4 ml-auto">
-        <button className="p-2 text-slate-500 hover:text-slate-800 transition">
+        <button onClick={() => router.push('/portal/messages')} className="p-2 text-slate-500 hover:text-slate-800 transition" title="Messages">
           <Mail size={20} />
         </button>
         

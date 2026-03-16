@@ -66,7 +66,6 @@ const TABS = [
   { key: "tenancies", label: "Tenancies", Icon: Users },
   { key: "documents", label: "Documents", Icon: FileText },
   { key: "maintenance", label: "Maintenance", Icon: Wrench },
-  { key: "notes", label: "Notes", Icon: StickyNote },
   { key: "audit", label: "Audit", Icon: ClipboardList },
 ];
 
@@ -220,7 +219,6 @@ export default function AdminPropertyProfilePage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Users size={16} className="text-teal-600" />Tenancies</h2>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition"><Plus size={14} />Add Tenancy</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -256,7 +254,6 @@ export default function AdminPropertyProfilePage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><FileText size={16} className="text-teal-600" />Documents</h2>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition"><Plus size={14} />Upload Document</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -300,7 +297,6 @@ export default function AdminPropertyProfilePage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Wrench size={16} className="text-teal-600" />Maintenance</h2>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition"><Plus size={14} />New Request</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -329,50 +325,7 @@ export default function AdminPropertyProfilePage() {
         </div>
       )}
 
-      {/* ── Notes ── */}
-      {activeTab === "notes" && (
-        <div className="space-y-3">
-          {/* Add note */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><StickyNote size={16} className="text-teal-600" />Add Note</h2>
-            <textarea
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              rows={3}
-              placeholder="Enter staff note…"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none"
-            />
-            <div className="flex justify-end mt-3">
-              <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition">
-                <Plus size={14} /> Save Note
-              </button>
-            </div>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><Shield size={11} />Notes are immutable once saved.</p>
-          </div>
-
-          {/* Timeline */}
-          <div className="relative">
-            <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200 hidden sm:block" />
-            <div className="space-y-3">
-              {notes.map((n, i) => (
-                <div key={i} className="relative sm:pl-14">
-                  <div className="hidden sm:flex absolute left-3 top-4 w-4 h-4 rounded-full bg-teal-600 border-2 border-white shadow-sm items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                  </div>
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <p className="text-sm font-bold text-slate-700">{n.author}</p>
-                      <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{n.staffId}</span>
-                      <span className="text-xs text-slate-400 flex items-center gap-1"><CalendarDays size={11} />{n.date}</span>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed">{n.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Notes tab removed */}
 
       {/* ── Audit ── */}
       {activeTab === "audit" && (

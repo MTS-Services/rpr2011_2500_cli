@@ -186,7 +186,7 @@ export default function TenantDocumentsPage() {
                 <th className="text-left px-5 py-3">Document</th>
                 <th className="text-left px-5 py-3">Type</th>
                 <th className="text-left px-5 py-3">Date</th>
-                <th className="text-left px-5 py-3">Size</th>
+                
                 <th className="text-right px-5 py-3">Action</th>
               </tr>
             </thead>
@@ -205,14 +205,13 @@ export default function TenantDocumentsPage() {
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full ${d.typeStyle}`}>{d.type}</span>
                   </td>
                   <td className="px-5 py-4 text-sm text-slate-500">{d.uploadedAt}</td>
-                  <td className="px-5 py-4 text-sm text-slate-400">{d.fileSize}</td>
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleDownload(d)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                        <Download size={14} /> Download
+                      <button onClick={() => handleDownload(d)} title="Download" className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition">
+                        <Download size={16} />
                       </button>
-                      <button onClick={() => handleDeleteDocument(d)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition">
-                        <Trash2 size={14} /> Delete
+                      <button onClick={() => handleDeleteDocument(d)} title="Delete" className="inline-flex items-center justify-center p-2.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition">
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -237,7 +236,7 @@ export default function TenantDocumentsPage() {
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-slate-800">{d.name}</div>
-                    <div className="text-xs text-slate-400 mt-1">{d.uploadedAt} · {d.fileSize}</div>
+                    <div className="text-xs text-slate-400 mt-1">{d.uploadedAt}</div>
                   </div>
                 </div>
                 <div className="mt-3">
@@ -245,11 +244,11 @@ export default function TenantDocumentsPage() {
                 </div>
               </div>
               <div className="flex-shrink-0 flex items-center gap-2">
-                <button onClick={() => handleDownload(d)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                  <Download size={14} />
+                <button onClick={() => handleDownload(d)} title="Download" className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition">
+                  <Download size={16} />
                 </button>
-                <button onClick={() => handleDeleteDocument(d)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition">
-                  <Trash2 size={14} />
+                <button onClick={() => handleDeleteDocument(d)} title="Delete" className="inline-flex items-center justify-center p-2.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition">
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>

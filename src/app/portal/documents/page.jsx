@@ -291,7 +291,6 @@ export default function DocumentsPage() {
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>{d.date}</span>
-                <span>{d.size}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => handleDownload(d)} className="flex-1 flex items-center justify-center p-2 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition" title="Download">
@@ -314,7 +313,7 @@ export default function DocumentsPage() {
                 <th className="text-left px-5 py-4">Property</th>
                 <th className="text-left px-5 py-4">Type</th>
                 <th className="text-left px-5 py-4">Date</th>
-                <th className="text-left px-5 py-4">Size</th>
+                
                 <th className="text-right px-6 py-4">Action</th>
               </tr>
             </thead>
@@ -336,7 +335,7 @@ export default function DocumentsPage() {
                     </span>
                   </td>
                   <td className="px-5 py-5 text-base text-slate-500">{d.date}</td>
-                  <td className="px-5 py-5 text-base text-slate-400">{d.size}</td>
+                  
                   <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => handleDownload(d)} className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition" title="Download">
