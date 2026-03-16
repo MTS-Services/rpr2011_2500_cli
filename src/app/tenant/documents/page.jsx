@@ -90,17 +90,27 @@ export default function TenantDocumentsPage() {
     fetchDocuments();
   }, []);
 
-  const handleDownload = (doc) => {
+  const handleDownload = async (doc) => {
     try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents/${doc.id}/download`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
       const link = document.createElement("a");
-      link.href = doc.fileUrl;
-      link.download = doc.name;
+      link.href = URL.createObjectURL(blob);
+      link.download = doc.name || "document";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error("Error downloading document:", err);
-      Swal.fire("Error", "Failed to download document", "error");
+      Swal.fire("Error", err.message || "Failed to download document", "error");
     }
   };
 

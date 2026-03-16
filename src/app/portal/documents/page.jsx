@@ -3,24 +3,62 @@
 import { useState, useEffect } from "react";
 import PortalShell from "@/components/portal/PortalShell";
 import Pagination from "@/components/portal/Pagination";
-import { Download, Search, ChevronDown, FileText, File, Plus } from "lucide-react";
+import { Download, Search, ChevronDown, FileText, File, Plus, Trash2 } from "lucide-react";
+import Swal from "sweetalert2";
+import { authenticatedFetch } from "@/utils/authFetch";
 
-const docs = [
-  { property: "Apt 5B Rosewood Close", name: "Lease Agreement 2022.pdf", type: "Lease", date: "Oct 10, 2022", size: "248 KB" },
-  { property: "Apt 306 Fairview Rd", name: "RTB Registration Cert.pdf", type: "RTB Registration", date: "May 19, 2023", size: "134 KB" },
-  { property: "Apt 104 Elmwood Grove", name: "March 2024 Rent Statement.pdf", type: "Statement", date: "Apr 1, 2024", size: "89 KB" },
-  { property: "Apt 22 Parkside Plaza", name: "Annual Inspection Report.pdf", type: "Inspection", date: "Jan 15, 2024", size: "320 KB" },
-  { property: "Apt 5B Rosewood Close", name: "Plumbing Invoice #0042.pdf", type: "Invoice", date: "Feb 28, 2024", size: "72 KB" },
-  { property: "Apt 104 Elmwood Grove", name: "Lease Agreement 2023.pdf", type: "Lease", date: "Aug 3, 2023", size: "261 KB" },
-];
-
-const typeColors = {
-  Lease: "bg-blue-50 text-blue-700",
-  "RTB Registration": "bg-purple-50 text-purple-700",
-  Statement: "bg-teal-50 text-teal-700",
-  Inspection: "bg-amber-50 text-amber-700",
-  Invoice: "bg-rose-50 text-rose-700",
+// Type styling
+const TYPE_STYLE = {
+  LEASE: { label: "Lease", style: "bg-blue-50 text-blue-700" },
+  INVOICE: { label: "Invoice", style: "bg-rose-50 text-rose-700" },
+  STATEMENT: { label: "Statement", style: "bg-teal-50 text-teal-700" },
 };
+
+// Calculate relative time
+function getRelativeTime(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now - date;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+// Format file size
+function formatFileSize(bytes) {
+  if (!bytes) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
+}
+
+// Transform API response to UI format
+function transformDocument(apiDoc) {
+  const typeUpper = (apiDoc.type || "").toUpperCase();
+  const typeInfo = TYPE_STYLE[typeUpper] || { label: apiDoc.type || "Unknown", style: "bg-slate-100 text-slate-600" };
+
+  return {
+    id: apiDoc.id,
+    property: apiDoc.property?.name || "Unknown",
+    name: apiDoc.name,
+    type: typeInfo.label,
+    typeStyle: typeInfo.style,
+    date: getRelativeTime(apiDoc.createdAt),
+    size: formatFileSize(apiDoc.fileSize),
+    fileUrl: apiDoc.fileUrl,
+    createdAt: apiDoc.createdAt,
+  };
+}
 
 export default function DocumentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,7 +67,36 @@ export default function DocumentsPage() {
   const [uploadFile, setUploadFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewType, setPreviewType] = useState(null);
-  const [allDocs, setAllDocs] = useState(docs);
+  const [allDocs, setAllDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch documents from API
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch documents: ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          const transformed = data.data.map(doc => transformDocument(doc));
+          setAllDocs(transformed);
+        }
+      } catch (err) {
+        console.error("Error fetching documents:", err);
+        setError(err.message || "Failed to load documents");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, []);
 
   const openUpload = () => setUploadOpen(true);
   const closeUpload = () => {
@@ -45,6 +112,61 @@ export default function DocumentsPage() {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  const handleDownload = async (doc) => {
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents/${doc.id}/download`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = doc.name || "document";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error("Error downloading document:", err);
+      Swal.fire("Error", err.message || "Failed to download document", "error");
+    }
+  };
+
+  const handleDeleteDocument = async (doc) => {
+    const result = await Swal.fire({
+      title: "Delete Document?",
+      text: `Are you sure you want to delete "${doc.name}"? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents/${doc.id}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete: ${response.statusText}`);
+      }
+
+      setAllDocs((prevDocs) => prevDocs.filter((d) => d.id !== doc.id));
+      Swal.fire({icon: "success", title: "Deleted!", timer: 2000, showConfirmButton: false});
+    } catch (err) {
+      console.error("Error deleting document:", err);
+      Swal.fire("Error", err.message || "Failed to delete document", "error");
+    }
+  };
 
   const onFileChange = (e) => {
     const f = e.target.files && e.target.files[0];
@@ -81,28 +203,37 @@ export default function DocumentsPage() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 lg:gap-3 mb-2 lg:mb-4">
-        {["All Properties", "All Document Types"].map((f) => (
-          <button key={f} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:border-slate-300 transition shadow-sm">
-            {f} <ChevronDown size={15} />
-          </button>
-        ))}
-        <div className="relative flex-1 min-w-[260px]">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search documents..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition shadow-sm"
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            <span className="ml-3 text-slate-600">Loading documents...</span>
+          </div>
         </div>
-      </div>
+      )}
 
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-4">
+          <p className="text-red-800 font-medium">Error: {error}</p>
+        </div>
+      )}
+
+      {/* No Documents State */}
+      {!loading && !error && allDocs.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No documents found.</p>
+        </div>
+      )}
+
+      {/* Content */}
+      {!loading && !error && allDocs.length > 0 && (
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         {/* Mobile cards */}
         <div className="lg:hidden divide-y divide-slate-100">
-          {allDocs.map((d, i) => (
-            <div key={i} className="px-4 py-4 space-y-3">
+          {allDocs.map((d) => (
+            <div key={d.id} className="px-4 py-4 space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
                   <FileText size={16} className="text-slate-500" />
@@ -111,15 +242,20 @@ export default function DocumentsPage() {
                   <p className="text-sm font-semibold text-slate-700 truncate">{d.name}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{d.property}</p>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${typeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span>
+                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${d.typeStyle}`}>{d.type}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>{d.date}</span>
                 <span>{d.size}</span>
               </div>
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                <Download size={13} /> Download
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleDownload(d)} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
+                  <Download size={13} /> Download
+                </button>
+                <button onClick={() => handleDeleteDocument(d)} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition">
+                  <Trash2 size={13} /> Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -138,8 +274,8 @@ export default function DocumentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {allDocs.map((d, i) => (
-                <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+              {allDocs.map((d) => (
+                <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
@@ -150,16 +286,21 @@ export default function DocumentsPage() {
                   </td>
                   <td className="px-5 py-5 text-base text-slate-600">{d.property}</td>
                   <td className="px-5 py-5">
-                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${typeColors[d.type] || "bg-slate-100 text-slate-600"}`}>
+                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${d.typeStyle}`}>
                       {d.type}
                     </span>
                   </td>
                   <td className="px-5 py-5 text-base text-slate-500">{d.date}</td>
                   <td className="px-5 py-5 text-base text-slate-400">{d.size}</td>
                   <td className="px-6 py-5 text-right">
-                    <button className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-[#f0fdfa] text-gray-800 rounded-lg transition">
-                      <Download size={16} /> 
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => handleDownload(d)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
+                        <Download size={16} /> Download
+                      </button>
+                      <button onClick={() => handleDeleteDocument(d)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition">
+                        <Trash2 size={16} /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -177,6 +318,7 @@ export default function DocumentsPage() {
           }}
         />
       </div>
+      )}
 
       {/* Upload Modal */}
       {uploadOpen && (
