@@ -269,9 +269,9 @@ export default function AdminAuditPage() {
                 ))}
               </tbody>
             </table>
-            <div className="border-t border-slate-100 px-4 py-3">
+            {/* <div className="border-t border-slate-100 px-4 py-3">
               <Pagination total={filtered.length} />
-            </div>
+            </div> */}
           </div>
 
           {/* Mobile cards — visible below lg */}
@@ -320,9 +320,9 @@ export default function AdminAuditPage() {
                 </div>
               </div>
             ))}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            {/* <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
               <Pagination total={filtered.length} />
-            </div>
+            </div> */}
           </div>
         </>
       )}

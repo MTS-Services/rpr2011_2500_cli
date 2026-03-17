@@ -21,7 +21,7 @@ const navItems = [
   { href: "/tenant/maintenance",  label: "Maintenance",     Icon: Wrench },
   { href: "/tenant/documents",    label: "Documents",       Icon: FolderOpen },
   { href: "/tenant/rtb",          label: "RTB Registration", Icon: Key },
-  { href: "/tenant/messages",     label: "Messages",        Icon: MessageSquare, badge: 2 },
+  { href: "/tenant/messages",     label: "Messages",        Icon: MessageSquare },
   { href: "/tenant/profile",      label: "Profile",         Icon: User },
 ];
 
