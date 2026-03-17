@@ -8,7 +8,6 @@ import {
   User,
   FileText,
   Wrench,
-  StickyNote,
   ArrowLeft,
   MapPin,
   Zap,
@@ -68,13 +67,6 @@ const maintenance = [
   { issue: "Leaky kitchen sink pipe", priority: "High", status: "Scheduled (30 Apr 2024)", updated: "8 days ago" },
 ];
 
-const notes = [
-  { date: "Mar 1, 2024", author: "Sarah Quinn", role: "Staff", text: "Notice to vacate received from tenant. 90-day notice period begins today." },
-  { date: "Feb 28, 2024", author: "Ciarán Byrne", role: "Staff", text: "Plumbing contractor invoice processed and filed. Work completed satisfactorily." },
-  { date: "Jan 15, 2024", author: "Sarah Quinn", role: "Staff", text: "Annual inspection completed. Minor issues noted — property generally in good condition." },
-  { date: "Nov 5, 2022", author: "David McCann", role: "Staff", text: "RTB registration confirmed. Certificate uploaded to documents." },
-];
-
 const TABS = [
   { key: "overview",      label: "Overview",         Icon: Home },
   { key: "tenancy",       label: "Tenancy",          Icon: BadgeCheck },
@@ -82,7 +74,6 @@ const TABS = [
   { key: "rtb",           label: "RTB Registration", Icon: CheckCircle },
   { key: "documents",     label: "Documents",        Icon: FileText },
   { key: "maintenance",   label: "Maintenance",      Icon: Wrench },
-  { key: "notes",         label: "Notes",            Icon: StickyNote },
 ];
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -539,43 +530,7 @@ export default function PropertyProfilePage() {
         </div>
       )}
 
-      {/* Tab: Notes */}
-      {activeTab === "notes" && (
-        <div className="space-y-3">
-          {/* Notice */}
-          <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
-            <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-700 font-medium">These notes are entered by McCann &amp; Corran staff and are read-only.</p>
-          </div>
-
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200 hidden sm:block" />
-
-            <div className="space-y-3">
-              {notes.map((n, i) => (
-                <div key={i} className="relative sm:pl-14">
-                  {/* Dot */}
-                  <div className="hidden sm:flex absolute left-3 top-4 w-4 h-4 rounded-full bg-teal-600 border-2 border-white shadow-sm items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                  </div>
-
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <p className="text-sm font-bold text-slate-700">{n.author}</p>
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700">{n.role}</span>
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <CalendarDays size={11} /> {n.date}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed">{n.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Notes tab removed for landlord view */}
     </PortalShell>
   );
 }

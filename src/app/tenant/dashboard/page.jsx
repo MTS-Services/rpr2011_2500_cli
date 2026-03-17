@@ -283,78 +283,7 @@ export default function TenantDashboardPage() {
             </div>
           </div>
 
-          {/* RTB Registration quick card */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-800">RTB Registration</h3>
-              <Link href="/tenant/rtb" className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5">
-                View <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center">
-                  <Key size={20} className="text-teal-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">Tenancy Registered with RTB</p>
-                  <p className="text-xs text-slate-500 mt-1">Your tenancy is registered with the Residential Tenancies Board.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-slate-50 p-3 rounded-md">
-                  <div className="text-xs text-slate-500">RTB Number</div>
-                  <div className="font-mono font-semibold text-slate-800 truncate">RTB-2022-10-456782</div>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-md">
-                  <div className="text-xs text-slate-500">Status</div>
-                  <div className="font-semibold text-teal-700">Registered</div>
-                </div>
-              </div>
-
-              <Link href="/tenant/rtb" className="block w-full text-center py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold">
-                View RTB Details
-              </Link>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">Messages</h3>
-              <Link
-                href="/tenant/messages"
-                className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5"
-              >
-                View All <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {messages.map((msg, i) => (
-                <div key={i} className="px-5 py-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xs shrink-0">
-                      MC
-                    </div>
-                    <p className="text-sm font-semibold text-slate-700">{msg.from}</p>
-                  </div>
-                  <p className="text-sm text-slate-500 leading-snug">{msg.text}</p>
-                  <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
-                    <Clock size={11} /> {msg.time}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div className="px-5 py-4 border-t border-slate-100">
-              <Link
-                href="/tenant/messages"
-                className="flex items-center justify-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700"
-              >
-                <MessageSquare size={15} /> Send a Message
-              </Link>
-            </div>
-          </div>
+          {/* RTB Registration and Messages removed as requested */}
         </div>
       </div>
     </TenantShell>

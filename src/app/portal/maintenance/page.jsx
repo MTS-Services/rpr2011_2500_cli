@@ -32,6 +32,13 @@ export default function MaintenancePage() {
   const [selectedDetails, setSelectedDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
+  // CSS to hide scrollbars
+  const hideScrollbarStyle = `
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  `;
+
   // Helper: Map backend status to frontend
   const mapStatus = (backendStatus) => {
     const mapping = {
@@ -177,6 +184,7 @@ export default function MaintenancePage() {
 
   return (
     <PortalShell>
+      <style>{hideScrollbarStyle}</style>
       <div className="mb-3 lg:mb-5">
         <h1 className="text-2xl lg:text-3xl font-bold text-slate-800">Maintenance</h1>
       </div>
@@ -310,7 +318,7 @@ export default function MaintenancePage() {
       {detailsOpen && selectedDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/35" onClick={() => setDetailsOpen(false)} />
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg z-50 overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg z-50 overflow-hidden max-h-[90vh] overflow-y-auto hide-scrollbar" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
             <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
               <div>
                 <h2 className="text-lg font-semibold text-slate-800">Maintenance Details</h2>
