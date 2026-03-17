@@ -3,10 +3,64 @@
 import PortalShell from "@/components/portal/PortalShell";
 import Image from "next/image";
 import { Lock, ArrowRight } from "lucide-react";
-import { usePortalAuth } from "@/context/PortalAuthContext";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authenticatedFetch } from "@/utils/authFetch";
+import Swal from "sweetalert2";
 
 export default function ProfilePage() {
-  const { user } = usePortalAuth();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/profile`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+        const result = await response.json();
+        if (result.success && result.data) {
+          setProfile(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to load profile",
+          icon: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <PortalShell>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">Loading profile...</p>
+        </div>
+      </PortalShell>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <PortalShell>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No profile data available</p>
+        </div>
+      </PortalShell>
+    );
+  }
 
   return (
     <PortalShell>
@@ -19,15 +73,17 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           {/* Header */}
           <div className="flex items-center gap-4 px-6 py-4 border-b border-slate-100">
-            <Image
-              src={user?.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
-              alt={user?.name}
-              width={72}
-              height={72}
-              className="rounded-full object-cover w-[72px] h-[72px] shrink-0"
-            />
+            <div className="w-[72px] h-[72px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-3xl font-bold shrink-0">
+              {profile.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)}
+            </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">{user?.name}</h2>
+              <h2 className="text-2xl font-bold text-slate-800">{profile.name}</h2>
+              <p className="text-sm text-slate-500 mt-0.5">{profile.role}</p>
             </div>
           </div>
 
@@ -48,22 +104,19 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
               <div className="px-6 py-4">
                 <p className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Email</p>
-                <p className="text-base text-slate-700">{user?.email}</p>
+                <p className="text-base text-slate-700">{profile.email}</p>
               </div>
               <div className="px-6 py-4">
                 <p className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Address</p>
-                <p className="text-base font-semibold text-slate-700">{user?.address?.split(",")[0]}</p>
-                <p className="text-base text-slate-500">{user?.address?.split(",").slice(1).join(",").trim()}</p>
-                <p className="text-sm text-slate-400 mt-1.5">30 minutes ago</p>
+                <p className="text-base font-semibold text-slate-700">{profile.address}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 border-t border-slate-100">
               <div className="px-6 py-4">
-                <p className="text-base text-slate-700">{user?.phone}</p>
+                <p className="text-base text-slate-700">{profile.phone}</p>
               </div>
               <div className="px-6 py-4">
-                <p className="text-base font-bold text-slate-700">{user?.ppsNumber}</p>
-                <p className="text-sm text-slate-400 mt-1.5">2 hours ago</p>
+                <p className="text-base font-bold text-slate-700">{profile.role}</p>
               </div>
             </div>
           </div>
@@ -82,12 +135,19 @@ export default function ProfilePage() {
             <p className="text-base text-amber-700">
               Need any changes made to your profile? Please contact McCann &amp; Corran for assistance.
             </p>
-            <a
-              href="/contact"
+            <button
+              type="button"
+              onClick={() => {
+                if (profile?.role && profile.role.toLowerCase() === "landlord") {
+                  router.push("/portal/messages");
+                } else {
+                  router.push("/contact");
+                }
+              }}
               className="shrink-0 inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition"
             >
               Contact Us <ArrowRight size={15} />
-            </a>
+            </button>
           </div>
         </div>
       </div>
