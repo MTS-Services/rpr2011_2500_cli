@@ -244,7 +244,11 @@ export default function AdminDocumentsPage() {
   const exportSelected = () => {
     const rows = docs.filter((d) => selected.includes(d.id));
     if (rows.length === 0) {
-      alert('No rows selected to export');
+      Swal.fire({
+        title: 'No Selection',
+        text: 'Please select documents to export',
+        icon: 'info',
+      });
       return;
     }
     const header = ['Name','Type','Property','Uploaded By','Age'];
@@ -264,7 +268,11 @@ export default function AdminDocumentsPage() {
 
   const deleteSelected = () => {
     if (selected.length === 0) {
-      alert('No rows selected to delete');
+      Swal.fire({
+        title: 'No Selection',
+        text: 'Please select documents to delete',
+        icon: 'info',
+      });
       return;
     }
     if (!confirm(`Delete ${selected.length} selected document(s)? This is a client-side mock.`)) {

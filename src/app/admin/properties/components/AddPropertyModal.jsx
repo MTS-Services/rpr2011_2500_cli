@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { X } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -22,7 +23,11 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.type || !formData.landlord) {
-      alert("Please fill in all required fields");
+      Swal.fire({
+        title: 'Incomplete Form',
+        text: 'Please fill in all required fields',
+        icon: 'warning',
+      });
       return;
     }
     onSubmit(formData);

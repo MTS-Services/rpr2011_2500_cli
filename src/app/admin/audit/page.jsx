@@ -1,148 +1,331 @@
 "use client";
-import { useState } from "react";
-import { Search, Download, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Download, Trash2 } from "lucide-react";
+import Pagination from "@/components/portal/Pagination";
+import { authenticatedFetch } from "@/utils/authFetch";
+import Swal from "sweetalert2";
 
-const ALL_LOGS = [
-  { id: 1, ts: "2026-02-23 10:12:04", adminId: "JM01", user: "John McCann",  actionType: "Update",  action: "Updated Rent",             target: "Property: Apt 5B",        ip: "192.168.1.40" },
-  { id: 2, ts: "2026-02-22 16:03:11", adminId: "SYS",  user: "System",       actionType: "Create",  action: "Auto-Invoice Generated",   target: "Tenancy: Apt 5B",        ip: "127.0.0.1" },
-  { id: 3, ts: "2026-02-21 09:22:50", adminId: "EC01", user: "Emma Curran",  actionType: "Update",  action: "Approved Maintenance",     target: "Maintenance: #342",      ip: "192.168.1.47" },
-  { id: 4, ts: "2026-02-20 14:45:18", adminId: "JM01", user: "John McCann",  actionType: "Create",  action: "Created Lease",            target: "Property: Apt 12 Elm",   ip: "192.168.1.40" },
-  { id: 5, ts: "2026-02-19 11:30:00", adminId: "SQ01", user: "Sarah Quinn",  actionType: "Delete",  action: "Deleted Document",         target: "Document: Invoice #21",  ip: "192.168.1.45" },
-  { id: 6, ts: "2026-02-18 08:55:12", adminId: "CB02", user: "Ciarán Byrne", actionType: "Login",   action: "Logged In",                target: "System",                 ip: "192.168.1.46" },
-];
-
-const ACTION_TYPES = ["All Actions", "Create", "Update", "Delete", "Login"];
-const USERS = ["All Users", "John McCann", "Emma Curran", "Sarah Quinn", "Ciarán Byrne", "System"];
+const ACTION_TYPES = ["All Actions", "User Login", "User Registration", "Profile Update", "User Deletion", "Tenancy Creation", "Tenancy Update", "Users List"];
 
 export default function AdminAuditPage() {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All Actions");
-  const [userFilter, setUserFilter] = useState("All Users");
   const [dateFrom, setDateFrom] = useState("");
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [triggerFetch, setTriggerFetch] = useState(0);
 
-  const filtered = ALL_LOGS.filter((l) => {
-    const matchSearch = l.action.toLowerCase().includes(search.toLowerCase()) || l.target.toLowerCase().includes(search.toLowerCase()) || l.user.toLowerCase().includes(search.toLowerCase());
-    const matchAction = actionFilter === "All Actions" || l.actionType === actionFilter;
-    const matchUser   = userFilter === "All Users" || l.user === userFilter;
-    const matchDate   = !dateFrom || l.ts >= dateFrom;
-    return matchSearch && matchAction && matchUser && matchDate;
+  useEffect(() => {
+    const fetchAuditLogs = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs?page=${currentPage}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch audit logs");
+        }
+        const result = await response.json();
+        if (result.success && result.data) {
+          setLogs(result.data);
+          if (result.meta?.pagination) {
+            setTotalPages(result.meta.pagination.totalPages);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching audit logs:", error);
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to load audit logs",
+          icon: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditLogs();
+  }, [currentPage, triggerFetch]);
+
+  const handleDeleteLog = async (logId) => {
+    const confirm = await Swal.fire({
+      title: "Delete Audit Log?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs/${logId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to delete audit log");
+      }
+      Swal.fire({
+        title: "Deleted!",
+        text: "Audit log has been deleted.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      setTriggerFetch((prev) => prev + 1);
+    } catch (error) {
+      console.error("Error deleting audit log:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to delete audit log",
+        icon: "error",
+      });
+    }
+  };
+
+  const filtered = logs.filter((l) => {
+    const matchSearch =
+      l.action.toLowerCase().includes(search.toLowerCase()) ||
+      l.target.toLowerCase().includes(search.toLowerCase()) ||
+      (l.user?.name || "").toLowerCase().includes(search.toLowerCase());
+    const matchAction =
+      actionFilter === "All Actions" || l.action === actionFilter;
+    const matchDate =
+      !dateFrom ||
+      new Date(l.createdAt).toISOString().split("T")[0] >= dateFrom;
+    return matchSearch && matchAction && matchDate;
   });
 
   const handleExport = () => {
-    const header = "Timestamp,Admin ID,User,Action Type,Action,Target";
-    const rows = filtered.map((l) => `${l.ts},${l.adminId},${l.user},${l.actionType},${l.action},${l.target}`);
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "audit-log.csv"; a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const header = "Timestamp,User,User Email,User Role,Action,Target";
+      const rows = filtered.map((l) =>
+        `"${new Date(l.createdAt).toLocaleString()}","${l.user?.name || "System"}","${l.user?.email || "N/A"}","${l.user?.role || "N/A"}","${l.action}","${l.target}"`
+      );
+      const csv = [header, ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      Swal.fire({
+        title: "Success!",
+        text: "Audit logs exported successfully",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to export audit logs",
+        icon: "error",
+      });
+    }
+  };
+
+  const getActionColor = (action) => {
+    if (action.includes("Deletion") || action.includes("Delete"))
+      return "bg-red-100 text-red-700";
+    if (action.includes("Creation") || action.includes("Registration"))
+      return "bg-teal-100 text-teal-700";
+    if (action.includes("Login")) return "bg-blue-100 text-blue-700";
+    if (action.includes("Update")) return "bg-amber-100 text-amber-700";
+    return "bg-slate-100 text-slate-700";
   };
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Audit Log</h1>
-          <p className="text-base text-slate-500 mt-0.5">Track all system actions and changes</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
+            Audit Log
+          </h1>
+          <p className="text-base text-slate-500 mt-0.5">
+            Track all system actions and changes
+          </p>
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition"
+          className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 text-white text-sm font-semibold rounded-lg shadow-sm transition"
         >
-          <Download size={15} /> Export CSV
+          <Download size={15} /> <span className="hidden sm:inline">Export CSV</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
-        <div className="relative col-span-2 sm:flex-1 sm:min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search logs…"
-            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
           />
         </div>
         <select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
-          className="w-full sm:w-auto px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+          className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
         >
-          {ACTION_TYPES.map((a) => <option key={a}>{a}</option>)}
-        </select>
-        <select
-          value={userFilter}
-          onChange={(e) => setUserFilter(e.target.value)}
-          className="w-full sm:w-auto px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
-        >
-          {USERS.map((u) => <option key={u}>{u}</option>)}
+          {ACTION_TYPES.map((a) => (
+            <option key={a}>{a}</option>
+          ))}
         </select>
         <input
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="w-full sm:w-auto col-span-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+          className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
         />
       </div>
 
-      {/* Table lg+ */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hidden lg:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/60">
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Timestamp</th>
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Admin ID</th>
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">User</th>
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Action Type</th>
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Action</th>
-              <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">Target</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filtered.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-50/60 transition">
-                <td className="px-4 py-3 font-mono text-slate-600">{l.ts}</td>
-                <td className="px-4 py-3 font-mono text-slate-500">{l.adminId}</td>
-                <td className="px-4 py-3 font-medium  text-slate-700">{l.user}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    l.actionType === "Delete" ? "bg-red-100 text-red-700" :
-                    l.actionType === "Create" ? "bg-teal-100 text-teal-700" :
-                    l.actionType === "Login"  ? "bg-blue-100 text-blue-700" :
-                    "bg-amber-100 text-amber-700"
-                  }`}>{l.actionType}</span>
-                </td>
-                <td className="px-4 py-3 text-slate-700">{l.action}</td>
-                <td className="px-4 py-3 text-slate-500">{l.target}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">Loading audit logs...</p>
+        </div>
+      )}
 
-      {/* Cards mobile */}
-      <div className="space-y-3 lg:hidden">
-        {filtered.map((l) => (
-          <div key={l.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1">
-            <div className="flex items-start justify-between">
-              <p className="text-base font-medium text-slate-800">{l.action}</p>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                l.actionType === "Delete" ? "bg-red-100 text-red-700" :
-                l.actionType === "Create" ? "bg-teal-100 text-teal-700" :
-                l.actionType === "Login"  ? "bg-blue-100 text-blue-700" :
-                "bg-amber-100 text-amber-700"
-              }`}>{l.actionType}</span>
-            </div>
-            <p className="text-sm text-slate-500">{l.target}</p>
-            <p className="text-sm font-semibold text-slate-700">{l.user} <span className="font-mono text-slate-400">·{l.adminId}</span></p>
-            <div className="flex items-center justify-between text-sm text-slate-400">
-              <span className="font-mono">{l.ts}</span>
+      {!loading && logs.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No audit logs found.</p>
+        </div>
+      )}
+
+      {!loading && logs.length > 0 && (
+        <>
+          {/* Table lg+ */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hidden lg:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">
+                    Timestamp
+                  </th>
+                  <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">
+                    User
+                  </th>
+                  <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">
+                    Action
+                  </th>
+                  <th className="px-4 py-3 text-base text-left font-semibold text-slate-600">
+                    Target
+                  </th>
+                  <th className="w-20 px-4 py-3 text-base text-right font-semibold text-slate-600">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((l) => (
+                  <tr key={l.id} className="hover:bg-slate-50/70 transition">
+                    <td className="px-4 py-3 font-mono text-sm text-slate-600">
+                      {new Date(l.createdAt).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900 text-sm">
+                      {l.user?.name || "System"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 text-sm">
+                      {l.user?.email || "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-sm font-semibold ${getActionColor(
+                          l.action
+                        )}`}
+                      >
+                        {l.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700 text-sm">
+                      {l.target}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleDeleteLog(l.id)}
+                        className="inline-flex items-center justify-center w-9 h-9 bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded-md transition"
+                        title="Delete log"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="border-t border-slate-100 px-4 py-3">
+              <Pagination total={filtered.length} />
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* Mobile cards — visible below lg */}
+          <div className="lg:hidden space-y-3">
+            {filtered.map((l) => (
+              <div
+                key={l.id}
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900 text-sm">
+                      {l.action}
+                    </p>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      {l.target}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteLog(l.id)}
+                    className="ml-2 w-9 h-9 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded-md transition flex-shrink-0"
+                    title="Delete log"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <div className="space-y-1 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-600">User</p>
+                    <p className="font-medium text-slate-900 text-sm">
+                      {l.user?.name || "System"}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-600">Email</p>
+                    <p className="text-xs text-slate-700">
+                      {l.user?.email || "N/A"}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-600">Time</p>
+                    <p className="font-mono text-xs text-slate-700">
+                      {new Date(l.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <Pagination total={filtered.length} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

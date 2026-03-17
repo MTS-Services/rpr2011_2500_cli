@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { X } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties = [], tenants = [], propertyMap = {} }) {
     const [formData, setFormData] = useState({
@@ -48,12 +49,20 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.tenantId || !formData.property || !formData.status || !formData.rent || !formData.rentDueDay) {
-            alert("Please fill in all required fields");
+            Swal.fire({
+              title: 'Incomplete Form',
+              text: 'Please fill in all required fields',
+              icon: 'warning',
+            });
             return;
         }
         const resolvedPropertyId = formData.propertyId || propertyMap[formData.property] || "";
         if (!resolvedPropertyId) {
-            alert("Selected property is missing an ID. Please reselect property.");
+            Swal.fire({
+              title: 'Invalid Selection',
+              text: 'Selected property is missing an ID. Please reselect property.',
+              icon: 'error',
+            });
             return;
         }
 
