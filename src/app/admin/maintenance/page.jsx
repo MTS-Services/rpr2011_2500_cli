@@ -1,28 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  Plus, ChevronDown, Search, ArrowUpDown, Eye, Edit, CheckCircle2
+  Plus, ChevronDown, Search, ArrowUpDown, Eye, Trash2, CheckCircle2
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
 import Swal from "sweetalert2";
-
-const REQUESTS = [
-  // Open
-  { id: 1,  col: "Open",        title: "Leaking tap",             priority: "Low",    assignee: { initials: "HQ", color: "bg-teal-500" },    name: "Holly Quigley",    property: "Apt 28 Parkside Plaza",   age: "4 days ago" },
-  { id: 2,  col: "Open",        title: "Smoke detector faulty",   priority: "Medium", assignee: { initials: "AW", color: "bg-orange-500" },  name: "Adam Walsh",       property: "Apt 65 Southern Cross",   age: "5 days ago" },
-  { id: 3,  col: "Open",        title: "Smoke alarm replacement", priority: "High",   assignee: { initials: "KD", color: "bg-rose-500" },    name: "Kevin Doples",     property: "Apt 22 Parkside Plaza",   age: "1 week ago" },
-  { id: 4,  col: "Open",        title: "Leaking tap",             priority: "High",   assignee: { initials: "SK", color: "bg-emerald-600" }, name: "Steven Keane",     property: "Apt 5 City Square",       age: "1 week ago" },
-  // In Progress
-  { id: 5,  col: "In Progress",  title: "Broken window",           priority: "Medium", assignee: { initials: "KM", color: "bg-indigo-500" },  name: "Kevin Madden",     property: "Apt 5B Rosewood Close",   age: "4 days ago" },
-  { id: 6,  col: "In Progress",  title: "Heating not working",     priority: "High",   assignee: { initials: "RS", color: "bg-sky-600" },     name: "Reginald Spencer", property: "Apt 21C Harbour View",    age: "1 week ago" },
-  { id: 7,  col: "In Progress",  title: "Shower not draining",     priority: "Medium", assignee: { initials: "RS", color: "bg-sky-600" },     name: "Reginald Spencer", property: "Apt 21C Harbour View",    age: "1 week ago" },
-  { id: 8,  col: "In Progress",  title: "Loose door handle",       priority: "Low",    assignee: { initials: "SK", color: "bg-teal-500" },    name: "Sarah Kelly",      property: "Apt 12 Grand Canal Dock", age: "2 weeks ago" },
-  // Closed
-  { id: 9,  col: "Closed",       title: "Bed replacement",         priority: "Medium", assignee: { initials: "EC", color: "bg-pink-500" },    name: "Emma Curran",      property: "Apt 7D Hanover Quay",     age: "4 days ago" },
-  { id: 10, col: "Closed",       title: "Broken skirting board",   priority: "Low",    assignee: { initials: "PH", color: "bg-amber-600" },   name: "Peter Hughes",     property: "Apt 306 Fairview Road",   age: "2 weeks ago" },
-  { id: 11, col: "Closed",       title: "Faulty light fitting",    priority: "Low",    assignee: { initials: "DB", color: "bg-violet-500" },  name: "Donal Byrne",      property: "Apt 104 Elmwood Grove",   age: "2 weeks ago" },
-  { id: 12, col: "Closed",       title: "Damp patch on ceiling",   priority: "High",   assignee: { initials: "LB", color: "bg-cyan-600" },    name: "Leanne Byrne",     property: "Apt 104 Elmwood Grove",   age: "3 weeks ago" },
-];
+import { authenticatedFetch } from "@/utils/authFetch";
 
 const STATUS_STYLE = {
   "Open":        "bg-slate-100 text-slate-600",
@@ -39,8 +22,10 @@ const PRIORITY_STYLE = {
 export default function AdminMaintenancePage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [requests, setRequests] = useState(REQUESTS);
-  const [propertyFilter, setPropertyFilter] = useState("All Properties");
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [triggerFetch, setTriggerFetch] = useState(0);
+  
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [costModalOpen, setCostModalOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
@@ -48,6 +33,86 @@ export default function AdminMaintenancePage() {
   const [costVendor, setCostVendor] = useState("");
   const [costDate, setCostDate] = useState("");
   const [costs, setCosts] = useState({});
+
+  // Helper: Generate initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  // Helper: Get consistent color for name
+  const getNameColor = (name) => {
+    const colors = ["bg-teal-500", "bg-orange-500", "bg-rose-500", "bg-emerald-600", "bg-indigo-500", "bg-sky-600", "bg-pink-500", "bg-amber-600", "bg-violet-500", "bg-cyan-600"];
+    return colors[(name || "").charCodeAt(0) % colors.length];
+  };
+
+  // Helper: Map backend status to frontend status
+  const mapStatus = (backendStatus) => {
+    const mapping = {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In Progress",
+      "CLOSED": "Closed"
+    };
+    return mapping[backendStatus] || backendStatus;
+  };
+
+  // Helper: Map backend priority to frontend priority
+  const mapPriority = (backendPriority) => {
+    return backendPriority.charAt(0) + backendPriority.slice(1).toLowerCase();
+  };
+
+  // Helper: Compute relative time
+  const computeAge = (createdAt) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffMs = now - created;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  // Fetch maintenance requests from API
+  useEffect(() => {
+    const fetchMaintenance = async () => {
+      try {
+        setLoading(true);
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance`
+        );
+        if (!response.ok) throw new Error("Failed to fetch maintenance");
+        const result = await response.json();
+        if (result.success && result.data) {
+          const mapped = result.data.map((item) => ({
+            id: item.id,
+            col: mapStatus(item.status),
+            title: item.title,
+            priority: mapPriority(item.priority),
+            assignee: {
+              initials: getInitials(item.reportedBy?.user?.name),
+              color: getNameColor(item.reportedBy?.user?.name || "")
+            },
+            name: item.reportedBy?.user?.name || "Unknown",
+            property: item.property?.address || item.property?.name || "Unknown Property",
+            age: computeAge(item.createdAt)
+          }));
+          setRequests(mapped);
+        }
+      } catch (error) {
+        console.error("Error fetching maintenance:", error);
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to load maintenance requests",
+          icon: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMaintenance();
+  }, [triggerFetch]);
 
   // Load costs from localStorage on mount
   useEffect(() => {
@@ -109,7 +174,79 @@ export default function AdminMaintenancePage() {
 
   const getCostForRequest = (requestId) => costs[requestId];
 
-  const uniqueProperties = Array.from(new Set(REQUESTS.map((r) => r.property))).slice(0, 50);
+  // Handle delete maintenance request
+  const handleDeleteMaintenance = async (requestId, title) => {
+    const confirmed = await Swal.fire({
+      title: "Delete Maintenance Request?",
+      text: `Are you sure you want to delete "${title}"? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirmed.isConfirmed) return;
+
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${requestId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) throw new Error("Failed to delete maintenance");
+      Swal.fire({
+        title: "Deleted!",
+        text: "Maintenance request has been deleted.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false
+      });
+      setTriggerFetch(prev => prev + 1);
+    } catch (error) {
+      console.error("Error deleting maintenance:", error);
+      Swal.fire("Error!", "Failed to delete maintenance request", "error");
+    }
+  };
+
+  // Handle status change with API update
+  const handleStatusChange = async (requestId, newFrontendStatus) => {
+    // Map frontend status to backend status
+    const statusMap = {
+      "Open": "OPEN",
+      "In Progress": "IN_PROGRESS",
+      "Closed": "CLOSED"
+    };
+
+    const backendStatus = statusMap[newFrontendStatus];
+    if (!backendStatus) return;
+
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${requestId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: backendStatus })
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update maintenance status");
+      Swal.fire({
+        title: "Updated!",
+        text: `Status changed to ${newFrontendStatus}`,
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false
+      });
+      setTriggerFetch(prev => prev + 1);
+    } catch (error) {
+      console.error("Error updating maintenance status:", error);
+      Swal.fire("Error!", "Failed to update maintenance status", "error");
+    }
+  };
+
+  
 
   const filtered = requests.filter((r) => {
     const matchSearch =
@@ -117,9 +254,8 @@ export default function AdminMaintenancePage() {
       r.title.toLowerCase().includes(search.toLowerCase()) ||
       r.property.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "All" || r.col === statusFilter;
-    const matchProperty = propertyFilter === "All Properties" || r.property === propertyFilter;
     const matchPriority = priorityFilter === "All" || r.priority === priorityFilter;
-    return matchSearch && matchStatus && matchProperty && matchPriority;
+    return matchSearch && matchStatus && matchPriority;
   });
 
   return (
@@ -129,8 +265,15 @@ export default function AdminMaintenancePage() {
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Maintenance</h1>
       </div>
 
-      {/* New Request button and modal removed */}
+      {/* Loading state */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">Loading maintenance requests...</p>
+        </div>
+      )}
 
+      {!loading && (
+        <>
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1 min-w-[180px] relative">
@@ -156,12 +299,7 @@ export default function AdminMaintenancePage() {
           </select>
           <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
-        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
-          <option>All Properties</option>
-          {uniqueProperties.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
+        
 
         <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
           <option value="All">Priority</option>
@@ -192,23 +330,15 @@ export default function AdminMaintenancePage() {
               </div>
             </div>
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-              <select value={r.col} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, col: e.target.value} : req))} className="text-xs font-semibold px-2.5 py-1 rounded-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer" style={{backgroundColor: STATUS_STYLE[r.col].split(' ')[0], color: STATUS_STYLE[r.col].split(' ')[1]}}>
+              <select value={r.col} onChange={(e) => handleStatusChange(r.id, e.target.value)} className="text-xs font-semibold px-2.5 py-1 rounded-full border-0 focus:outline-none ring-1 ring-teal-400 cursor-pointer" style={{backgroundColor: STATUS_STYLE[r.col].split(' ')[0], color: STATUS_STYLE[r.col].split(' ')[1]}}>
                 <option value="Open">Open</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Closed">Closed</option>
               </select>
-              {getCostForRequest(r.id) ? (
-                <div className="flex items-center gap-1">
-                  {/* <CheckCircle2 size={13} className="text-green-600" /> */}
-                  <span className="text-xs font-medium text-green-700">€{getCostForRequest(r.id).amount.toFixed(2)}</span>
-                </div>
-              ) : (
-                <span className="text-xs text-slate-400">No cost</span>
-              )}
             </div>
             <div className="flex items-center justify-end pt-2">
-              <button onClick={() => openCostModal(r.id)} className="p-2 bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition" title="Record cost">
-                <Edit size={14} />
+              <button onClick={() => handleDeleteMaintenance(r.id, r.title)} className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition" title="Delete maintenance request">
+                <Trash2 size={14} />
               </button>
             </div>
           </div>
@@ -223,9 +353,6 @@ export default function AdminMaintenancePage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1"># <ArrowUpDown size={12} className="text-slate-400" /></span>
-              </th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">
                 <span className="flex items-center gap-1">Issue </span>
               </th>
@@ -234,14 +361,12 @@ export default function AdminMaintenancePage() {
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Priority</th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Reported</th>
-              <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Cost</th>
               <th className="px-4 py-3 text-right font-semibold text-base text-slate-600">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50/60 transition">
-                <td className="px-4 py-3 text-slate-400 font-mono text-sm">{String(r.id).padStart(3, "0")}</td>
                 <td className="px-4 py-3">
                   <p className="font-semibold text-base text-slate-800">{r.title}</p>
                 </td>
@@ -260,26 +385,16 @@ export default function AdminMaintenancePage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <select value={r.col} onChange={(e) => setRequests(requests.map(req => req.id === r.id ? {...req, col: e.target.value} : req))} className="text-xs font-semibold px-2.5 py-1 rounded-full border-0 focus:outline-none ring-1 ring-teal-400 cursor-pointer" style={{backgroundColor: STATUS_STYLE[r.col].split(' ')[0], color: STATUS_STYLE[r.col].split(' ')[1]}}>
+                  <select value={r.col} onChange={(e) => handleStatusChange(r.id, e.target.value)} className="text-xs font-semibold px-2.5 py-1 rounded-full border-0 focus:outline-none ring-1 ring-teal-400 cursor-pointer" style={{backgroundColor: STATUS_STYLE[r.col].split(' ')[0], color: STATUS_STYLE[r.col].split(' ')[1]}}>
                     <option value="Open">Open</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Closed">Closed</option>
                   </select>
                 </td>
                 <td className="px-4 py-3 text-slate-400">{r.age}</td>
-                <td className="px-4 py-3">
-                  {getCostForRequest(r.id) ? (
-                    <div className="flex items-center gap-1.5">
-                      
-                      <span className="text-sm font-medium text-green-700">€{getCostForRequest(r.id).amount.toFixed(2)}</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-slate-400">No cost</span>
-                  )}
-                </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => openCostModal(r.id)} className="w-9 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-300 hover:text-gray-800 text-teal-700 rounded-md transition" title="Record cost">
-                    <Edit size={15} />
+                  <button onClick={() => handleDeleteMaintenance(r.id, r.title)} className="w-9 h-9 inline-flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition" title="Delete maintenance request">
+                    <Trash2 size={15} />
                   </button>
                 </td>
               </tr>
@@ -288,6 +403,9 @@ export default function AdminMaintenancePage() {
         </table>
         <Pagination total={filtered.length} />
       </div>
+
+        </>
+      )}
 
       {/* Record Cost Modal */}
       {costModalOpen && (

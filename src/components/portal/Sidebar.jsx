@@ -19,8 +19,8 @@ const navItems = [
   { href: "/portal/tenants", label: "Tenants", Icon: Users },
   { href: "/portal/documents", label: "Documents", Icon: FolderOpen },
   { href: "/portal/maintenance", label: "Maintenance", Icon: Wrench },
-  { href: "/portal/messages", label: "Messages", Icon: MessageSquare, badge: 2 },
-  { href: "/portal/profile", label: "Profile", Icon: User, badge: 3 },
+  { href: "/portal/messages", label: "Messages", Icon: MessageSquare },
+  { href: "/portal/profile", label: "Profile", Icon: User },
 ];
 
 export default function Sidebar({ mobileOpen, onClose }) {

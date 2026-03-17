@@ -7,6 +7,7 @@ import {
   ArrowUpDown, Home, Users, Eye, Edit, Trash
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import Swal from "sweetalert2";
 
 const LANDLORDS = [
   { id: 1, name: "Joan Doyle",      initials: "JD", color: "bg-teal-500",    sub: "Apt 28 Perkside Plaza",  properties: 12, tenants: 9,  mobile: "085-323-8927", pps: "3276513B",  pps2: "325-0305597", dob: "14 Mar 1972", email: "joan.doyle@email.com" },
@@ -65,7 +66,14 @@ export default function AdminLandlordsPage() {
 
   const exportSelected = () => {
     const rows = landlords.filter((l) => selected.includes(l.id));
-    if (rows.length === 0) { alert('No rows selected'); return; }
+    if (rows.length === 0) {
+      Swal.fire({
+        title: 'No Selection',
+        text: 'Please select rows to export',
+        icon: 'info',
+      });
+      return;
+    }
     const csv = ['Name,Email,Mobile,Properties,Tenants'].concat(rows.map(r => `${r.name},${r.email},${r.mobile},${r.properties},${r.tenants}`)).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -73,7 +81,14 @@ export default function AdminLandlordsPage() {
   };
 
   const deleteSelected = () => {
-    if (selected.length === 0) { alert('No rows selected'); return; }
+    if (selected.length === 0) {
+      Swal.fire({
+        title: 'No Selection',
+        text: 'Please select rows to delete',
+        icon: 'info',
+      });
+      return;
+    }
     if (!confirm(`Delete ${selected.length} landlords?`)) return;
     setLandlords((p) => p.filter(l => !selected.includes(l.id)));
     setSelected([]);

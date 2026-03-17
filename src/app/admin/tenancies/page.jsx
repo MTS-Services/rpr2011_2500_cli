@@ -98,45 +98,53 @@ function AdminTenanciesInner() {
 
   // Fetch tenancies from API
   useEffect(() => {
-    const fetchTenancies = async () => {
+    const fetchTenanciesAndTenants = async () => {
       try {
         setLoading(true);
-        const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`
-        );
-        if (!response.ok) {
-          throw new Error(`Failed to fetch tenancies: ${response.statusText}`);
+        const [tenanciesResponse, usersResponse] = await Promise.all([
+          authenticatedFetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`
+          ),
+          authenticatedFetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?role=TENANT`
+          ),
+        ]);
+
+        if (!tenanciesResponse.ok) {
+          throw new Error(`Failed to fetch tenancies: ${tenanciesResponse.statusText}`);
         }
-        const data = await response.json();
-        if (data.success && data.data) {
-          const transformed = data.data.map((tenancy, idx) =>
+
+        const tenanciesData = await tenanciesResponse.json();
+        if (tenanciesData.success && tenanciesData.data) {
+          const transformed = tenanciesData.data.map((tenancy, idx) =>
             transformTenancy(tenancy, idx)
           );
           setTenancies(transformed);
-          // Extract unique tenants for AddTenancyModal
-          const uniqueTenants = Array.from(
-            new Map(
-              data.data.map((t) => [
-                t.tenant.id,
-                {
-                  id: t.tenant.id,
-                  name: t.tenant.name,
-                  property: t.property.name,
-                },
-              ])
-            ).values()
-          );
-          setTenants(uniqueTenants);
+        }
+
+        // Fetch all tenants from users endpoint
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          if (usersData.success && usersData.data) {
+            const allTenants = usersData.data
+              .filter((user) => user.role === "TENANT")
+              .map((user) => ({
+                id: user.id,
+                name: user.name,
+                property: "", // No property directly from users endpoint
+              }));
+            setTenants(allTenants);
+          }
         }
       } catch (err) {
-        console.error("Error fetching tenancies:", err);
-        setError(err.message || "Failed to load tenancies");
+        console.error("Error fetching data:", err);
+        setError(err.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
     };
     
-    fetchTenancies();
+    fetchTenanciesAndTenants();
   }, []);
 
   // Build status options from source data so we stay in sync

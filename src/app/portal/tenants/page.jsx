@@ -5,7 +5,7 @@ import Link from "next/link";
 import Swal from "sweetalert2";
 import PortalShell from "@/components/portal/PortalShell";
 import Pagination from "@/components/portal/Pagination";
-import { Eye, Trash2, Search, ChevronDown } from "lucide-react";
+import { Eye, Search, ChevronDown } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
 
 const mockTenants = [
@@ -23,13 +23,31 @@ export default function TenantsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper: Map tenancy status to display status
+  const mapTenancyStatus = (status) => {
+    const statusMap = {
+      "ACTIVE": "Active",
+      "NOTICE": "Notice Served",
+      "ENDED": "Ended"
+    };
+    return statusMap[status] || status;
+  };
+
+  // Helper: Get status color
+  const getStatusColor = (tenancyStatus, rentStatus) => {
+    if (tenancyStatus === "NOTICE") return "bg-amber-100 text-amber-700";
+    if (tenancyStatus === "ENDED") return "bg-slate-100 text-slate-500";
+    if (rentStatus === "OVERDUE") return "bg-red-100 text-red-700";
+    return "bg-teal-100 text-teal-700";
+  };
+
   // Fetch tenants from API
   useEffect(() => {
     const fetchTenants = async () => {
       try {
         setLoading(true);
         const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenants`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/landlord/tenants`
         );
         if (!response.ok) {
           throw new Error(`Failed to fetch tenants: ${response.statusText}`);
@@ -38,21 +56,27 @@ export default function TenantsPage() {
         if (data.success && data.data) {
           // Transform API response to match UI format
           const transformed = data.data.map((tenant) => ({
-            id: tenant.id,
-            name: tenant.name,
-            property: tenant.property?.name || tenant.property || "Unknown Property",
-            start: tenant.tenancyStart ? new Date(tenant.tenancyStart).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—",
-            pps: tenant.ppsNumber || "—",
-            status: tenant.status || "Active",
-            statusColor: tenant.status === "Notice Served" ? "bg-amber-100 text-amber-700" : tenant.status === "Ended" ? "bg-slate-100 text-slate-500" : "bg-teal-100 text-teal-700",
+            id: tenant.tenantId,
+            tenancyId: tenant.tenancyId,
+            name: tenant.user?.name || "Unknown",
+            email: tenant.user?.email || "",
+            property: tenant.property?.address || tenant.property?.name || "Unknown Property",
+            start: tenant.startDate ? new Date(tenant.startDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—",
+            tenancyStatus: tenant.tenancyStatus,
+            rentStatus: tenant.rentStatus,
+            rent: tenant.rent,
+            status: mapTenancyStatus(tenant.tenancyStatus),
+            statusColor: getStatusColor(tenant.tenancyStatus, tenant.rentStatus),
           }));
           setTenants(transformed);
         } else {
-          setTenants(mockTenants);
+          setError("No tenants found");
+          setTenants([]);
         }
       } catch (err) {
-        console.warn("Error fetching tenants, using mock data:", err);
-        setTenants(mockTenants);
+        console.warn("Error fetching tenants:", err);
+        setError(err.message);
+        setTenants([]);
       } finally {
         setLoading(false);
       }
@@ -114,7 +138,20 @@ export default function TenantsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p className="text-red-700 font-medium">{error}</p>
+        </div>
+      ) : tenants.length === 0 ? (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
+          <p className="text-slate-600 font-medium">No tenants found</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         {/* Mobile cards */}
         <div className="lg:hidden divide-y divide-slate-100">
           {tenants.map((t) => (
@@ -137,20 +174,12 @@ export default function TenantsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/portal/tenants/${t.id}`}
+                  href={`/portal/tenants/${t.tenancyId}`}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-white bg-teal-700 hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 rounded-lg transition font-medium"
                   aria-label={`View ${t.name} details`}
                 >
                   View Details
                 </Link>
-                <button
-                  onClick={() => handleDeleteTenant(t)}
-                  className="px-3 py-2 text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-lg transition font-medium"
-                  aria-label={`Delete ${t.name}`}
-                  title="Delete tenant"
-                >
-                  <Trash2 size={16} />
-                </button>
               </div>
             </div>
           ))}
@@ -185,21 +214,14 @@ export default function TenantsPage() {
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link
-                        href={`/portal/tenants/${t.id}`}
+                        href={`/portal/tenants/${t.tenancyId}`}
                         className="inline-flex items-center justify-center px-3 py-2 bg-teal-50 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-teal-700 rounded-lg transition"
                         aria-label={`View ${t.name} details`}
                         title="View tenant details"
                       >
                         <Eye size={16} />
                       </Link>
-                      <button
-                        onClick={() => handleDeleteTenant(t)}
-                        className="inline-flex items-center justify-center px-3 py-2 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 text-red-600 rounded-lg transition"
-                        aria-label={`Delete ${t.name}`}
-                        title="Delete tenant"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {/* delete button removed for landlord view */}
                     </div>
                   </td>
                 </tr>
@@ -218,7 +240,8 @@ export default function TenantsPage() {
             setCurrentPage(1);
           }}
         />
-      </div>
+        </div>
+      )}
     </PortalShell>
   );
 }

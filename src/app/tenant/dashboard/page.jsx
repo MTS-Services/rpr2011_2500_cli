@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
+import { authenticatedFetch } from "@/utils/authFetch";
 import Link from "next/link";
 import {
   Home,
@@ -64,12 +66,33 @@ const alerts = [
   },
 ];
 
-const payments = [
-  { month: "February 2025", amount: "€1,750", status: "Overdue",   statusColor: "bg-red-100 text-red-700",   date: "Due Feb 1" },
-  { month: "January 2025",  amount: "€1,750", status: "Paid",      statusColor: "bg-teal-100 text-teal-700", date: "Jan 1, 2025" },
-  { month: "December 2024", amount: "€1,750", status: "Paid",      statusColor: "bg-teal-100 text-teal-700", date: "Dec 1, 2024" },
-  { month: "November 2024", amount: "€1,750", status: "Paid",      statusColor: "bg-teal-100 text-teal-700", date: "Nov 1, 2024" },
-];
+// Helper function to map payment status to display color
+const getPaymentStatusColor = (status) => {
+  switch (status) {
+    case "PAID":
+      return "bg-teal-100 text-teal-700";
+    case "PENDING":
+      return "bg-orange-100 text-orange-700";
+    case "OVERDUE":
+      return "bg-red-100 text-red-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
+
+// Helper function to map payment status to display text
+const mapPaymentStatus = (status) => {
+  switch (status) {
+    case "PAID":
+      return "Paid";
+    case "PENDING":
+      return "Pending";
+    case "OVERDUE":
+      return "Overdue";
+    default:
+      return status;
+  }
+};
 
 const maintenance = [
   { title: "Boiler not heating", date: "Feb 20, 2025", status: "In Progress", statusColor: "bg-blue-100 text-blue-700" },
@@ -82,13 +105,64 @@ const messages = [
 ];
 
 export default function TenantDashboardPage() {
+  const [tenancies, setTenancies] = useState([]);
+  const [loadingTenancies, setLoadingTenancies] = useState(true);
+  const [tenanciesError, setTenanciesError] = useState(null);
+  const [rentPayments, setRentPayments] = useState([]);
+  const [loadingRentPayments, setLoadingRentPayments] = useState(true);
+  const [rentPaymentsError, setRentPaymentsError] = useState(null);
+
+  useEffect(() => {
+    const fetchTenancies = async () => {
+      try {
+        setLoadingTenancies(true);
+        setTenanciesError(null);
+        const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/my`);
+        if (!res.ok) throw new Error(`Failed to load tenancies: ${res.statusText}`);
+        const body = await res.json();
+        if (body.success && Array.isArray(body.data)) setTenancies(body.data);
+        else setTenancies([]);
+      } catch (err) {
+        console.error("Error fetching tenancies:", err);
+        setTenanciesError(err.message || "Failed to load tenancies");
+        setTenancies([]);
+      } finally {
+        setLoadingTenancies(false);
+      }
+    };
+    fetchTenancies();
+  }, []);
+
+  useEffect(() => {
+    const fetchRentPayments = async () => {
+      try {
+        setLoadingRentPayments(true);
+        setRentPaymentsError(null);
+        const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/tenant`);
+        if (!res.ok) throw new Error(`Failed to load rent payments: ${res.statusText}`);
+        const body = await res.json();
+        if (body.success && Array.isArray(body.data)) setRentPayments(body.data);
+        else setRentPayments([]);
+      } catch (err) {
+        console.error("Error fetching rent payments:", err);
+        setRentPaymentsError(err.message || "Failed to load rent payments");
+        setRentPayments([]);
+      } finally {
+        setLoadingRentPayments(false);
+      }
+    };
+    fetchRentPayments();
+  }, []);
+
+  const tenancy = tenancies && tenancies.length > 0 ? tenancies[0] : null;
+
   return (
     <TenantShell>
       {/* Header */}
       <div className="flex items-center justify-between mb-3 xl:mb-5">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Welcome Back, Kevin</h1>
-          <p className="text-slate-500 mt-1 text-sm">Apt 5B Rosewood Close · Tenancy since Oct 2022</p>
+          <h1 className="text-3xl font-bold text-slate-800">{tenancy?.tenant?.name ? `Welcome Back, ${tenancy.tenant.name}` : 'Welcome Back'}</h1>
+          <p className="text-slate-500 mt-1 text-sm">{tenancy?.property?.name ? `${tenancy.property.name} · Tenancy since ${tenancy.startDate ? new Date(tenancy.startDate).toLocaleDateString() : '—'}` : '—'}</p>
         </div>
         <Link
           href="/tenant/maintenance"
@@ -100,56 +174,56 @@ export default function TenantDashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 xl:gap-3 mb-3 xl:mb-5">
-        {kpis.map(({ label, value, Icon, color, sub }) => (
-          <div
-            key={label}
-            className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm ${color.split(" ")[2]}`}
-          >
-            <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold text-slate-500 leading-tight">{label}</p>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color.split(" ").slice(0, 2).join(" ")}`}>
-                <Icon size={20} />
-              </div>
+        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+          <div className="flex items-start justify-between">
+            <p className="text-sm font-semibold text-slate-500 leading-tight">Monthly Rent</p>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-teal-50 text-teal-600`}>
+              <CreditCard size={20} />
             </div>
-            <p className="text-2xl font-bold text-slate-800 leading-tight">{value}</p>
-            <p className="text-xs text-slate-400">{sub}</p>
           </div>
-        ))}
+          <p className="text-2xl font-bold text-slate-800 leading-tight">{tenancy ? `€${tenancy.rent}` : '€1,750'}</p>
+          <p className="text-xs text-slate-400">{tenancy?.rentDueDay ? `Due ${tenancy.rentDueDay}` : 'Due 1st of month'}</p>
+        </div>
+
+        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+          <div className="flex items-start justify-between">
+            <p className="text-sm font-semibold text-slate-500 leading-tight">Next Payment</p>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600`}>
+              <Calendar size={20} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-slate-800 leading-tight">{tenancy && tenancy.startDate ? new Date(tenancy.startDate).toLocaleDateString('en-US',{month:'short', day:'numeric'}) : '—'}</p>
+          <p className="text-xs text-slate-400">{tenancy?.rentReviewDate ? `Rent review ${new Date(tenancy.rentReviewDate).toLocaleDateString()}` : '—'}</p>
+        </div>
+
+        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+          <div className="flex items-start justify-between">
+            <p className="text-sm font-semibold text-slate-500 leading-tight">Open Requests</p>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600`}>
+              <Wrench size={20} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-slate-800 leading-tight">{maintenance.length}</p>
+          <p className="text-xs text-slate-400">Maintenance</p>
+        </div>
+
+        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+          <div className="flex items-start justify-between">
+            <p className="text-sm font-semibold text-slate-500 leading-tight">Documents</p>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600`}>
+              <FileText size={20} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-slate-800 leading-tight">4</p>
+          <p className="text-xs text-slate-400">Available</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Alerts + Rent History */}
         <div className="lg:col-span-2 space-y-3 xl:space-y-4">
 
-          {/* Alerts */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5 text-lg font-bold text-slate-800">
-                <AlertCircle size={20} className="text-amber-500" />
-                Alerts
-              </div>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {alerts.map((a, i) => (
-                <div key={i} className="flex items-center justify-between px-5 py-3">
-                  <div className="flex items-center gap-3.5">
-                    {a.type === "warning" ? (
-                      <AlertCircle size={18} className="text-red-500 shrink-0" />
-                    ) : (
-                      <CheckCircle2 size={18} className="text-teal-500 shrink-0" />
-                    )}
-                    <div>
-                      <p className="text-base text-slate-700 font-medium">{a.text}</p>
-                      <p className="text-sm text-slate-400 mt-0.5">{a.meta}</p>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap ml-4 ${a.badgeColor}`}>
-                    {a.badge}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Alerts removed per request */}
 
           {/* Rent Payment History */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -174,40 +248,68 @@ export default function TenantDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {payments.map((p, i) => (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3 text-base font-semibold text-slate-700">{p.month}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">{p.date}</td>
-                      <td className="px-4 py-4">
-                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${p.statusColor}`}>
-                          {p.status}
-                        </span>
+                  {rentPayments.length > 0 ? (
+                    rentPayments.slice(0, 4).map((p, i) => {
+                      const monthDate = new Date(p.month + "-01");
+                      const monthLabel = monthDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                      const dateDisplay = p.paidDate 
+                        ? new Date(p.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                      return (
+                        <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-5 py-3 text-base font-semibold text-slate-700">{monthLabel}</td>
+                          <td className="px-4 py-4 text-sm text-slate-500">{dateDisplay}</td>
+                          <td className="px-4 py-4">
+                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getPaymentStatusColor(p.status)}`}>
+                              {mapPaymentStatus(p.status)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-right text-base font-bold text-slate-800">€{p.amount}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-5 py-4 text-center text-slate-500">
+                        {loadingRentPayments ? 'Loading payments...' : 'No payments found'}
                       </td>
-                      <td className="px-5 py-3 text-right text-base font-bold text-slate-800">{p.amount}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile cards (smaller than lg) */}
             <div className="lg:hidden space-y-4 p-4">
-              {payments.map((p, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 ">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-700">{p.month}</div>
-                      <div className="text-xs text-slate-400 mt-1">{p.date}</div>
-                      <div className="mt-2">
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${p.statusColor}`}>{p.status}</span>
+              {rentPayments.length > 0 ? (
+                rentPayments.slice(0, 4).map((p, i) => {
+                  const monthDate = new Date(p.month + "-01");
+                  const monthLabel = monthDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                  const dateDisplay = p.paidDate 
+                    ? new Date(p.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  return (
+                    <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 ">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-700">{monthLabel}</div>
+                          <div className="text-xs text-slate-400 mt-1">{dateDisplay}</div>
+                          <div className="mt-2">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getPaymentStatusColor(p.status)}`}>{mapPaymentStatus(p.status)}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-base font-bold text-slate-800">€{p.amount}</div>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-base font-bold text-slate-800">{p.amount}</div>
-                    </div>
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4 text-slate-500">
+                  {loadingRentPayments ? 'Loading payments...' : 'No payments found'}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -257,16 +359,16 @@ export default function TenantDashboardPage() {
                 <Home size={48} className="text-teal-300" />
               </div>
               <div>
-                <p className="text-base font-bold text-slate-800">Apt 5B Rosewood Close</p>
-                <p className="text-sm text-slate-500 mt-0.5">Dublin 9, Ireland</p>
+                <p className="text-base font-bold text-slate-800">{tenancy?.property?.name || '—'}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{tenancy?.property?.address || tenancy?.property?.county || '—'}</p>
               </div>
               <div className="space-y-2 text-sm">
                 {[
-                  { label: "Rent",         value: "€1,750 / month" },
-                  { label: "Lease Start",  value: "Oct 10, 2022" },
-                  { label: "Lease End",    value: "Oct 10, 2025" },
-                  { label: "RTB",          value: "Registered" },
-                  { label: "MPRN",         value: "10623847501" },
+                  { label: "Rent",         value: tenancy ? `€${tenancy.rent} / month` : '—' },
+                  { label: "Lease Start",  value: tenancy?.startDate ? new Date(tenancy.startDate).toLocaleDateString() : '—' },
+                  { label: "Lease End",    value: tenancy?.endDate ? new Date(tenancy.endDate).toLocaleDateString() : '—' },
+                  { label: "RTB",          value: tenancy?.rtbRegistration || (tenancy?.rtbNumber ? 'Registered' : '—') },
+                  { label: "MPRN",         value: tenancy?.property?.mprn || '—' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between">
                     <span className="text-slate-500">{label}</span>
@@ -283,78 +385,7 @@ export default function TenantDashboardPage() {
             </div>
           </div>
 
-          {/* RTB Registration quick card */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-800">RTB Registration</h3>
-              <Link href="/tenant/rtb" className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5">
-                View <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center">
-                  <Key size={20} className="text-teal-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">Tenancy Registered with RTB</p>
-                  <p className="text-xs text-slate-500 mt-1">Your tenancy is registered with the Residential Tenancies Board.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-slate-50 p-3 rounded-md">
-                  <div className="text-xs text-slate-500">RTB Number</div>
-                  <div className="font-mono font-semibold text-slate-800 truncate">RTB-2022-10-456782</div>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-md">
-                  <div className="text-xs text-slate-500">Status</div>
-                  <div className="font-semibold text-teal-700">Registered</div>
-                </div>
-              </div>
-
-              <Link href="/tenant/rtb" className="block w-full text-center py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold">
-                View RTB Details
-              </Link>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">Messages</h3>
-              <Link
-                href="/tenant/messages"
-                className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5"
-              >
-                View All <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {messages.map((msg, i) => (
-                <div key={i} className="px-5 py-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xs shrink-0">
-                      MC
-                    </div>
-                    <p className="text-sm font-semibold text-slate-700">{msg.from}</p>
-                  </div>
-                  <p className="text-sm text-slate-500 leading-snug">{msg.text}</p>
-                  <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
-                    <Clock size={11} /> {msg.time}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div className="px-5 py-4 border-t border-slate-100">
-              <Link
-                href="/tenant/messages"
-                className="flex items-center justify-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700"
-              >
-                <MessageSquare size={15} /> Send a Message
-              </Link>
-            </div>
-          </div>
+          {/* RTB Registration and Messages removed as requested */}
         </div>
       </div>
     </TenantShell>
