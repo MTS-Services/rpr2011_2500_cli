@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
+import Pagination from "@/components/portal/Pagination";
 import { FileText, Download, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
 import { authenticatedFetch } from "@/utils/authFetch";
@@ -62,6 +63,8 @@ export default function TenantDocumentsPage() {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Fetch documents from API
   useEffect(() => {
@@ -89,6 +92,21 @@ export default function TenantDocumentsPage() {
 
     fetchDocuments();
   }, []);
+
+  // Pagination logic
+  const totalPages = Math.ceil(docs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDocs = docs.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   const handleDownload = async (doc) => {
     try {
@@ -191,7 +209,7 @@ export default function TenantDocumentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {docs.map((d) => (
+              {paginatedDocs.map((d) => (
                 <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
@@ -226,7 +244,7 @@ export default function TenantDocumentsPage() {
       {/* Mobile cards */}
       {!loading && !error && docs.length > 0 && (
       <div className="lg:hidden space-y-2">
-        {docs.map((d) => (
+        {paginatedDocs.map((d) => (
           <div key={d.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
@@ -255,6 +273,19 @@ export default function TenantDocumentsPage() {
           </div>
         ))}
       </div>
+      )}
+
+      {/* Pagination */}
+      {docs.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mt-3 xl:mt-4">
+          <Pagination
+            total={docs.length}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
       )}
 
     </TenantShell>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
+import Pagination from "@/components/portal/Pagination";
 import { Wrench, Plus, Clock, CheckCircle2, AlertCircle, X } from "lucide-react";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 import { authenticatedFetch } from "@/utils/authFetch";
@@ -60,6 +61,8 @@ export default function TenantMaintenancePage() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Form state for new request
   const [formData, setFormData] = useState({
@@ -210,6 +213,21 @@ export default function TenantMaintenancePage() {
     }
   }
 
+  // Pagination logic
+  const totalPages = Math.ceil(requests.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRequests = requests.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
   return (
     <TenantShell>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 xl:mb-5 gap-3">
@@ -331,7 +349,7 @@ export default function TenantMaintenancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {requests.map((r) => (
+              {paginatedRequests.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
@@ -372,7 +390,7 @@ export default function TenantMaintenancePage() {
 
       {/* Mobile cards */}
       <div className="lg:hidden space-y-2">
-        {requests.map((r) => (
+        {paginatedRequests.map((r) => (
           <div key={r.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
@@ -403,8 +421,20 @@ export default function TenantMaintenancePage() {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        ))}\n      </div>
+
+      {/* Pagination */}
+      {requests.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mt-3 xl:mt-4">
+          <Pagination
+            total={requests.length}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+      )}
         </>
       )}
     </TenantShell>
