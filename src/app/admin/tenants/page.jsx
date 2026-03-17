@@ -7,7 +7,6 @@ import {
   Edit,
   Trash,
 } from "lucide-react";
-import Pagination from "@/components/portal/Pagination";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
@@ -24,16 +23,13 @@ export default function AdminTenantsPage() {
   const [editingTenant, setEditingTenant] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
   const [triggerFetch, setTriggerFetch] = useState(0);
 
   const fetchTenants = async () => {
     try {
       setLoading(true);
       const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?page=${currentPage}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch tenants");
@@ -50,9 +46,6 @@ export default function AdminTenantsPage() {
           createdAt: user.createdAt,
         }));
       setTenants(tenantUsers);
-      if (result.meta?.pagination) {
-        setTotalPages(result.meta.pagination.totalPages);
-      }
     } catch (error) {
       console.error("Error fetching tenants:", error);
       Swal.fire({
@@ -67,7 +60,7 @@ export default function AdminTenantsPage() {
 
   useEffect(() => {
     fetchTenants();
-  }, [currentPage, triggerFetch]);
+  }, [triggerFetch]);
 
   const filtered = tenants
     .filter((tenant) => {
@@ -416,14 +409,11 @@ export default function AdminTenantsPage() {
                 </div>
               </div>
             ))}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <Pagination total={filtered.length} />
-            </div>
           </div>
 
           {/* Table — visible lg+ */}
           <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
-            <table className="w-full text-base">
+            <table className="w-full text-base table-fixed">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   <th className="w-10 px-4 py-3">
@@ -472,7 +462,7 @@ export default function AdminTenantsPage() {
                         aria-label={`Select ${tenant.name}`}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 truncate">
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-8 h-8 rounded-full ${getColorForInitials(
@@ -486,10 +476,10 @@ export default function AdminTenantsPage() {
                         </p>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 text-sm">
+                    <td className="px-4 py-3 text-slate-600 text-sm truncate">
                       {tenant.email}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 text-sm">
+                    <td className="px-4 py-3 text-slate-600 text-sm truncate">
                       {tenant.phone}
                     </td>
                     <td className="px-4 py-3">
@@ -540,9 +530,6 @@ export default function AdminTenantsPage() {
                 ))}
               </tbody>
             </table>
-            <div className="border-t border-slate-100 px-4 py-3">
-              <Pagination total={filtered.length} />
-            </div>
           </div>
 
           {/* Add Modal */}
