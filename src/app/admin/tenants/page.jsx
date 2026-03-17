@@ -7,6 +7,7 @@ import {
   Edit,
   Trash,
 } from "lucide-react";
+import Pagination from "@/components/portal/Pagination";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
@@ -415,24 +416,8 @@ export default function AdminTenantsPage() {
                 </div>
               </div>
             ))}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center justify-between">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 rounded-md text-sm font-medium transition"
-              >
-                Previous
-              </button>
-              <p className="text-sm text-slate-600">
-                Page {currentPage} of {totalPages}
-              </p>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 rounded-md text-sm font-medium transition"
-              >
-                Next
-              </button>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <Pagination total={filtered.length} />
             </div>
           </div>
 
@@ -555,24 +540,8 @@ export default function AdminTenantsPage() {
                 ))}
               </tbody>
             </table>
-            <div className="border-t border-slate-100 px-4 py-3 flex items-center justify-between">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 rounded-md text-sm font-medium transition"
-              >
-                Previous
-              </button>
-              <p className="text-sm text-slate-600">
-                Page {currentPage} of {totalPages}
-              </p>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 rounded-md text-sm font-medium transition"
-              >
-                Next
-              </button>
+            <div className="border-t border-slate-100 px-4 py-3">
+              <Pagination total={filtered.length} />
             </div>
           </div>
 
@@ -606,7 +575,7 @@ export default function AdminTenantsPage() {
                     ✕
                   </button>
                 </div>
-                <form onSubmit={handleAddSubmit} className="mt-4 space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+                <form onSubmit={handleAddSubmit} className="mt-4 space-y-3">
                   <div>
                     <label
                       htmlFor="addName"
@@ -617,6 +586,7 @@ export default function AdminTenantsPage() {
                     <input
                       id="addName"
                       name="name"
+                      placeholder="e.g., John Doe"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                       required
                     />
@@ -632,6 +602,7 @@ export default function AdminTenantsPage() {
                       id="addEmail"
                       name="email"
                       type="email"
+                      placeholder="e.g., john@example.com"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                       required
                     />
@@ -647,6 +618,7 @@ export default function AdminTenantsPage() {
                       id="addPassword"
                       name="password"
                       type="password"
+                      placeholder="e.g., SecurePass123!"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                       required
                     />
@@ -662,6 +634,7 @@ export default function AdminTenantsPage() {
                       id="addPhone"
                       name="phone"
                       type="tel"
+                      placeholder="e.g., +353 87 123 4567"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
@@ -675,6 +648,7 @@ export default function AdminTenantsPage() {
                     <input
                       id="addAddress"
                       name="address"
+                      placeholder="e.g., 123 Main Street, Dublin, D01 1AA"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
@@ -688,10 +662,11 @@ export default function AdminTenantsPage() {
                     <input
                       id="addPpsNumber"
                       name="ppsNumber"
+                      placeholder="e.g., 1234567AB"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
-                   <div>
+                  <div>
                     <label
                       htmlFor="addPps2"
                       className="block text-sm font-medium text-slate-700 mb-1"
@@ -701,6 +676,7 @@ export default function AdminTenantsPage() {
                     <input
                       id="addPps2"
                       name="pps2"
+                      placeholder="e.g., 7654321"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
@@ -715,6 +691,7 @@ export default function AdminTenantsPage() {
                       id="addDateOfBirth"
                       name="dateOfBirth"
                       type="date"
+                      placeholder="mm/dd/yyyy"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
