@@ -194,9 +194,7 @@ export default function AdminLandlordsPage() {
                 <span className="flex items-center justify-center gap-1">Tenants <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Mobile</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex items-center gap-1">P.P.S. <ArrowUpDown size={13} className="text-slate-400" /></span>
-              </th>
+              
               <th className="px-4 py-3 text-left font-semibold text-slate-600">
                 <span className="flex whitespace-nowrap items-center gap-1">Date of Birth <ArrowUpDown size={13} className="text-slate-400" /></span>
               </th>
@@ -241,12 +239,7 @@ export default function AdminLandlordsPage() {
                 <td className="px-4 py-3">
                   <p className="text-slate-700 text-sm">{landlord.mobile}</p>
                 </td>
-                <td className="px-4 py-3">
-                  <p className="text-slate-700 flex items-center gap-1 text-sm">
-                    <span className="inline-block w-2 h-2 rounded-full bg-teal-500" />
-                    {landlord.pps}
-                  </p>
-                </td>
+                
                 <td className="px-4 py-3 text-slate-600 text-sm">{landlord.dob}</td>
                 <td className="px-4 py-3 text-slate-400 text-sm">{landlord.email}</td>
                 <td className="px-4 py-3 text-right">

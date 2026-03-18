@@ -57,7 +57,7 @@ export default function LoginPage() {
               <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
                 <Image
                   src="/logo.png"
-                  alt="McCann & Curran Realty"
+                  alt="McCann & Curran Reality"
                   width={40}
                   height={40}
                 />

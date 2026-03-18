@@ -11,12 +11,12 @@ export default function Footer() {
           <div className="flex items-center gap-2.5">
             <Image
               src="/logo.png"
-              alt="McCann & Curran Realty"
+              alt="McCann & Curran Reality"
               width={36}
               height={36}
             />
             <span className="text-base font-bold text-dark-900 tracking-tight">
-              McCann &amp; Curran Realty
+              McCann &amp; Curran Reality
             </span>
           </div>
 
@@ -64,7 +64,7 @@ export default function Footer() {
 
       <div className="border-t border-dark-200">
         <div className="container mx-auto px-6 lg:px-16 py-5 text-center text-xs text-dark-400">
-          © 2026 McCann &amp; Corran Realty Limited. All rights reserved. &nbsp;·&nbsp; PSRA Lic. No. 004008
+          © 2026 McCann &amp; Corran Reality. All rights reserved. &nbsp;·&nbsp; PSRA Lic. No. 004008
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Tenant Portal — McCann & Curran Realty",
-  description: "Tenant portal for McCann & Curran Realty Realty",
+  title: "Tenant Portal — McCann & Curran Reality",
+  description: "Tenant portal for McCann & Curran Reality Reality",
 };
 
 export default function TenantLayout({ children }) {

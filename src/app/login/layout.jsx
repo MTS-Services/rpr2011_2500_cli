@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Login — McCann & Curran Realty",
-  description: "Sign in to the McCann & Curran Realty client portal",
+  title: "Login — McCann & Curran Reality",
+  description: "Sign in to the McCann & Curran Reality client portal",
 };
 
 export default function LoginLayout({ children }) {
