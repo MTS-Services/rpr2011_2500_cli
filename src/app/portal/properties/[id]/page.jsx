@@ -129,6 +129,9 @@ export default function PropertyProfilePage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [fetchedProperty, setFetchedProperty] = useState(null);
   const [fetchedTenants, setFetchedTenants] = useState(null);
+  const [fetchedRentSummary, setFetchedRentSummary] = useState(null);
+  const [fetchedRentCalendar, setFetchedRentCalendar] = useState(null);
+  const [fetchedRentPayments, setFetchedRentPayments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -165,6 +168,42 @@ export default function PropertyProfilePage() {
           const propertyTenants = tenants.filter(t => t.property && t.property.id === id);
           console.log("Property tenants:", propertyTenants);
           setFetchedTenants(propertyTenants);
+        }
+
+        // Fetch rent payment summary
+        const rentSummaryUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/rent-payments/landlord/property/${id}/summary`;
+        try {
+          const rentSummaryRes = await authenticatedFetch(rentSummaryUrl);
+          if (rentSummaryRes.ok) {
+            const rentSummaryData = await rentSummaryRes.json();
+            setFetchedRentSummary(rentSummaryData.data);
+          }
+        } catch (err) {
+          console.warn("Failed to fetch rent summary:", err);
+        }
+
+        // Fetch rent payment calendar
+        const rentCalendarUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/rent-payments/landlord/property/${id}/calendar`;
+        try {
+          const rentCalendarRes = await authenticatedFetch(rentCalendarUrl);
+          if (rentCalendarRes.ok) {
+            const rentCalendarData = await rentCalendarRes.json();
+            setFetchedRentCalendar(rentCalendarData.data?.calendar || []);
+          }
+        } catch (err) {
+          console.warn("Failed to fetch rent calendar:", err);
+        }
+
+        // Fetch rent payment history
+        const rentPaymentsUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/rent-payments/landlord/property/${id}`;
+        try {
+          const rentPaymentsRes = await authenticatedFetch(rentPaymentsUrl);
+          if (rentPaymentsRes.ok) {
+            const rentPaymentsData = await rentPaymentsRes.json();
+            setFetchedRentPayments(rentPaymentsData.data || []);
+          }
+        } catch (err) {
+          console.warn("Failed to fetch rent payments:", err);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -364,21 +403,48 @@ export default function PropertyProfilePage() {
 
       {/* Tab: Rent Payments */}
       {activeTab === "rent" && (() => {
-        const totalCollected = rentTracker.filter(r => r.status === "Paid").length * 1750;
-        const overdueCount   = rentTracker.filter(r => r.status === "Overdue").length;
+        // Use fetched rent data, fall back to mock if not available
+        const displayRentSummary = fetchedRentSummary || {
+          monthlyRent: "1750",
+          totalCollected: "8400",
+          monthsPaid: 4,
+          totalMonths: 12,
+          overdueCount: 0,
+          pendingCount: 8,
+          rentDueDay: 1,
+          year: new Date().getFullYear(),
+        };
+        
+        const displayRentCalendar = fetchedRentCalendar && fetchedRentCalendar.length > 0
+          ? fetchedRentCalendar.map(item => ({
+              month: item.month,
+              monthKey: item.monthKey,
+              amount: item.amount ? `€${item.amount}` : null,
+              status: item.status || "PENDING",
+              dueDate: item.dueDate,
+              paidDate: item.paidDate,
+              reference: item.reference,
+            }))
+          : rentTracker;
+        
+        const totalCollected = parseInt(displayRentSummary.totalCollected) || (rentTracker.filter(r => r.status === "Paid").length * 1750);
+        const overdueCount = displayRentSummary.overdueCount ?? rentTracker.filter(r => r.status === "Overdue").length;
+        const monthlyRent = parseInt(displayRentSummary.monthlyRent) || 1750;
+        const rentDueDay = displayRentSummary.rentDueDay || 1;
+        
         return (
           <div className="space-y-4">
             {/* Summary cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                 <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Monthly Rent</p>
-                <p className="text-2xl font-bold text-slate-800">€1,750</p>
-                <p className="text-xs text-slate-400 mt-1">Due 1st of each month</p>
+                <p className="text-2xl font-bold text-slate-800">€{monthlyRent.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-1">Due {rentDueDay}{rentDueDay === 1 ? "st" : rentDueDay === 2 ? "nd" : rentDueDay === 3 ? "rd" : "th"} of each month</p>
               </div>
               <div className="bg-white rounded-2xl border border-teal-100 shadow-sm p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Total Collected (2025)</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Total Collected</p>
                 <p className="text-2xl font-bold text-teal-700">€{totalCollected.toLocaleString()}</p>
-                <p className="text-xs text-slate-400 mt-1">{rentTracker.filter(r => r.status === "Paid").length} of 12 months paid</p>
+                <p className="text-xs text-slate-400 mt-1">{displayRentSummary.monthsPaid} of {displayRentSummary.totalMonths} months paid</p>
               </div>
               <div className={`bg-white rounded-2xl border shadow-sm p-4 ${overdueCount > 0 ? "border-red-100" : "border-slate-200"}`}>
                 <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Overdue</p>
@@ -397,18 +463,20 @@ export default function PropertyProfilePage() {
             {/* Monthly calendar grid */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <CalendarDays size={16} className="text-teal-600" /> Monthly Rent Calendar — 2025
+                <CalendarDays size={16} className="text-teal-600" /> Monthly Rent Calendar — {displayRentSummary.year || new Date().getFullYear()}
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                {rentTracker.map((r) => {
-                  const s = rentStatusStyle[r.status];
+                {displayRentCalendar.map((r) => {
+                  const status = r.status === "PAID" ? "Paid" : r.status === "OVERDUE" ? "Overdue" : "Pending";
+                  const s = rentStatusStyle[status];
+                  const bgClass = status === "Overdue" ? "border-red-200 bg-red-50" : status === "Paid" ? "border-teal-100 bg-teal-50/50" : "border-slate-100 bg-slate-50/40";
                   return (
-                    <div key={r.month} className={`rounded-xl border p-3 flex flex-col gap-1.5 ${r.status === "Overdue" ? "border-red-200 bg-red-50" : r.status === "Paid" ? "border-teal-100 bg-teal-50/50" : "border-slate-100 bg-slate-50/40"}`}>
+                    <div key={r.monthKey || r.month} className={`rounded-xl border p-3 flex flex-col gap-1.5 ${bgClass}`}>
                       <p className="text-xs font-bold text-slate-500">{r.month}</p>
-                      <p className="text-sm font-bold text-slate-800">{r.amount}</p>
+                      <p className="text-sm font-bold text-slate-800">{r.amount || "—"}</p>
                       <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full w-fit ${s.badge}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                        {r.status}
+                        {status}
                       </span>
                     </div>
                   );
@@ -435,17 +503,21 @@ export default function PropertyProfilePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {rentTracker.map((r, i) => {
-                      const s = rentStatusStyle[r.status];
+                    {(fetchedRentPayments && fetchedRentPayments.length > 0 ? fetchedRentPayments : rentTracker).map((r, i) => {
+                      const status = r.status === "PAID" ? "Paid" : r.status === "OVERDUE" ? "Overdue" : "Pending";
+                      const s = rentStatusStyle[status];
+                      const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                      const monthYear = r.month || "—";
+                      const amount = r.amount ? `€${r.amount}` : "—";
                       return (
                         <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-3 text-sm font-semibold text-slate-700">{r.month} 2025</td>
-                          <td className="px-5 py-3 text-sm text-slate-500">{r.date}</td>
-                          <td className="px-5 py-3 font-mono text-xs text-slate-400">{r.ref}</td>
+                          <td className="px-5 py-3 text-sm font-semibold text-slate-700">{monthYear}</td>
+                          <td className="px-5 py-3 text-sm text-slate-500">{dueDate}</td>
+                          <td className="px-5 py-3 font-mono text-xs text-slate-400">{r.reference || "—"}</td>
                           <td className="px-5 py-3">
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.badge}`}>{r.status}</span>
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.badge}`}>{status}</span>
                           </td>
-                          <td className="px-5 py-3 text-right font-bold text-slate-800">{r.amount}</td>
+                          <td className="px-5 py-3 text-right font-bold text-slate-800">{amount}</td>
                         </tr>
                       );
                     })}
