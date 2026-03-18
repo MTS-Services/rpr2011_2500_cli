@@ -6,7 +6,7 @@ import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
 const DEFAULTS = {
-  companyName: "McCann Realty",
+  companyName: "McCann Reality",
   contactEmail: "admin@example.com",
   currentPassword: "",
   newPassword: "",

@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Privacy Policy — McCann & Curran Realty",
-  description: "How McCann & Curran Realty Realty Limited collects, uses, and protects your personal data.",
+  title: "Privacy Policy — McCann & Curran Reality",
+  description: "How McCann & Curran Reality Reality Limited collects, uses, and protects your personal data.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-dark-900 mb-3">1. Who We Are</h2>
             <p>
-              McCann &amp; Corran Realty Limited (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a property management company registered in Ireland.
+              McCann &amp; Corran Reality Limited (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a property management company registered in Ireland.
               Our registered office is at Lower Camden St, Dublin, D02XE80. We are committed to protecting and respecting your privacy in
               accordance with the General Data Protection Regulation (GDPR) and the Data Protection Acts 1988–2018.
             </p>

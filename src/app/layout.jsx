@@ -3,7 +3,7 @@ import ConditionalShell from "@/components/ConditionalShell";
 import { PortalAuthProvider } from "@/context/PortalAuthContext";
 
 export const metadata = {
-  title: "McCann & Curran Realty | Professional Property Management",
+  title: "McCann & Curran Reality | Professional Property Management",
   description:
     "Comprehensive property management with secure digital reporting, RTB compliance, and transparent financial services in Ireland.",
   icons: {

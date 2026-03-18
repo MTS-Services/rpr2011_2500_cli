@@ -21,7 +21,7 @@ export default function CTA() {
           </h2>
 
           <p className="section-desc text-dark-300 mb-10 max-w-xl mx-auto leading-relaxed">
-            Join 500+ clients who trust McCann &amp; Curran Realty for stress-free, fully transparent property management across Ireland.
+            Join 500+ clients who trust McCann &amp; Curran Reality for stress-free, fully transparent property management across Ireland.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

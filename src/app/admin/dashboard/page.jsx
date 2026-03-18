@@ -212,15 +212,15 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/admin/documents')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-lg shadow-sm transition">
             <Upload size={15} className="text-slate-500" />
-            <span className="hidden sm:inline">Upload Document</span>
+            <span className="hidden xl:inline">Upload Document</span>
           </button>
           <button onClick={() => router.push('/admin/tenancies')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-lg shadow-sm transition">
             <FileText size={15} className="text-slate-500" />
-            <span className="hidden sm:inline">Add Tenancy</span>
+            <span className="hidden xl:inline">Add Tenancy</span>
           </button>
           <button onClick={() => router.push('/admin/properties')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
             <Plus size={16} />
-            <span className="hidden sm:inline">Add Property</span>
+            <span className="hidden xl:inline">Add Property</span>
           </button>
         </div>
       </div>

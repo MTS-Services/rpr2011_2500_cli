@@ -47,7 +47,7 @@ export default function Hero() {
             <div className="absolute inset-0 animate-kenburns">
               <Image
                 src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=900&q=85"
-                alt="McCann & Curran Realty office"
+                alt="McCann & Curran Reality office"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"

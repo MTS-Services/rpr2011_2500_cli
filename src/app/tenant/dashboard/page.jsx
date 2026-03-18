@@ -100,8 +100,8 @@ const maintenance = [
 ];
 
 const messages = [
-  { from: "McCann & Curran Realty Agency", text: "Your rent review is scheduled for May 2025.", time: "2 days ago" },
-  { from: "McCann & Curran Realty Agency", text: "A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "3 days ago" },
+  { from: "McCann & Curran Reality Agency", text: "Your rent review is scheduled for May 2025.", time: "2 days ago" },
+  { from: "McCann & Curran Reality Agency", text: "A maintenance engineer will visit on Feb 24th between 10am–1pm.", time: "3 days ago" },
 ];
 
 export default function TenantDashboardPage() {

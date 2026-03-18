@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Cookie Policy — McCann & Curran Realty",
-  description: "How McCann & Curran Realty Realty Limited uses cookies on its website.",
+  title: "Cookie Policy — McCann & Curran Reality",
+  description: "How McCann & Curran Reality Reality Limited uses cookies on its website.",
 };
 
 export default function CookiePolicyPage() {

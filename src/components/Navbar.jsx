@@ -54,13 +54,13 @@ function NavbarContent() {
         <Link href="/" className="flex items-center gap-2.5">
           <Image
             src="/logo.png"
-            alt="McCann & Curran Realty"
+            alt="McCann & Curran Reality"
             width={38}
             height={38}
             priority
           />
           <span className="text-[1.1rem] font-bold text-dark-900 tracking-tighter">
-            McCann <span className="text-dark-900">&amp;</span> Curran Realty
+            McCann <span className="text-dark-900">&amp;</span> Curran Reality
           </span>
         </Link>
 

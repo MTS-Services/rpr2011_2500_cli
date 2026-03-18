@@ -9,7 +9,7 @@ export default function Map() {
         allowFullScreen
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
-        title="McCann & Curran Realty Location"
+        title="McCann & Curran Reality Location"
       />
     </div>
   );
