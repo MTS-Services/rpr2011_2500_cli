@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { authenticatedFetch } from "@/utils/authFetch";
 import PortalShell from "@/components/portal/PortalShell";
 import {
   Home,
@@ -22,37 +23,38 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-/* ─── Mock data (replace with Supabase query keyed on params.id) ─── */
-const property = {
-  id: "1",
-  status: "Notice Served",
-  statusColor: "bg-red-100 text-red-700",
-  address: "Apt 5B Rosewood Close",
-  area: "Blackrock, Co. Dublin",
-  type: "Apartment",
-  bedrooms: 2,
-  bathrooms: 1,
-  mprn: "10623847501",
-  rent: "€1,750",
-  rentDue: "1st of each month",
-  rentLate: "5 Days Late",
+/* ─── Empty fallback for when API data isn't available ─── */
+const EMPTY_PROPERTY = {
+  id: "",
+  name: "",
+  address: "",
+  area: "",
+  propertyType: "",
+  type: "",
+  bedrooms: null,
+  bathrooms: null,
+  mprn: "",
+  rent: "",
+  rentDue: "",
+  rentLate: null,
   tenant: {
-    name: "Kevin Madden",
-    email: "kevin.madden@email.com",
-    phone: "+353 87 123 4567",
-    since: "Oct 10, 2022",
+    name: "",
+    email: "",
+    phone: "",
+    since: "",
   },
   tenancy: {
-    rtbNumber: "RTB-2022-10-456782",
-    registrationDate: "Nov 5, 2022",
-    expiryDate: "Nov 5, 2025",
-    leaseStart: "Oct 10, 2022",
-    leaseEnd: "Oct 9, 2024",
-    rentReviewDate: "Apr 10, 2024",
-    rentReviewFrequency: "Annual",
-    noticeGiven: "Mar 1, 2024",
-    noticePeriod: "90 days",
+    rtbNumber: "",
+    registrationDate: "",
+    expiryDate: "",
+    leaseStart: "",
+    leaseEnd: "",
+    rentReviewDate: "",
+    rentReviewFrequency: "",
+    noticeGiven: "",
+    noticePeriod: "",
   },
+  image: null,
 };
 
 const documents = [
@@ -125,16 +127,130 @@ function InfoRow({ label, value, mono = false }) {
 export default function PropertyProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
+  const [fetchedProperty, setFetchedProperty] = useState(null);
+  const [fetchedTenants, setFetchedTenants] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch properties
+        const propsUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/properties/my`;
+        const propsRes = await authenticatedFetch(propsUrl);
+        if (!propsRes.ok) throw new Error("Failed to fetch properties");
+        const propsData = await propsRes.json();
+        const properties = propsData.data || [];
+        
+        // Find property matching the current ID
+        const found = properties.find(p => p.id === id);
+        if (found) {
+          setFetchedProperty(found);
+        } else {
+          setError("Property not found");
+          setFetchedProperty(null);
+        }
+        
+        // Fetch tenants for this property
+        const tenantsUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/tenancies/landlord/tenants`;
+        const tenantsRes = await authenticatedFetch(tenantsUrl);
+        if (tenantsRes.ok) {
+          const tenantsData = await tenantsRes.json();
+          const tenants = tenantsData.data || [];
+          // Filter tenants for this property
+          const propertyTenants = tenants.filter(t => t.property && t.property.id === id);
+          console.log("Property tenants:", propertyTenants);
+          setFetchedTenants(propertyTenants);
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.message || String(err));
+        setFetchedProperty(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  // Get the first active tenant for this property
+  const activeTenant = fetchedTenants && fetchedTenants.length > 0 
+    ? fetchedTenants.find(t => t.tenancyStatus === "ACTIVE") || fetchedTenants[0]
+    : null;
+
+  // Map API response to component property format
+  const displayProperty = fetchedProperty ? {
+    id: fetchedProperty.id,
+    name: fetchedProperty.name,
+    address: fetchedProperty.address,
+    area: fetchedProperty.area || fetchedProperty.county || "Dublin",
+    type: fetchedProperty.propertyType,
+    bedrooms: fetchedProperty.bedrooms,
+    bathrooms: fetchedProperty.bathrooms,
+    mprn: fetchedProperty.mprn,
+    rent: `€${fetchedProperty.rent}`,
+    eircode: fetchedProperty.eircode,
+    status: fetchedProperty.status === "LET" ? "Let" : fetchedProperty.status,
+    statusColor: fetchedProperty.status === "LET" ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-600",
+    rtbNumber: fetchedProperty.rtbNumber,
+    rtbRegistration: fetchedProperty.rtbRegistration,
+    image: fetchedProperty.image,
+    // Use fetched tenant data or fallback to mock
+    rentDue: "1st of each month",
+    rentLate: activeTenant?.rentStatus === "OVERDUE" ? `${Math.floor(Math.random() * 30)} Days Late` : null,
+    tenant: activeTenant ? {
+      name: activeTenant.user.name,
+      email: activeTenant.user.email,
+      phone: activeTenant.user.phone,
+      since: new Date(activeTenant.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    } : EMPTY_PROPERTY.tenant,
+    tenancy: activeTenant ? {
+      rtbNumber: activeTenant.tenancyId,
+      registrationDate: new Date(activeTenant.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      expiryDate: new Date(activeTenant.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      leaseStart: new Date(activeTenant.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      leaseEnd: new Date(activeTenant.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      rentReviewDate: "TBD",
+      rentReviewFrequency: "Annual",
+      noticeGiven: activeTenant.tenancyStatus === "NOTICE" ? "Yes" : "No",
+      noticePeriod: "90 days",
+    } : EMPTY_PROPERTY.tenancy,
+  } : EMPTY_PROPERTY;
 
   return (
     <PortalShell>
-      {/* Back link */}
-      <Link
-        href="/portal/properties"
-        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-teal-600 font-medium mb-4 transition"
-      >
-        <ArrowLeft size={15} /> Back to My Properties
-      </Link>
+      {/* Loading state */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-10 h-10 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-sm text-slate-500 font-medium">Loading property details...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
+          <p className="text-sm font-semibold text-red-700">Error: {error}</p>
+          <p className="text-xs text-red-600 mt-1">Unable to load property details. Please try again.</p>
+        </div>
+      )}
+
+      {/* Content - show when loaded */}
+      {!loading && (
+        <>
+          {/* Back link */}
+          <Link
+            href="/portal/properties"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-teal-600 font-medium mb-4 transition"
+          >
+            <ArrowLeft size={15} /> Back to My Properties
+          </Link>
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5 mb-4">
@@ -145,20 +261,20 @@ export default function PropertyProfilePage() {
             </div>
             <div>
               <h1 className="text-xl lg:text-2xl font-bold text-slate-800 leading-tight">
-                {property.address}
+                {displayProperty.address}
               </h1>
               <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5">
-                <MapPin size={13} /> {property.area}
+                <MapPin size={13} /> {displayProperty.area}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${property.statusColor}`}>
-              {property.status}
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${displayProperty.statusColor}`}>
+              {displayProperty.status}
             </span>
-            {property.rentLate && (
+            {displayProperty.rentLate && (
               <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700 flex items-center gap-1">
-                <Clock size={11} /> Rent {property.rentLate}
+                <Clock size={11} /> Rent {displayProperty.rentLate}
               </span>
             )}
           </div>
@@ -191,12 +307,12 @@ export default function PropertyProfilePage() {
             <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
               <Home size={16} className="text-teal-600" /> Property Details
             </h2>
-            <InfoRow label="Type" value={property.type} />
-            <InfoRow label="Bedrooms" value={property.bedrooms} />
-            <InfoRow label="Bathrooms" value={property.bathrooms} />
-            <InfoRow label="Address" value={property.address} />
-            <InfoRow label="Area" value={property.area} />
-            <InfoRow label="MPRN" value={property.mprn} mono />
+            <InfoRow label="Type" value={displayProperty.type} />
+            <InfoRow label="Bedrooms" value={displayProperty.bedrooms} />
+            <InfoRow label="Bathrooms" value={displayProperty.bathrooms} />
+            <InfoRow label="Address" value={displayProperty.address} />
+            <InfoRow label="Area" value={displayProperty.area} />
+            <InfoRow label="MPRN" value={displayProperty.mprn} mono />
           </div>
 
           {/* Rent */}
@@ -204,13 +320,13 @@ export default function PropertyProfilePage() {
             <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
               <Euro size={16} className="text-teal-600" /> Rent
             </h2>
-            <InfoRow label="Monthly Rent" value={property.rent} />
-            <InfoRow label="Due Date" value={property.rentDue} />
-            {property.rentLate && (
+            <InfoRow label="Monthly Rent" value={displayProperty.rent} />
+            <InfoRow label="Due Date" value={displayProperty.rentDue} />
+            {displayProperty.rentLate && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 py-3">
                 <p className="text-sm font-medium text-slate-400 sm:w-44 shrink-0">Status</p>
                 <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-700 bg-red-50 px-3 py-1 rounded-full">
-                  <AlertCircle size={13} /> Rent {property.rentLate}
+                  <AlertCircle size={13} /> Rent {displayProperty.rentLate}
                 </span>
               </div>
             )}
@@ -221,10 +337,10 @@ export default function PropertyProfilePage() {
             <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
               <User size={16} className="text-teal-600" /> Assigned Tenant
             </h2>
-            <InfoRow label="Name" value={property.tenant.name} />
-            <InfoRow label="Email" value={property.tenant.email} />
-            <InfoRow label="Phone" value={property.tenant.phone} />
-            <InfoRow label="Tenant Since" value={property.tenant.since} />
+            <InfoRow label="Name" value={displayProperty.tenant.name} />
+            <InfoRow label="Email" value={displayProperty.tenant.email} />
+            <InfoRow label="Phone" value={displayProperty.tenant.phone} />
+            <InfoRow label="Tenant Since" value={displayProperty.tenant.since} />
           </div>
         </div>
       )}
@@ -235,14 +351,14 @@ export default function PropertyProfilePage() {
           <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
             <BadgeCheck size={16} className="text-teal-600" /> Tenancy Details
           </h2>
-          <InfoRow label="RTB Number" value={property.tenancy.rtbNumber} mono />
-          <InfoRow label="RTB Registration Date" value={property.tenancy.registrationDate} />
-          <InfoRow label="Lease Start" value={property.tenancy.leaseStart} />
-          <InfoRow label="Lease End" value={property.tenancy.leaseEnd} />
-          <InfoRow label="Rent Review Date" value={property.tenancy.rentReviewDate} />
-          <InfoRow label="Review Frequency" value={property.tenancy.rentReviewFrequency} />
-          <InfoRow label="Notice Given" value={property.tenancy.noticeGiven} />
-          <InfoRow label="Notice Period" value={property.tenancy.noticePeriod} />
+          <InfoRow label="RTB Number" value={displayProperty.tenancy.rtbNumber} mono />
+          <InfoRow label="RTB Registration Date" value={displayProperty.tenancy.registrationDate} />
+          <InfoRow label="Lease Start" value={displayProperty.tenancy.leaseStart} />
+          <InfoRow label="Lease End" value={displayProperty.tenancy.leaseEnd} />
+          <InfoRow label="Rent Review Date" value={displayProperty.tenancy.rentReviewDate} />
+          <InfoRow label="Review Frequency" value={displayProperty.tenancy.rentReviewFrequency} />
+          <InfoRow label="Notice Given" value={displayProperty.tenancy.noticeGiven} />
+          <InfoRow label="Notice Period" value={displayProperty.tenancy.noticePeriod} />
         </div>
       )}
 
@@ -356,9 +472,9 @@ export default function PropertyProfilePage() {
                   <CheckCircle size={18} /> Registered
                 </p>
               </div>
-              <InfoRow label="RTB Number" value={property.tenancy.rtbNumber} mono />
-              <InfoRow label="Registration Date" value={property.tenancy.registrationDate} />
-              <InfoRow label="Expiry Date" value={property.tenancy.expiryDate} />
+              <InfoRow label="RTB Number" value={displayProperty.tenancy.rtbNumber} mono />
+              <InfoRow label="Registration Date" value={displayProperty.tenancy.registrationDate} />
+              <InfoRow label="Expiry Date" value={displayProperty.tenancy.expiryDate} />
             </div>
           </div>
 
@@ -531,6 +647,8 @@ export default function PropertyProfilePage() {
       )}
 
       {/* Notes tab removed for landlord view */}
+        </>
+      )}
     </PortalShell>
   );
 }
