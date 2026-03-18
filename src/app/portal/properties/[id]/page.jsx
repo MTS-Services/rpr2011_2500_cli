@@ -132,6 +132,8 @@ export default function PropertyProfilePage() {
   const [fetchedRentSummary, setFetchedRentSummary] = useState(null);
   const [fetchedRentCalendar, setFetchedRentCalendar] = useState(null);
   const [fetchedRentPayments, setFetchedRentPayments] = useState(null);
+  const [fetchedMaintenance, setFetchedMaintenance] = useState(null);
+  const [fetchedDocuments, setFetchedDocuments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -204,6 +206,36 @@ export default function PropertyProfilePage() {
           }
         } catch (err) {
           console.warn("Failed to fetch rent payments:", err);
+        }
+
+        // Fetch maintenance requests
+        const maintenanceUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/maintenance/landlord`;
+        try {
+          const maintenanceRes = await authenticatedFetch(maintenanceUrl);
+          if (maintenanceRes.ok) {
+            const maintenanceData = await maintenanceRes.json();
+            const allMaintenance = maintenanceData.data || [];
+            // Filter maintenance for this specific property
+            const propertyMaintenance = allMaintenance.filter(m => m.propertyId === id);
+            setFetchedMaintenance(propertyMaintenance);
+          }
+        } catch (err) {
+          console.warn("Failed to fetch maintenance:", err);
+        }
+
+        // Fetch documents
+        const documentsUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/documents?propertyId=${id}`;
+        try {
+          const documentsRes = await authenticatedFetch(documentsUrl);
+          if (documentsRes.ok) {
+            const documentsData = await documentsRes.json();
+            const allDocuments = documentsData.data || [];
+            // Filter documents for this specific property
+            const propertyDocuments = allDocuments.filter(d => d.propertyId === id);
+            setFetchedDocuments(propertyDocuments);
+          }
+        } catch (err) {
+          console.warn("Failed to fetch documents:", err);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -580,20 +612,32 @@ export default function PropertyProfilePage() {
               <FileText size={16} className="text-teal-600" /> RTB Documents
             </h2>
             <div className="space-y-2">
-              {documents
-                .filter((d) => d.type === "RTB Registration")
-                .map((d, i) => (
+              {(fetchedDocuments && fetchedDocuments.length > 0 
+                ? fetchedDocuments.filter((d) => d.type === "RTB_REGISTRATION" || d.type === "RTB Registration")
+                : documents.filter((d) => d.type === "RTB Registration")
+              ).map((d, i) => {
+                const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : d.date || "—";
+                const docSize = d.fileSize || d.size || "—";
+                const docUrl = d.fileUrl;
+                return (
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
                     <div>
                       <p className="text-sm font-semibold text-slate-700">{d.name}</p>
-                      <p className="text-xs text-slate-400 mt-1">{d.date} • {d.size}</p>
+                      <p className="text-xs text-slate-400 mt-1">{docDate} • {docSize}</p>
                     </div>
-                    <button className="px-3 py-1.5 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition flex items-center gap-1.5">
-                      <Download size={14} /> Download
-                    </button>
+                    {docUrl ? (
+                      <a href={docUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition flex items-center gap-1.5">
+                        <Download size={14} /> Download
+                      </a>
+                    ) : (
+                      <button disabled className="px-3 py-1.5 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed flex items-center gap-1.5">
+                        <Download size={14} /> No Link
+                      </button>
+                    )}
                   </div>
-                ))}
-              {documents.filter((d) => d.type === "RTB Registration").length === 0 && (
+                );
+              })}
+              {fetchedDocuments && fetchedDocuments.filter((d) => d.type === "RTB_REGISTRATION" || d.type === "RTB Registration").length === 0 && (
                 <p className="text-sm text-slate-500 px-4 py-6 text-center">No RTB documents uploaded yet.</p>
               )}
             </div>
@@ -611,20 +655,37 @@ export default function PropertyProfilePage() {
           </div>
           {/* Mobile */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {documents.map((d, i) => (
-              <div key={i} className="px-5 py-4 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-slate-700">{d.name}</p>
-                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${docTypeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span>
+            {(fetchedDocuments && fetchedDocuments.length > 0 ? fetchedDocuments : documents).map((d, i) => {
+              const displayType = d.type ? (d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : d.type) : d.type;
+              const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : d.date || "—";
+              const docSize = d.fileSize || d.size || "—";
+              const docUrl = d.fileUrl;
+              return (
+                <div key={i} className="px-5 py-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-700">{d.name}</p>
+                    <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${docTypeColors[displayType] || "bg-slate-100 text-slate-600"}`}>{displayType}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>{docDate}</span><span>{docSize}</span>
+                  </div>
+                  {docUrl ? (
+                    <a href={docUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
+                      <Download size={13} /> Download
+                    </a>
+                  ) : (
+                    <button disabled className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                      <Download size={13} /> No Link
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>{d.date}</span><span>{d.size}</span>
-                </div>
-                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                  <Download size={13} /> Download
-                </button>
+              );
+            })}
+            {fetchedDocuments && fetchedDocuments.length === 0 && (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm text-slate-500">No documents uploaded for this property.</p>
               </div>
-            ))}
+            )}
           </div>
           {/* Desktop */}
           <div className="hidden lg:block overflow-x-auto">
@@ -639,23 +700,40 @@ export default function PropertyProfilePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {documents.map((d, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 text-base font-semibold text-slate-700">{d.name}</td>
-                    <td className="px-5 py-4">
-                      <span className={`text-sm font-medium px-3 py-1 rounded-full ${docTypeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span>
-                    </td>
-                    <td className="px-5 py-4 text-base text-slate-500">{d.date}</td>
-                    <td className="px-5 py-4 text-base text-slate-400">{d.size}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition">
-                        <Download size={15} /> Download
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {(fetchedDocuments && fetchedDocuments.length > 0 ? fetchedDocuments : documents).map((d, i) => {
+                  const displayType = d.type ? (d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : d.type) : d.type;
+                  const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : d.date || "—";
+                  const docSize = d.fileSize || d.size || "—";
+                  const docUrl = d.fileUrl;
+                  return (
+                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-5 py-4 text-base font-semibold text-slate-700">{d.name}</td>
+                      <td className="px-5 py-4">
+                        <span className={`text-sm font-medium px-3 py-1 rounded-full ${docTypeColors[displayType] || "bg-slate-100 text-slate-600"}`}>{displayType}</span>
+                      </td>
+                      <td className="px-5 py-4 text-base text-slate-500">{docDate}</td>
+                      <td className="px-5 py-4 text-base text-slate-400">{docSize}</td>
+                      <td className="px-6 py-4 text-right">
+                        {docUrl ? (
+                          <a href={docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition">
+                            <Download size={15} /> Download
+                          </a>
+                        ) : (
+                          <button disabled className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <Download size={15} /> No Link
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            {fetchedDocuments && fetchedDocuments.length === 0 && (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm text-slate-500">No documents uploaded for this property.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -677,17 +755,26 @@ export default function PropertyProfilePage() {
 
           {/* Mobile */}
           <div className="lg:hidden divide-y divide-slate-100 mt-4">
-            {maintenance.map((m, i) => (
-              <div key={i} className="px-5 py-4 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-slate-700">{m.issue}</p>
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${priorityColors[m.priority]}`}>{m.priority}</span>
+            {(fetchedMaintenance && fetchedMaintenance.length > 0 ? fetchedMaintenance : maintenance).map((m, i) => {
+              const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : "Pending";
+              const lastUpdated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+              return (
+                <div key={i} className="px-5 py-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-700">{m.title || m.issue}</p>
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${priorityColors[m.priority]}`}>{m.priority}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>{status}</span><span>{lastUpdated}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>{m.status}</span><span>{m.updated}</span>
-                </div>
+              );
+            })}
+            {fetchedMaintenance && fetchedMaintenance.length === 0 && (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm text-slate-500">No maintenance requests for this property.</p>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Desktop */}
@@ -702,18 +789,27 @@ export default function PropertyProfilePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {maintenance.map((m, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 text-base font-semibold text-slate-700">{m.issue}</td>
-                    <td className="px-5 py-4">
-                      <span className={`text-sm font-semibold px-3 py-1 rounded-full ${priorityColors[m.priority]}`}>{m.priority}</span>
-                    </td>
-                    <td className="px-5 py-4 text-base text-slate-600">{m.status}</td>
-                    <td className="px-5 py-4 text-sm text-slate-400">{m.updated}</td>
-                  </tr>
-                ))}
+                {(fetchedMaintenance && fetchedMaintenance.length > 0 ? fetchedMaintenance : maintenance).map((m, i) => {
+                  const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : "Pending";
+                  const lastUpdated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                  return (
+                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-5 py-4 text-base font-semibold text-slate-700">{m.title || m.issue}</td>
+                      <td className="px-5 py-4">
+                        <span className={`text-sm font-semibold px-3 py-1 rounded-full ${priorityColors[m.priority]}`}>{m.priority}</span>
+                      </td>
+                      <td className="px-5 py-4 text-base text-slate-600">{status}</td>
+                      <td className="px-5 py-4 text-sm text-slate-400">{lastUpdated}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            {fetchedMaintenance && fetchedMaintenance.length === 0 && (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm text-slate-500">No maintenance requests for this property.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
