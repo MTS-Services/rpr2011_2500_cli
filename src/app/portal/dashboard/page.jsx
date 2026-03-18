@@ -1,48 +1,121 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import PortalShell from "@/components/portal/PortalShell";
-import { AlertTriangle, Home, Users, Wrench, FileText, ArrowRight, CheckCircle2, AlertCircle, Clock, TrendingUp } from "lucide-react";
-import Image from "next/image";
-import { PROPERTY_FINANCES, getLandlordSummary } from "@/data/finances";
+import { AlertTriangle, Home, Users, Wrench, FileText, ArrowRight, CheckCircle2, AlertCircle, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { authenticatedFetch } from "@/utils/authFetch";
+import Link from "next/link";
 
-const kpis = [
-  { label: "My Properties", value: "4", Icon: Home, color: "bg-amber-50 text-amber-600 border-amber-100" },
-  { label: "Active Tenancies", value: "3", Icon: Users, color: "bg-blue-50 text-blue-600 border-blue-100" },
-  { label: "Open Maintenance", value: "2", Icon: Wrench, color: "bg-purple-50 text-purple-600 border-purple-100" },
-  { label: "New Documents", value: "2", Icon: FileText, color: "bg-rose-50 text-rose-600 border-rose-100" },
-];
+const formatCurrency = (amount) => {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  const numeric = Number(amount);
+  if (Number.isNaN(numeric)) return amount;
+  return `€${numeric.toLocaleString("en-IE")}`;
+};
 
-const alerts = [
-  { type: "warning", text: "Rent review due for Apt 5B Rosewood Close", meta: "Due 12 May 2024", badge: "12 May 2024", badgeColor: "bg-amber-100 text-amber-700" },
-  { type: "info", text: "Broken shower reported in Apt 22 Parkside Plaza", meta: "2 days ago", badge: "In Progress", badgeColor: "bg-teal-100 text-teal-700" },
-];
+const getPropertyStatusColor = (status) => {
+  switch (status?.toUpperCase()) {
+    case "LET":
+      return "bg-teal-100 text-teal-700";
+    case "NOTICE":
+      return "bg-amber-100 text-amber-700";
+    case "VACANT":
+      return "bg-slate-100 text-slate-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
 
-const properties = [
-  { id: "1", status: "Notice Served", address: "Apt 5B Rosewood Close", sub: "Rent review in 11 days", tenant: "Kevin Madden", tenantSub: "5 days ago", rent: "€1,750", rentSub: "# 123C1678", rentLate: "5 Days Late", statusColor: "bg-red-100 text-red-700" },
-  { id: "2", status: "Let", address: "Apt 306 Fairview Rd", sub: "Lease renewed", tenant: "Stephen Blake", tenantSub: "15 days ago", rent: "€1,850", rentSub: "4 Jan 2025", rentLate: null, statusColor: "bg-teal-100 text-teal-700" },
-  { id: "3", status: "Notice Served", address: "Apt 22 Parkside Plaza", sub: "Tenant vacating", tenant: "Reginald Spencer", tenantSub: "3 days ago", rent: "€1,500", rentSub: "0 Dec 2024", rentLate: null, statusColor: "bg-amber-100 text-amber-700" },
-  { id: "4", status: "Let", address: "Apt 104 Elmwood Grove", sub: "Active since Aug 2025", tenant: "Adam Walsh", tenantSub: "17 days ago", rent: "€1,600", rentSub: "12 Aug 2025", rentLate: null, statusColor: "bg-teal-100 text-teal-700" },
-];
-
-const lateRent = properties.filter((p) => p.rentLate);
-
-const activity = [
-  { name: "Edward Martin", action: "reported an issue in", property: "Apt 104 Elmwood Grove", time: "2 hours ago", avatar: "https://randomuser.me/api/portraits/men/41.jpg" },
-  { name: "Kevin Madden", action: "rent payment 5 days late", property: "Apt 65 Southern Cross", time: "1 day ago", avatar: "https://randomuser.me/api/portraits/men/44.jpg" },
-  { name: "Sarah Quinn", action: 'uploaded "Lease Agreement"', property: "Apt 306 Fairview Rd", time: "15 days ago", avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
-  { name: "Steven Keane", action: "finalized RTB registration", property: "Apt 70 Square B-64", time: "17 days ago", avatar: "https://randomuser.me/api/portraits/men/55.jpg" },
-];
+const getTenancyStatusColor = (status) => {
+  switch (status?.toUpperCase()) {
+    case "ACTIVE":
+      return "bg-teal-100 text-teal-700";
+    case "NOTICE":
+      return "bg-amber-100 text-amber-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
 
 export default function DashboardPage() {
-  // Get landlord's finances summary
-  const landlordId = "landlord-1"; // Joe's landlord ID
-  const financeSummary = getLandlordSummary(landlordId);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/landlord/dashboard`
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch landlord dashboard");
+        }
+        const json = await res.json();
+        setDashboardData(json.data);
+      } catch (err) {
+        console.warn("Error fetching landlord dashboard:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <PortalShell>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={32} className="text-teal-600 animate-spin" />
+        </div>
+      </PortalShell>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <PortalShell>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-800">Unable to load dashboard</p>
+              <p className="text-sm text-red-700 mt-1">
+                {error || "Failed to load your dashboard data. Please try refreshing."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </PortalShell>
+    );
+  }
+
+  const { profile, summary, rentStatus, financialSummary, properties, activeTenancies } = dashboardData;
+  const profileName = profile?.name ? profile.name.split(" ")[0] : "Landlord";
+  const kpis = [
+    { label: "My Properties", value: summary?.totalProperties || "0", Icon: Home, color: "bg-amber-50 text-amber-600 border-amber-100" },
+    { label: "Active Tenancies", value: summary?.activeTenancies || "0", Icon: Users, color: "bg-blue-50 text-blue-600 border-blue-100" },
+    { label: "Open Maintenance", value: summary?.openMaintenance || "0", Icon: Wrench, color: "bg-purple-50 text-purple-600 border-purple-100" },
+    { label: "New Documents", value: summary?.newDocuments || "0", Icon: FileText, color: "bg-rose-50 text-rose-600 border-rose-100" },
+  ];
+
+  const financeSummary = {
+    period: financialSummary?.period || "March 2026",
+    totalRent: Number(financialSummary?.totalRent) || 0,
+    totalDeductions: Number(financialSummary?.deductions) || 0,
+    totalNet: Number(financialSummary?.netAmount) || 0,
+    paidCount: financialSummary?.paidAmount || 0,
+  };
 
   return (
     <PortalShell>
       {/* Title */}
       <div className="flex items-center justify-between mb-3 lg:mb-5">
-        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800">Welcome Back, Joe</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800">Welcome Back, {profileName}</h1>
       </div>
 
       {/* KPI Cards */}
@@ -60,32 +133,38 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Rent Status Indicator */}
-      {lateRent.length > 0 && (
+      {/* Rent Status Indicator - Only show if overdue */}
+      {rentStatus?.overdueCount > 0 && (
         <div className="bg-white rounded-2xl border border-red-200 overflow-hidden shadow-sm mb-3 lg:mb-5">
           <div className="flex items-center gap-2 px-4 lg:px-6 py-3 lg:py-4 border-b border-red-100">
             <Clock size={16} className="text-red-500" />
-            <h3 className="text-base lg:text-lg font-bold text-slate-800">Rent Status</h3>
+            <h3 className="text-base lg:text-lg font-bold text-slate-800">Overdue Rent</h3>
             <span className="ml-auto text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700">
-              {lateRent.length} Overdue
+              {rentStatus.overdueCount} Overdue
             </span>
           </div>
-          <div className="divide-y divide-red-50">
-            {lateRent.map((p) => (
-              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 lg:px-6 py-3 lg:py-4">
-                <div>
-                  <p className="text-sm lg:text-base font-semibold text-slate-700">{p.address}</p>
-                  <p className="text-xs lg:text-sm text-slate-400 mt-0.5">Tenant: {p.tenant}</p>
+          {Array.isArray(rentStatus?.outstandingPayments) && rentStatus.outstandingPayments.length > 0 ? (
+            <div className="divide-y divide-red-50">
+              {rentStatus.outstandingPayments.map((p, i) => (
+                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 lg:px-6 py-3 lg:py-4">
+                  <div>
+                    <p className="text-sm lg:text-base font-semibold text-slate-700">{p.property?.name || "—"}</p>
+                    <p className="text-xs lg:text-sm text-slate-400 mt-0.5">Tenant: {p.tenant?.name || "—"}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-bold text-slate-700">{formatCurrency(p.amount)}</p>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">
+                      <AlertCircle size={11} /> Overdue
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <p className="text-sm font-bold text-slate-700">{p.rent}</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">
-                    <AlertCircle size={11} /> {p.rentLate}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="px-4 lg:px-6 py-4 text-center text-slate-500 text-sm">
+              No overdue payments
+            </div>
+          )}
         </div>
       )}
 
@@ -95,28 +174,30 @@ export default function DashboardPage() {
           <TrendingUp size={18} className="text-teal-600" />
           <h3 className="text-base lg:text-lg font-bold text-slate-800">Finances Summary</h3>
           <span className="ml-auto text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-700">
-            March 2026
+            {financeSummary.period}
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 lg:p-6">
           <div className="flex flex-col gap-1">
             <p className="text-xs lg:text-sm font-semibold text-slate-500">Total Rent</p>
-            <p className="text-lg lg:text-2xl font-bold text-slate-800">€{financeSummary.totalRent.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-1">From 4 properties</p>
+            <p className="text-lg lg:text-2xl font-bold text-slate-800">{formatCurrency(financeSummary.totalRent)}</p>
+            <p className="text-xs text-slate-400 mt-1">From {summary?.totalProperties || 0} properties</p>
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-xs lg:text-sm font-semibold text-slate-500">Deductions</p>
-            <p className="text-lg lg:text-2xl font-bold text-rose-600">-€{financeSummary.totalDeductions.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-1">{Math.round((financeSummary.totalDeductions / financeSummary.totalRent) * 100)}% of rent</p>
+            <p className="text-lg lg:text-2xl font-bold text-rose-600">-{formatCurrency(financeSummary.totalDeductions)}</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {financeSummary.totalRent > 0 ? Math.round((financeSummary.totalDeductions / financeSummary.totalRent) * 100) : 0}% of rent
+            </p>
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-xs lg:text-sm font-semibold text-slate-500">Net Amount</p>
-            <p className="text-lg lg:text-2xl font-bold text-teal-600">€{financeSummary.totalNet.toLocaleString()}</p>
+            <p className="text-lg lg:text-2xl font-bold text-teal-600">{formatCurrency(financeSummary.totalNet)}</p>
             <p className="text-xs text-slate-400 mt-1">Payable</p>
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-xs lg:text-sm font-semibold text-slate-500">Months Paid</p>
-            <p className="text-lg lg:text-2xl font-bold text-slate-800">{financeSummary.paidCount}/4</p>
+            <p className="text-xs lg:text-sm font-semibold text-slate-500">Paid Amount</p>
+            <p className="text-lg lg:text-2xl font-bold text-slate-800">{formatCurrency(financeSummary.paidCount)}</p>
             <p className="text-xs text-slate-400 mt-1">This period</p>
           </div>
         </div>
@@ -128,41 +209,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {/* Left: Alerts + Properties */}
-          <div className="space-y-4">
-          {/* Alerts */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-slate-100">
-              <div className="flex items-center gap-2 text-base lg:text-lg font-bold text-slate-800">
-                <AlertTriangle size={18} className="text-amber-500" />
-                Alerts
-              </div>
-              <a href="#" className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5">
-                View All <ArrowRight size={14} />
-              </a>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {alerts.map((a, i) => (
-                <div key={i} className="flex items-start lg:items-center justify-between px-4 lg:px-6 py-3 lg:py-4 gap-3">
-                  <div className="flex items-start gap-3">
-                    {a.type === "warning" ? (
-                      <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-                    ) : (
-                      <CheckCircle2 size={16} className="text-teal-500 shrink-0 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="text-sm lg:text-base text-slate-700 font-medium">{a.text}</p>
-                      <p className="text-xs lg:text-sm text-slate-400 mt-0.5">{a.meta}</p>
-                    </div>
-                  </div>
-                  <span className={`text-xs lg:text-sm font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 ${a.badgeColor}`}>
-                    {a.badge}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
+        <div className="space-y-4">
           {/* My Properties */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-slate-100">
@@ -174,25 +221,27 @@ export default function DashboardPage() {
 
             {/* Mobile cards */}
             <div className="lg:hidden divide-y divide-slate-100">
-              {properties.map((p, i) => (
-                <div key={i} className="px-4 py-3 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-700">{p.address}</p>
-                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${p.statusColor}`}>{p.status}</span>
-                  </div>
-                  <p className="text-xs text-slate-400">{p.sub}</p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-slate-400">Tenant</p>
-                      <p className="text-sm text-slate-700">{p.tenant}</p>
+              {properties && properties.length > 0 ? (
+                properties.map((p, i) => (
+                  <div key={i} className="px-4 py-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-700">{p.name || p.address || "—"}</p>
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${getPropertyStatusColor(p.status)}`}>
+                        {p.status || "—"}
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400">Rent</p>
-                      <p className="text-sm font-bold text-slate-800">{p.rent}</p>
+                    <p className="text-xs text-slate-400">{p.address || "—"}</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-slate-400">Rent</p>
+                        <p className="text-sm font-semibold text-slate-700">{formatCurrency(p.rent)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="px-4 py-4 text-center text-slate-500">No properties</div>
+              )}
             </div>
 
             {/* Desktop table */}
@@ -201,33 +250,38 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
                     <th className="text-left px-6 py-3.5">Status</th>
-                    <th className="text-left px-4 py-3.5">Property Address</th>
-                    <th className="text-left px-4 py-3.5">Tenant</th>
+                    <th className="text-left px-4 py-3.5">Property</th>
+                    <th className="text-left px-4 py-3.5">Address</th>
                     <th className="text-right px-6 py-3.5">Rent</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {properties.map((p, i) => (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <span className={`text-sm font-semibold px-3 py-1 rounded-full ${p.statusColor}`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="text-base font-semibold text-slate-700">{p.address}</p>
-                        <p className="text-sm text-slate-400 mt-0.5">{p.sub}</p>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="text-base text-slate-700">{p.tenant}</p>
-                        <p className="text-sm text-slate-400 mt-0.5">{p.tenantSub}</p>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <p className="text-base font-bold text-slate-800">{p.rent}</p>
-                        <p className="text-sm text-slate-400 mt-0.5">{p.rentSub}</p>
+                  {properties && properties.length > 0 ? (
+                    properties.map((p, i) => (
+                      <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getPropertyStatusColor(p.status)}`}>
+                            {p.status || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className="text-base font-semibold text-slate-700">{p.name || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className="text-base text-slate-700">{p.address || "—"}</p>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <p className="text-base font-bold text-slate-800">{formatCurrency(p.rent)}</p>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-5 py-4 text-center text-slate-500">
+                        No properties
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -238,9 +292,84 @@ export default function DashboardPage() {
               </a>
             </div>
           </div>
-        </div>
 
-        {/* Recent Activity removed per design request */}
+          {/* Active Tenancies */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-slate-100">
+              <h3 className="text-base lg:text-lg font-bold text-slate-800">Active Tenancies</h3>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-slate-100">
+              {activeTenancies && activeTenancies.length > 0 ? (
+                activeTenancies.slice(0, 4).map((t, i) => (
+                  <div key={i} className="px-4 py-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-700">{t.property?.name || "—"}</p>
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${getTenancyStatusColor(t.status)}`}>
+                        {t.status || "—"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">Tenant: {t.tenant?.name || "—"}</p>
+                    <p className="text-xs text-slate-400 font-semibold">{formatCurrency(t.rent)} / month</p>
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-4 text-center text-slate-500">No active tenancies</div>
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                    <th className="text-left px-6 py-3.5">Status</th>
+                    <th className="text-left px-4 py-3.5">Property</th>
+                    <th className="text-left px-4 py-3.5">Tenant</th>
+                    <th className="text-right px-6 py-3.5">Rent</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {activeTenancies && activeTenancies.length > 0 ? (
+                    activeTenancies.slice(0, 4).map((t, i) => (
+                      <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getTenancyStatusColor(t.status)}`}>
+                            {t.status || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className="text-base font-semibold text-slate-700">{t.property?.name || "—"}</p>
+                          <p className="text-sm text-slate-400 mt-0.5">{t.property?.address || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className="text-base text-slate-700">{t.tenant?.name || "—"}</p>
+                          <p className="text-sm text-slate-400 mt-0.5">{t.tenant?.email || "—"}</p>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <p className="text-base font-bold text-slate-800">{formatCurrency(t.rent)}</p>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-5 py-4 text-center text-slate-500">
+                        No active tenancies
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-4 lg:px-6 py-3 lg:py-4 border-t border-slate-100 text-center">
+              <Link href="/portal/tenants" className="text-sm lg:text-base text-teal-600 hover:text-teal-700 font-semibold flex items-center justify-center gap-1.5">
+                View All Tenancies <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </PortalShell>
   );
