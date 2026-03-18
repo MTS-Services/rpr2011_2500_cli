@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { authenticatedFetch } from "@/utils/authFetch";
 import {
   ArrowLeft, Home, BadgeCheck, FileText, Wrench,
   StickyNote, ClipboardList, MapPin, Euro, Zap,
@@ -42,9 +43,9 @@ const documents = [
 ];
 
 const maintenance = [
-  { issue: "Shower broken", priority: "Medium", status: "In Progress", assignee: "Contractor A", updated: "1 day ago" },
-  { issue: "Heating issue", priority: "High", status: "Open", assignee: "Maintenance Team", updated: "2 hours ago" },
-  { issue: "Leaky kitchen sink", priority: "High", status: "Closed", assignee: "Contractor B", updated: "3 weeks ago" },
+  { title: "Shower broken", priority: "Medium", status: "In Progress", assignee: "Contractor A", updated: "1 day ago" },
+  { title: "Heating issue", priority: "High", status: "Open", assignee: "Maintenance Team", updated: "2 hours ago" },
+  { title: "Leaky kitchen sink", priority: "High", status: "Closed", assignee: "Contractor B", updated: "3 weeks ago" },
 ];
 
 const notes = [
@@ -66,7 +67,6 @@ const TABS = [
   { key: "tenancies", label: "Tenancies", Icon: Users },
   { key: "documents", label: "Documents", Icon: FileText },
   { key: "maintenance", label: "Maintenance", Icon: Wrench },
-  { key: "audit", label: "Audit", Icon: ClipboardList },
 ];
 
 const docTypeColors = {
@@ -107,6 +107,147 @@ export default function AdminPropertyProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [noteText, setNoteText] = useState("");
+  const [selectedTenancyId, setSelectedTenancyId] = useState(null);
+  const [fetchedTenancyDetails, setFetchedTenancyDetails] = useState(null);
+  
+  // Fetched data states
+  const [fetchedProperty, setFetchedProperty] = useState(null);
+  const [fetchedRentPayments, setFetchedRentPayments] = useState([]);
+  const [fetchedTenancies, setFetchedTenancies] = useState(null);
+  const [fetchedDocuments, setFetchedDocuments] = useState(null);
+  const [fetchedMaintenance, setFetchedMaintenance] = useState(null);
+  const [fetchedAuditLog, setFetchedAuditLog] = useState(null);
+  const [isLoadingRentPayments, setIsLoadingRentPayments] = useState(false);
+  const [financeFilters, setFinanceFilters] = useState({
+    status: "ALL",
+    year: "",
+    tenancyId: "",
+    tenantId: "",
+  });
+
+  const fetchRentPayments = async (filters) => {
+    if (!id) return;
+
+    setIsLoadingRentPayments(true);
+    try {
+      const query = new URLSearchParams();
+      if (filters.status && filters.status !== "ALL") query.set("status", filters.status);
+      if (filters.year) query.set("year", filters.year);
+      if (filters.tenancyId) query.set("tenancyId", filters.tenancyId);
+      if (filters.tenantId) query.set("tenantId", filters.tenantId);
+
+      const queryString = query.toString();
+      const rentUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments${queryString ? `?${queryString}` : ""}`;
+      const rentRes = await authenticatedFetch(rentUrl);
+
+      if (rentRes.ok) {
+        const data = await rentRes.json();
+        const propertyPayments = (data.data || []).filter(
+          (p) => p.tenancy?.property?.id === id
+        );
+        setFetchedRentPayments(propertyPayments);
+      } else {
+        setFetchedRentPayments([]);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch rent payments:", err);
+      setFetchedRentPayments([]);
+    } finally {
+      setIsLoadingRentPayments(false);
+    }
+  };
+
+  // Fetch property data from APIs
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch property details
+        const propertiesUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/${id}`;
+        const propertiesRes = await authenticatedFetch(propertiesUrl);
+        if (propertiesRes.ok) {
+          const data = await propertiesRes.json();
+          setFetchedProperty(data.data);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch property details:", err);
+      }
+
+      try {
+        // Fetch tenancies
+        const tenanciesUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/landlord/tenants`;
+        const tenanciesRes = await authenticatedFetch(tenanciesUrl);
+        if (tenanciesRes.ok) {
+          const data = await tenanciesRes.json();
+          const filtered = data.data?.filter(t => t.propertyId === id) || [];
+          setFetchedTenancies(filtered);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch tenancies:", err);
+      }
+
+      try {
+        // Fetch documents
+        const docsUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents?propertyId=${id}`;
+        const docsRes = await authenticatedFetch(docsUrl);
+        if (docsRes.ok) {
+          const data = await docsRes.json();
+          setFetchedDocuments(data.data || []);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch documents:", err);
+      }
+
+      try {
+        // Fetch maintenance
+        const maintUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/landlord`;
+        const maintRes = await authenticatedFetch(maintUrl);
+        if (maintRes.ok) {
+          const data = await maintRes.json();
+          const filtered = data.data?.filter(m => m.propertyId === id) || [];
+          setFetchedMaintenance(filtered);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch maintenance:", err);
+      }
+
+      // Audit: No endpoint yet, using mock
+      try {
+        // TODO: Replace with actual audit endpoint when available
+        // const auditUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit?propertyId=${id}`;
+        // const auditRes = await authenticatedFetch(auditUrl);
+        // if (auditRes.ok) {
+        //   const data = await auditRes.json();
+        //   setFetchedAuditLog(data.data || []);
+        // }
+        setFetchedAuditLog(null); // Using mock for now
+      } catch (err) {
+        console.warn("Failed to fetch audit log:", err);
+      }
+    };
+
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchRentPayments(financeFilters);
+  }, [id, financeFilters.status, financeFilters.year, financeFilters.tenancyId, financeFilters.tenantId]);
+
+  // Fetch tenancy details when a tenancy is selected
+  const fetchTenancyDetails = async (tenancyId) => {
+    try {
+      const tenancyUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/${tenancyId}`;
+      const res = await authenticatedFetch(tenancyUrl);
+      if (res.ok) {
+        const data = await res.json();
+        setFetchedTenancyDetails(data.data);
+        setSelectedTenancyId(tenancyId);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch tenancy details:", err);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -123,15 +264,20 @@ export default function AdminPropertyProfilePage() {
               <Home size={22} className="text-teal-600" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-slate-800 leading-tight">{property.name}</h1>
-              <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5"><MapPin size={13} />{property.area}</p>
+              <h1 className="text-xl lg:text-2xl font-bold text-slate-800 leading-tight">{fetchedProperty?.name || "—"}</h1>
+              <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5"><MapPin size={13} />{fetchedProperty?.address || "—"}</p>
+              {fetchedProperty?.landlord && (
+                <p className="text-xs text-slate-500 mt-2">Landlord: <strong>{fetchedProperty.landlord.name}</strong> • {fetchedProperty.landlord.email}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${property.statusColor}`}>{property.status}</span>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition">
-              <Edit size={14} /> Edit Property
-            </button>
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+              fetchedProperty?.status === "LET" ? "bg-green-100 text-green-600" : 
+              fetchedProperty?.status === "AVAILABLE" ? "bg-blue-100 text-blue-600" :
+              fetchedProperty?.status === "Notice" ? "bg-orange-100 text-orange-600" : 
+              "bg-slate-100 text-slate-600"
+            }`}>{fetchedProperty?.status || "—"}</span>
           </div>
         </div>
       </div>
@@ -155,22 +301,26 @@ export default function AdminPropertyProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><Home size={16} className="text-teal-600" />Property Details</h2>
-            <InfoRow label="Type" value={property.type} />
-            <InfoRow label="Bedrooms" value={property.bedrooms} />
-            <InfoRow label="Bathrooms" value={property.bathrooms} />
-            <InfoRow label="County / City" value={property.county} />
-            <InfoRow label="Eircode" value={property.eircode} mono />
-            <InfoRow label="MPRN" value={property.mprn} mono />
+            <InfoRow label="Type" value={fetchedProperty?.propertyType || "—"} />
+            <InfoRow label="Bedrooms" value={fetchedProperty?.bedrooms ?? "—"} />
+            <InfoRow label="Bathrooms" value={fetchedProperty?.bathrooms ?? "—"} />
+            <InfoRow label="County / City" value={fetchedProperty?.county || "—"} />
+            <InfoRow label="Eircode" value={fetchedProperty?.eircode || "—"} mono />
+            <InfoRow label="Address" value={fetchedProperty?.address || "—"} />
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><Euro size={16} className="text-teal-600" />Rent & Landlord</h2>
-            <InfoRow label="Rent" value={property.rent} />
-            <InfoRow label="Rent Due" value={property.rentDue} />
+            <InfoRow label="Monthly Rent" value={`€${fetchedProperty?.rent || "—"}`} />
             <InfoRow label="Landlord">
-              <Link href={`/admin/landlords/${property.landlordId}`} className="text-base font-semibold text-teal-600 hover:underline">{property.landlord}</Link>
+              {fetchedProperty?.landlord ? (
+                <Link href={`/admin/landlords/${fetchedProperty?.landlordId}`} className="text-base font-semibold text-teal-600 hover:underline">{fetchedProperty.landlord.name}</Link>
+              ) : (
+                <span>—</span>
+              )}
             </InfoRow>
+            <InfoRow label="Landlord Email" value={fetchedProperty?.landlord?.email || "—"} />
             <InfoRow label="Status">
-              <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${property.statusColor}`}>{property.status}</span>
+              <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${fetchedProperty?.status === "LET" ? "bg-green-100 text-green-600" : fetchedProperty?.status === "AVAILABLE" ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-600"}`}>{fetchedProperty?.status || "—"}</span>
             </InfoRow>
           </div>
         </div>
@@ -178,74 +328,389 @@ export default function AdminPropertyProfilePage() {
 
       {/* ── Finances ── */}
       {activeTab === "finances" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={20} className="text-teal-600" />Property Finances</h2>
-            <Link
-              href={`/admin/properties/${id}/finances`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition"
-            >
-              <TrendingUp size={14} /> View Details
-            </Link>
-          </div>
-          <div className="text-center py-12">
-            <p className="text-slate-600 mb-4">Click the button above to view detailed finances for this property including:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <p className="text-2xl font-bold text-teal-600">€1,950</p>
-                <p className="text-sm text-slate-600">Monthly Rent</p>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <p className="text-2xl font-bold text-red-600">-€245</p>
-                <p className="text-sm text-slate-600">Avg Deductions</p>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <p className="text-2xl font-bold text-slate-800">€1,705</p>
-                <p className="text-sm text-slate-600">Net Amount</p>
-              </div>
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={20} className="text-teal-600" />Property Finances</h2>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                {isLoadingRentPayments ? "Loading..." : `${fetchedRentPayments.length} Payments`}
+              </span>
             </div>
-            <ul className="text-left mt-6 inline-block text-slate-600 text-sm space-y-2">
-              <li>✓ Monthly rent collected tracking</li>
-              <li>✓ Deductions management (maintenance, bills, taxes)</li>
-              <li>✓ Mark months as paid/pending</li>
-              <li>✓ Edit rent amounts and deductions</li>
-            </ul>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+              <select
+                value={financeFilters.status}
+                onChange={(e) => setFinanceFilters((prev) => ({ ...prev, status: e.target.value }))}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
+              >
+                <option value="ALL">All Status</option>
+                <option value="PAID">PAID</option>
+                <option value="PENDING">PENDING</option>
+                <option value="OVERDUE">OVERDUE</option>
+                <option value="LATE">LATE</option>
+              </select>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Year (e.g. 2026)"
+                value={financeFilters.year}
+                onChange={(e) => {
+                  const yearValue = e.target.value;
+                  if (/^\d{0,4}$/.test(yearValue)) {
+                    setFinanceFilters((prev) => ({ ...prev, year: yearValue }));
+                  }
+                }}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
+              />
+
+              <select
+                value={financeFilters.tenancyId}
+                onChange={(e) => setFinanceFilters((prev) => ({ ...prev, tenancyId: e.target.value }))}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
+              >
+                <option value="">All Tenancies</option>
+                {(fetchedTenancies || []).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.rtbNumber || t.id}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={financeFilters.tenantId}
+                onChange={(e) => setFinanceFilters((prev) => ({ ...prev, tenantId: e.target.value }))}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
+              >
+                <option value="">All Tenants</option>
+                {[...new Map(
+                  fetchedRentPayments
+                    .filter((p) => p.tenant?.id)
+                    .map((p) => [p.tenant.id, p.tenant])
+                ).values()].map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name || tenant.email || tenant.id}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() =>
+                  setFinanceFilters({ status: "ALL", year: "", tenancyId: "", tenantId: "" })
+                }
+                className="px-3 py-2 text-sm font-semibold border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
+              >
+                Reset Filters
+              </button>
+            </div>
+
+            {(() => {
+              const totalCollected = fetchedRentPayments
+                .filter((p) => p.status === "PAID")
+                .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+              const totalPending = fetchedRentPayments
+                .filter((p) => p.status === "PENDING")
+                .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+              const overdueCount = fetchedRentPayments.filter((p) => p.status === "OVERDUE").length;
+              const pendingCount = fetchedRentPayments.filter((p) => p.status === "PENDING").length;
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-2xl font-bold text-teal-600">€{fetchedProperty?.rent || "—"}</p>
+                    <p className="text-sm text-slate-600 mt-1">Monthly Rent</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-2xl font-bold text-blue-600">€{totalCollected.toFixed(2)}</p>
+                    <p className="text-sm text-slate-600 mt-1">Total Collected</p>
+                  </div>
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-2xl font-bold text-amber-700">€{totalPending.toFixed(2)}</p>
+                    <p className="text-sm text-amber-700 mt-1">Pending Amount ({pendingCount})</p>
+                  </div>
+                  <div className={`p-4 rounded-lg border ${overdueCount > 0 ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"}`}>
+                    <p className={`text-2xl font-bold ${overdueCount > 0 ? "text-red-600" : "text-slate-800"}`}>{overdueCount}</p>
+                    <p className="text-sm text-slate-600 mt-1">Overdue Payments</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {fetchedProperty?.landlord && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700"><strong>Landlord:</strong> {fetchedProperty.landlord.name} ({fetchedProperty.landlord.email})</p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-700">Rent Payment History</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                    <th className="text-left px-5 py-3">Month</th>
+                    <th className="text-left px-5 py-3">Amount</th>
+                    <th className="text-left px-5 py-3">Due Date</th>
+                    <th className="text-left px-5 py-3">Paid Date</th>
+                    <th className="text-left px-5 py-3">Tenant</th>
+                    <th className="text-left px-5 py-3">Reference</th>
+                    <th className="text-left px-5 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {isLoadingRentPayments ? (
+                    <tr>
+                      <td colSpan="7" className="px-5 py-8 text-center text-slate-500">
+                        <p className="text-sm">Loading rent payments...</p>
+                      </td>
+                    </tr>
+                  ) : fetchedRentPayments.length > 0 ? (
+                    [...fetchedRentPayments]
+                      .sort((a, b) => new Date(b.dueDate || b.createdAt) - new Date(a.dueDate || a.createdAt))
+                      .map((p) => {
+                        const statusBadge =
+                          p.status === "PAID"
+                            ? "bg-green-100 text-green-700"
+                            : p.status === "OVERDUE"
+                            ? "bg-red-100 text-red-700"
+                            : p.status === "LATE"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-amber-100 text-amber-700";
+
+                        return (
+                          <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="px-5 py-4 text-sm font-semibold text-slate-700">{p.month || "—"}</td>
+                            <td className="px-5 py-4 text-sm font-bold text-slate-700">€{p.amount || "0"}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{p.dueDate ? new Date(p.dueDate).toLocaleDateString() : "—"}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{p.paidDate ? new Date(p.paidDate).toLocaleDateString() : "—"}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{p.tenant?.name || "—"}</td>
+                            <td className="px-5 py-4 text-xs font-mono text-slate-500">{p.reference || "—"}</td>
+                            <td className="px-5 py-4">
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge}`}>
+                                {p.status || "—"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-5 py-8 text-center text-slate-500">
+                        <p className="text-sm">No rent payments found for this property.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {/* ── Tenancies ── */}
       {activeTab === "tenancies" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Users size={16} className="text-teal-600" />Tenancies</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Tenant</th>
-                  <th className="text-left px-5 py-3">Start</th>
-                  <th className="text-left px-5 py-3">End</th>
-                  <th className="text-left px-5 py-3">Rent</th>
-                  <th className="text-left px-5 py-3">RTB Number</th>
-                  <th className="text-left px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {tenancies.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-slate-700">{t.tenant}</td>
-                    <td className="px-5 py-4 text-slate-600 text-sm">{t.start}</td>
-                    <td className="px-5 py-4 text-slate-600 text-sm">{t.end}</td>
-                    <td className="px-5 py-4 font-bold text-slate-700">{t.rent}</td>
-                    <td className="px-5 py-4 font-mono text-sm text-slate-500">{t.rtb}</td>
-                    <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${t.statusColor}`}>{t.status}</span></td>
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Users size={16} className="text-teal-600" />Tenancies</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                    <th className="text-left px-5 py-3">Tenant</th>
+                    <th className="text-left px-5 py-3">Start</th>
+                    <th className="text-left px-5 py-3">End</th>
+                    <th className="text-left px-5 py-3">Rent</th>
+                    <th className="text-left px-5 py-3">RTB Number</th>
+                    <th className="text-left px-5 py-3">Status</th>
+                    <th className="text-right px-5 py-3">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {fetchedTenancies && fetchedTenancies.length > 0 ? (
+                    fetchedTenancies.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-50/60 transition-colors cursor-pointer">
+                        <td className="px-5 py-4 font-semibold text-slate-700">{t.tenant?.user?.name || t.tenantFirstName ? `${t.tenantFirstName || ""} ${t.tenantLastName || ""}` : "—"}</td>
+                        <td className="px-5 py-4 text-slate-600 text-sm">{t.startDate ? new Date(t.startDate).toLocaleDateString() : "—"}</td>
+                        <td className="px-5 py-4 text-slate-600 text-sm">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "—"}</td>
+                        <td className="px-5 py-4 font-bold text-slate-700">€{t.rent || "—"}</td>
+                        <td className="px-5 py-4 font-mono text-sm text-slate-500">{t.rtbNumber || "—"}</td>
+                        <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${t.status === "ACTIVE" ? "bg-green-100 text-green-600" : t.status === "ENDED" ? "bg-slate-100 text-slate-500" : "bg-orange-100 text-orange-600"}`}>{t.status || "—"}</span></td>
+                        <td className="px-5 py-4 text-right">
+                          <button 
+                            onClick={() => fetchTenancyDetails(t.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"
+                          >
+                            <Eye size={13} /> View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-5 py-8 text-center text-slate-500">
+                        <p className="text-sm">No tenancies found for this property.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* Tenancy Details Modal */}
+          {fetchedTenancyDetails && selectedTenancyId && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2"><BadgeCheck size={20} className="text-teal-600" />Tenancy Details</h2>
+                <button 
+                  onClick={() => {
+                    setFetchedTenancyDetails(null);
+                    setSelectedTenancyId(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Tenant Information */}
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h3 className="text-base font-bold text-slate-700 mb-4">Tenant Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Name</p>
+                      <p className="text-sm font-semibold text-slate-700">{fetchedTenancyDetails?.tenant?.name || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Email</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.tenant?.email || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rent Details */}
+                <div className="border-l-4 border-green-500 pl-4">
+                  <h3 className="text-base font-bold text-slate-700 mb-4">Rent Details</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Rent Amount</p>
+                      <p className="text-sm font-bold text-slate-700">€{fetchedTenancyDetails?.rent || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Rent Due Day</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.rentDueDay ? `${fetchedTenancyDetails.rentDueDay}th of month` : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Rent Status</p>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full inline-block ${fetchedTenancyDetails?.rentStatus === "OVERDUE" ? "bg-red-100 text-red-600" : fetchedTenancyDetails?.rentStatus === "PAID" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
+                        {fetchedTenancyDetails?.rentStatus || "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lease Dates */}
+                <div className="border-l-4 border-purple-500 pl-4">
+                  <h3 className="text-base font-bold text-slate-700 mb-4">Lease Dates</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Start Date</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.startDate ? new Date(fetchedTenancyDetails.startDate).toLocaleDateString() : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">End Date</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.endDate ? new Date(fetchedTenancyDetails.endDate).toLocaleDateString() : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Rent Review Date</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.rentReviewDate ? new Date(fetchedTenancyDetails.rentReviewDate).toLocaleDateString() : "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RTB Registration */}
+                <div className="border-l-4 border-orange-500 pl-4">
+                  <h3 className="text-base font-bold text-slate-700 mb-4">RTB Registration</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">RTB Number</p>
+                      <p className="text-sm font-mono text-slate-700">{fetchedTenancyDetails?.rtbNumber || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">RTB Status</p>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full inline-block ${fetchedTenancyDetails?.rtbStatus === "Active" ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-600"}`}>
+                        {fetchedTenancyDetails?.rtbStatus || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Registration Status</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.rtbRegistration || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Registration Date</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.rtbRegistrationDate ? new Date(fetchedTenancyDetails.rtbRegistrationDate).toLocaleDateString() : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Expiry Date</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.rtbExpiryDate ? new Date(fetchedTenancyDetails.rtbExpiryDate).toLocaleDateString() : "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Landlord Information */}
+                <div className="border-l-4 border-indigo-500 pl-4">
+                  <h3 className="text-base font-bold text-slate-700 mb-4">Landlord Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Name</p>
+                      <p className="text-sm font-semibold text-slate-700">{fetchedTenancyDetails?.landlord?.name || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Email</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.landlord?.email || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Property Information */}
+                <div className="border-l-4 border-teal-500 pl-4">
+                  <h3 className="text-base font-bold text-slate-700 mb-4">Property Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Address</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.property?.address || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Type</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.property?.propertyType || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Bedrooms</p>
+                      <p className="text-sm text-slate-600">{fetchedTenancyDetails?.property?.bedrooms || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-200 flex justify-end gap-3">
+                <button 
+                  onClick={() => {
+                    setFetchedTenancyDetails(null);
+                    setSelectedTenancyId(null);
+                  }}
+                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -269,23 +734,45 @@ export default function AdminPropertyProfilePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {documents.map((d, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{d.name}</td>
-                    <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${docTypeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span></td>
-                    <td className="px-5 py-4 text-sm text-slate-500">{d.date}</td>
-                    <td className="px-5 py-4 text-sm text-slate-400">{d.size}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{d.uploader}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex gap-1 flex-wrap">
-                        {d.visibility.map((v) => <span key={v} className={`text-xs font-medium px-2 py-0.5 rounded-full ${visColors[v] || "bg-slate-100 text-slate-500"}`}>{v}</span>)}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</button>
+                {fetchedDocuments && fetchedDocuments.length > 0 ? (
+                  fetchedDocuments.map((d, i) => {
+                    const docType = d.type ? (d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : d.type) : d.type;
+                    const docName = d.name;
+                    const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : d.date;
+                    const docSize = d.fileSize || d.size;
+                    const docUploader = d.uploadedBy?.name || d.uploader || "—";
+                    const visibility = d.visibility?.map(v => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase()) || [];
+                    const fileUrl = d.fileUrl || d.downloadUrl;
+                    
+                    return (
+                      <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{docName}</td>
+                        <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${docTypeColors[docType] || "bg-slate-100 text-slate-600"}`}>{docType}</span></td>
+                        <td className="px-5 py-4 text-sm text-slate-500">{docDate}</td>
+                        <td className="px-5 py-4 text-sm text-slate-400">{docSize}</td>
+                        <td className="px-5 py-4 text-sm text-slate-600">{docUploader}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex gap-1 flex-wrap">
+                            {visibility.length > 0 ? visibility.map((v) => <span key={v} className={`text-xs font-medium px-2 py-0.5 rounded-full ${visColors[v] || "bg-slate-100 text-slate-500"}`}>{v}</span>) : <span className="text-xs text-slate-400">—</span>}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          {fileUrl ? (
+                            <a href={fileUrl} download className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</a>
+                          ) : (
+                            <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-400 text-xs font-semibold rounded-lg cursor-not-allowed"><Download size={13} />No Link</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="px-5 py-8 text-center text-slate-500">
+                      <p className="text-sm">No documents found for this property.</p>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -310,15 +797,33 @@ export default function AdminPropertyProfilePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {maintenance.map((m, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-slate-700">{m.issue}</td>
-                    <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${priorityColors[m.priority]}`}>{m.priority}</span></td>
-                    <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColors[m.status]}`}>{m.status}</span></td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{m.assignee}</td>
-                    <td className="px-5 py-4 text-sm text-slate-400">{m.updated}</td>
+                {fetchedMaintenance && fetchedMaintenance.length > 0 ? (
+                  fetchedMaintenance.map((m, i) => {
+                    const title = m.title;
+                    const priority = m.priority || "—";
+                    const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : m.status === "OPEN" ? "Open" : m.status || "—";
+                    const assignee = m.assignedTo?.name || "—";
+                    const updated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : "—";
+                    const statusDisplay = statusColors[status] || "bg-slate-100 text-slate-600";
+                    const priorityDisplay = priorityColors[priority] || "bg-slate-100 text-slate-600";
+                    
+                    return (
+                      <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-5 py-4 font-semibold text-slate-700">{title}</td>
+                        <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${priorityDisplay}`}>{priority}</span></td>
+                        <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusDisplay}`}>{status}</span></td>
+                        <td className="px-5 py-4 text-sm text-slate-600">{assignee}</td>
+                        <td className="px-5 py-4 text-sm text-slate-400">{updated}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="px-5 py-8 text-center text-slate-500">
+                      <p className="text-sm">No maintenance requests found for this property.</p>
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -327,40 +832,7 @@ export default function AdminPropertyProfilePage() {
 
       {/* Notes tab removed */}
 
-      {/* ── Audit ── */}
-      {activeTab === "audit" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><ClipboardList size={16} className="text-teal-600" />Audit Log</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Timestamp</th>
-                  <th className="text-left px-5 py-3">Staff ID</th>
-                  <th className="text-left px-5 py-3">User</th>
-                  <th className="text-left px-5 py-3">Action</th>
-                  <th className="text-left px-5 py-3">Entity</th>
-                  <th className="text-left px-5 py-3">IP Address</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {auditLog.map((l, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 text-sm font-mono text-slate-600">{l.ts}</td>
-                    <td className="px-5 py-4 text-xs font-mono bg-slate-50 text-slate-500 rounded">{l.adminId}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-700">{l.user}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{l.action}</td>
-                    <td className="px-5 py-4 text-sm text-slate-500">{l.entity}</td>
-                    <td className="px-5 py-4 text-xs font-mono text-slate-400">{l.ip}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* Audit tab removed per request */}
     </div>
   );
 }
