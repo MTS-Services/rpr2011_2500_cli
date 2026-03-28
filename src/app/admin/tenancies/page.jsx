@@ -397,19 +397,6 @@ function AdminTenanciesInner() {
                 aria-label="Search tenancies by tenant, landlord, or property"
               />
             </div>
-
-            <select value={countyFilter} onChange={(e) => setCountyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by county or city">
-              <option>All County/City</option>
-              {uniqueCounties.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by property">
-              <option>All Properties</option>
-              {uniqueProperties.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer" aria-label="Filter by status">
-              <option>All Statuses</option>
-              {STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
           </div>
       <div className="lg:hidden space-y-3">
         {filtered.map((t) => (
