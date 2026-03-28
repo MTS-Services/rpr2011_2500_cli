@@ -127,18 +127,7 @@ export default function AdminReportsPage() {
           <p className="text-base text-slate-500 mt-0.5">View and export system-wide financial and occupancy reports</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <label className="text-sm text-slate-500">From</label>
-            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400" />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <label className="text-sm text-slate-500">To</label>
-            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400" />
-          </div>
-          <select value={property} onChange={(e) => setProperty(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400">
-            {properties.map((p) => <option key={p}>{p}</option>)}
-          </select>
+        <div className="flex items-center gap-2">
           <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
             <Download size={15} /> Export CSV
           </button>
