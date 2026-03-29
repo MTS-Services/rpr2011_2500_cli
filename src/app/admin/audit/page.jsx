@@ -14,7 +14,7 @@ export default function AdminAuditPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   const [triggerFetch, setTriggerFetch] = useState(0);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function AdminAuditPage() {
       try {
         setLoading(true);
         const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs?page=${currentPage}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch audit logs");
@@ -30,9 +30,6 @@ export default function AdminAuditPage() {
         const result = await response.json();
         if (result.success && result.data) {
           setLogs(result.data);
-          if (result.meta?.pagination) {
-            setTotalPages(result.meta.pagination.totalPages);
-          }
         }
       } catch (error) {
         console.error("Error fetching audit logs:", error);
@@ -47,7 +44,7 @@ export default function AdminAuditPage() {
     };
 
     fetchAuditLogs();
-  }, [currentPage, triggerFetch]);
+  }, [triggerFetch]);
 
   const handleDeleteLog = async (logId) => {
     const confirm = await Swal.fire({
@@ -101,6 +98,16 @@ export default function AdminAuditPage() {
       new Date(l.createdAt).toISOString().split("T")[0] >= dateFrom;
     return matchSearch && matchAction && matchDate;
   });
+
+  // Client-side pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+  // Ensure current page is valid when filters or itemsPerPage change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [filtered.length, itemsPerPage]);
 
   const handleExport = () => {
     try {
@@ -232,8 +239,8 @@ export default function AdminAuditPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((l) => (
+                <tbody className="divide-y divide-slate-100">
+                {paginated.map((l) => (
                   <tr key={l.id} className="hover:bg-slate-50/70 transition">
                     <td className="px-4 py-3 font-mono text-sm text-slate-600">
                       {new Date(l.createdAt).toLocaleString()}
@@ -269,14 +276,23 @@ export default function AdminAuditPage() {
                 ))}
               </tbody>
             </table>
-            {/* <div className="border-t border-slate-100 px-4 py-3">
-              <Pagination total={filtered.length} />
-            </div> */}
+            <div className="border-t border-slate-100 px-4 py-3">
+              <Pagination
+                total={filtered.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
 
           {/* Mobile cards — visible below lg */}
           <div className="lg:hidden space-y-3">
-            {filtered.map((l) => (
+            {paginated.map((l) => (
               <div
                 key={l.id}
                 className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3"
@@ -320,9 +336,18 @@ export default function AdminAuditPage() {
                 </div>
               </div>
             ))}
-            {/* <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <Pagination total={filtered.length} />
-            </div> */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <Pagination
+                total={filtered.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
         </>
       )}
