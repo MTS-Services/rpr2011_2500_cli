@@ -29,6 +29,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose = () => {} })
     { href: "/admin/landlords", label: "Landlords", Icon: Users },
     { href: "/admin/tenants", label: "Tenants", Icon: UserCheck },
     { href: "/admin/tenancies", label: "Tenancies", Icon: ClipboardList },
+    { href: "/admin/rtb",       label: "RTB Registration", Icon: FileText },
     { href: "/admin/messages",  label: "Messages",  Icon: Mail },
     { href: "/admin/contact-submissions", label: "Contact Submissions", Icon: MessageSquare },
     { href: "/admin/reports",   label: "Reports",   Icon: BarChart2 },

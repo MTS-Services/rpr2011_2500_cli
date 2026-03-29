@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import PortalShell from "@/components/portal/PortalShell";
 import { AlertTriangle, Home, Users, Wrench, FileText, ArrowRight, CheckCircle2, AlertCircle, Clock, TrendingUp, Loader2 } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
@@ -38,6 +39,7 @@ const getTenancyStatusColor = (status) => {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -167,6 +169,37 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+
+      {/* RTB Registration Summary */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-3 lg:mb-5">
+        <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-slate-100 bg-slate-50/30">
+          <h3 className="text-base lg:text-lg font-bold text-slate-800 flex items-center gap-2">
+            <FileText size={18} className="text-teal-600" />
+            RTB Registration Overview
+          </h3>
+          <Link 
+            href="/portal/rtb"
+            className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition flex items-center gap-1"
+          >
+            Manage RTB <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="p-4 lg:p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: "Registered", value: summary?.rtbStatus?.REGISTERED ?? 0, color: "text-teal-600", bg: "bg-teal-50" },
+              { label: "Pending", value: summary?.rtbStatus?.PENDING ?? 0, color: "text-amber-600", bg: "bg-amber-50" },
+              { label: "Missing", value: summary?.rtbStatus?.MISSING ?? 0, color: "text-rose-600", bg: "bg-rose-50" },
+              { label: "Unknown", value: summary?.rtbStatus?.UNKNOWN ?? 0, color: "text-slate-600", bg: "bg-slate-50" },
+            ].map((stat, i) => (
+              <div key={i} className={`${stat.bg} p-4 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md cursor-pointer hover:-translate-y-1 duration-300`} onClick={() => router.push('/portal/rtb')}>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{stat.label}</p>
+                <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Finances Summary */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-3 lg:mb-5">

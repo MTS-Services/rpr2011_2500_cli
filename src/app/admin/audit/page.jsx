@@ -14,37 +14,64 @@ export default function AdminAuditPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [triggerFetch, setTriggerFetch] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
 
+  // Debounce search input to avoid excessive requests
   useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // Fetch audit logs from server with pagination and optional filters
+  useEffect(() => {
+    const controller = new AbortController();
+
     const fetchAuditLogs = async () => {
       try {
         setLoading(true);
-        const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch audit logs");
-        }
+        const params = new URLSearchParams();
+        params.append("page", String(currentPage));
+        params.append("limit", String(itemsPerPage));
+        if (debouncedSearch) params.append("search", debouncedSearch);
+        if (actionFilter && actionFilter !== "All Actions")
+          params.append("action", actionFilter);
+        if (dateFrom) params.append("dateFrom", dateFrom);
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs?${params.toString()}`;
+        const response = await authenticatedFetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error("Failed to fetch audit logs");
         const result = await response.json();
         if (result.success && result.data) {
           setLogs(result.data);
+          const pagination = result.meta?.pagination || {};
+          setTotalItems(pagination.totalItems ?? result.data.length ?? 0);
+          setTotalPages(pagination.totalPages ?? Math.max(1, Math.ceil((pagination.totalItems ?? result.data.length ?? 0) / itemsPerPage)));
+        } else {
+          setLogs([]);
+          setTotalItems(0);
+          setTotalPages(1);
         }
       } catch (error) {
-        console.error("Error fetching audit logs:", error);
-        Swal.fire({
-          title: "Error!",
-          text: "Failed to load audit logs",
-          icon: "error",
-        });
+        if (error.name !== "AbortError") {
+          console.error("Error fetching audit logs:", error);
+          Swal.fire({
+            title: "Error!",
+            text: "Failed to load audit logs",
+            icon: "error",
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchAuditLogs();
-  }, [triggerFetch]);
+    return () => controller.abort();
+  }, [currentPage, itemsPerPage, debouncedSearch, actionFilter, dateFrom, triggerFetch]);
 
   const handleDeleteLog = async (logId) => {
     const confirm = await Swal.fire({
@@ -86,33 +113,35 @@ export default function AdminAuditPage() {
     }
   };
 
-  const filtered = logs.filter((l) => {
-    const matchSearch =
-      l.action.toLowerCase().includes(search.toLowerCase()) ||
-      l.target.toLowerCase().includes(search.toLowerCase()) ||
-      (l.user?.name || "").toLowerCase().includes(search.toLowerCase());
-    const matchAction =
-      actionFilter === "All Actions" || l.action === actionFilter;
-    const matchDate =
-      !dateFrom ||
-      new Date(l.createdAt).toISOString().split("T")[0] >= dateFrom;
-    return matchSearch && matchAction && matchDate;
-  });
-
-  // Client-side pagination
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-  // Ensure current page is valid when filters or itemsPerPage change
+  // Ensure current page is valid when total items or itemsPerPage change
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [filtered.length, itemsPerPage]);
+    const total = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    if (currentPage > total) setCurrentPage(1);
+  }, [totalItems, itemsPerPage]);
 
-  const handleExport = () => {
+  // Reset to first page when filters change
+  useEffect(() => {
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [debouncedSearch, actionFilter, dateFrom]);
+
+  const handleExport = async () => {
     try {
+      setLoading(true);
+      const exportLimit = totalItems > 0 ? totalItems : 10000;
+      const params = new URLSearchParams();
+      params.append("page", "1");
+      params.append("limit", String(exportLimit));
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (actionFilter && actionFilter !== "All Actions") params.append("action", actionFilter);
+      if (dateFrom) params.append("dateFrom", dateFrom);
+
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to export audit logs");
+      const result = await response.json();
+      const dataToExport = result.data || [];
+
       const header = "Timestamp,User,User Email,User Role,Action,Target";
-      const rows = filtered.map((l) =>
+      const rows = dataToExport.map((l) =>
         `"${new Date(l.createdAt).toLocaleString()}","${l.user?.name || "System"}","${l.user?.email || "N/A"}","${l.user?.role || "N/A"}","${l.action}","${l.target}"`
       );
       const csv = [header, ...rows].join("\n");
@@ -131,11 +160,14 @@ export default function AdminAuditPage() {
         showConfirmButton: false,
       });
     } catch (error) {
+      console.error("Error exporting audit logs:", error);
       Swal.fire({
         title: "Error!",
         text: "Failed to export audit logs",
         icon: "error",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -240,7 +272,7 @@ export default function AdminAuditPage() {
                 </tr>
               </thead>
                 <tbody className="divide-y divide-slate-100">
-                {paginated.map((l) => (
+                {logs.map((l) => (
                   <tr key={l.id} className="hover:bg-slate-50/70 transition">
                     <td className="px-4 py-3 font-mono text-sm text-slate-600">
                       {new Date(l.createdAt).toLocaleString()}
@@ -278,7 +310,7 @@ export default function AdminAuditPage() {
             </table>
             <div className="border-t border-slate-100 px-4 py-3">
               <Pagination
-                total={filtered.length}
+                total={totalItems}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
@@ -292,7 +324,7 @@ export default function AdminAuditPage() {
 
           {/* Mobile cards — visible below lg */}
           <div className="lg:hidden space-y-3">
-            {paginated.map((l) => (
+            {logs.map((l) => (
               <div
                 key={l.id}
                 className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3"
@@ -338,7 +370,7 @@ export default function AdminAuditPage() {
             ))}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
               <Pagination
-                total={filtered.length}
+                total={totalItems}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}

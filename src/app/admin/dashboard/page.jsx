@@ -162,6 +162,37 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
+      {/* RTB Registration Overview */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/30">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <FileText size={18} className="text-teal-600" />
+            RTB Registration Summary
+          </h2>
+          <button 
+            onClick={() => router.push('/admin/rtb')}
+            className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition"
+          >
+            Manage RTB →
+          </button>
+        </div>
+        <div className="p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Registered", value: summary?.rtbStatus?.REGISTERED ?? 0, color: "text-teal-600", bg: "bg-teal-50" },
+              { label: "Pending", value: summary?.rtbStatus?.PENDING ?? 0, color: "text-amber-600", bg: "bg-amber-50" },
+              { label: "Missing", value: summary?.rtbStatus?.MISSING ?? 0, color: "text-rose-600", bg: "bg-rose-50" },
+              { label: "Unknown", value: summary?.rtbStatus?.UNKNOWN ?? 0, color: "text-slate-600", bg: "bg-slate-50" },
+            ].map((stat, i) => (
+              <div key={i} className={`${stat.bg} p-4 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md cursor-pointer hover:-translate-y-1 duration-300 flex flex-col justify-center`} onClick={() => router.push('/admin/rtb')}>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-tight sm:tracking-wider leading-none mb-2">{stat.label}</p>
+                <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* System overview */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
