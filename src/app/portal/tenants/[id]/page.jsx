@@ -6,8 +6,8 @@ import PortalShell from "@/components/portal/PortalShell";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 import {
-    ArrowLeft, Phone, Mail, MapPin, Calendar, Download,
-    Share2, MoreVertical, ChevronRight, Clock, DollarSign,
+    ArrowLeft, Phone, Mail, MapPin, Calendar,
+    ChevronRight, Clock, DollarSign,
     CheckCircle2, AlertCircle, MessageSquare, Paperclip
 } from "lucide-react";
 
@@ -56,7 +56,6 @@ export default function TenantDetailsPage() {
     const [tenancy, setTenancy] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showMenu, setShowMenu] = useState(false);
 
     // Fetch tenancy details from API
     useEffect(() => {
@@ -101,24 +100,7 @@ export default function TenantDetailsPage() {
         }
     }, [tenancyId]);
 
-    const handlePrint = () => {
-        window.print();
-    };
-
-    const handleDownload = () => {
-        console.log("TODO: Download tenant document");
-    };
-
-    const handleShare = () => {
-        if (navigator.share) {
-            navigator.share({
-                title: `${tenancy?.tenant?.name} - Tenant Details`,
-                text: `View tenant information for ${tenancy?.tenant?.name}`,
-            });
-        } else {
-            console.log("TODO: Copy link to clipboard");
-        }
-    };
+    // menu actions removed
 
     // Show loading state
     if (loading) {
@@ -163,37 +145,7 @@ export default function TenantDetailsPage() {
                     <h1 className="text-3xl font-bold text-slate-900">{tenancy.tenant.name}</h1>
                     <p className="text-sm text-slate-500 mt-1">{tenancy.property.address} • {tenancy.property.county}</p>
                 </div>
-                <div className="relative">
-                    <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        aria-label="Menu"
-                    >
-                        <MoreVertical size={20} className="text-slate-600" />
-                    </button>
-                    {showMenu && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
-                            <button
-                                onClick={handleDownload}
-                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition"
-                            >
-                                <Download size={16} /> Download Details
-                            </button>
-                            <button
-                                onClick={handlePrint}
-                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition border-t border-slate-100"
-                            >
-                                <FileText size={16} /> Print
-                            </button>
-                            <button
-                                onClick={handleShare}
-                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition border-t border-slate-100"
-                            >
-                                <Share2 size={16} /> Share
-                            </button>
-                        </div>
-                    )}
-                </div>
+                {/* three-dot menu removed */}
             </div>
 
             {/* Status badge and quick info */}
