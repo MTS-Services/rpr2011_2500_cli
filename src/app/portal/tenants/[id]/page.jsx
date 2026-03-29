@@ -56,6 +56,7 @@ export default function TenantDetailsPage() {
     const [tenancy, setTenancy] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [startingConversation, setStartingConversation] = useState(false);
 
     // Fetch tenancy details from API
     useEffect(() => {
@@ -99,6 +100,102 @@ export default function TenantDetailsPage() {
             fetchTenancy();
         }
     }, [tenancyId]);
+
+    const handleStartConversation = async () => {
+        if (!tenancy || !tenancy.tenant) {
+            Swal.fire("Error", "Tenant information is missing", "error");
+            return;
+        }
+
+        // Try to get tenant user id from common fields
+        const participantId = tenancy.tenant.id || tenancy.tenant.userId || tenancy.tenant._id;
+        if (!participantId) {
+            Swal.fire("Error", "Unable to determine tenant user id", "error");
+            return;
+        }
+
+        try {
+                setStartingConversation(true);
+
+                // Try multiple payload shapes for compatibility with different backends
+                const email = tenancy.tenant.email;
+                const tenantUserObj = tenancy.tenant.user || tenancy.tenant.userData || {};
+                const candidateIds = [
+                    tenancy.tenant.userId,
+                    tenancy.tenant.id,
+                    tenancy.tenant._id,
+                    tenantUserObj.id,
+                    tenantUserObj.userId,
+                ].filter(Boolean);
+
+                const payloads = [];
+                // prefer id-based payloads
+                for (const id of candidateIds) {
+                    payloads.push({ participantId: id });
+                    payloads.push({ participantId: String(id) });
+                    payloads.push({ participant: { id } });
+                }
+                // email-based fallbacks
+                if (email) {
+                    payloads.push({ participantEmail: email });
+                    payloads.push({ email });
+                    payloads.push({ participant: { email } });
+                }
+
+                let resp = null;
+                let data = null;
+                let lastError = null;
+
+                for (const payload of payloads) {
+                    try {
+                        resp = await authenticatedFetch(
+                            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations`,
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(payload),
+                            }
+                        );
+
+                        if (!resp.ok) {
+                            const errBody = await resp.json().catch(() => ({}));
+                            lastError = errBody.message || `Create conversation failed (${resp.status})`;
+                            // try next payload
+                            continue;
+                        }
+
+                        data = await resp.json();
+                        break; // success
+                    } catch (err) {
+                        lastError = err.message || String(err);
+                        continue;
+                    }
+                }
+
+                if (!resp || !resp.ok) {
+                    throw new Error(lastError || "Failed to create conversation");
+                }
+
+                let conversationId = data.id || data.data?.id || data.conversation?.id || data.data?.conversationId || data.conversationId;
+            if (!conversationId && data.data && typeof data.data === "object") {
+                // Try deeper lookups
+                conversationId = data.data?.conversation?.id || data.data?.conversationId;
+            }
+
+            // Navigate to messages page, open the conversation if we have an id
+            if (conversationId) {
+                router.push(`/portal/messages?conversationId=${conversationId}`);
+            } else {
+                // Fallback: just open messages list
+                router.push(`/portal/messages`);
+            }
+        } catch (err) {
+            console.error("Error creating conversation:", err);
+            Swal.fire("Error", err.message || "Failed to start conversation", "error");
+        } finally {
+            setStartingConversation(false);
+        }
+    };
 
     // menu actions removed
 
@@ -274,8 +371,13 @@ export default function TenantDetailsPage() {
                                 </a>
                             </div>
 
-                            <button className="w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2">
-                                <MessageSquare size={16} /> Send Message
+                            <button
+                                onClick={handleStartConversation}
+                                disabled={startingConversation}
+                                className="w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
+                            >
+                                <MessageSquare size={16} />
+                                {startingConversation ? "Starting…" : "Send Message"}
                             </button>
                         </div>
 

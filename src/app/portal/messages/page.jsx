@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import PortalShell from "@/components/portal/PortalShell";
 import { Send, Search, ArrowLeft } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
@@ -8,6 +9,8 @@ import { usePortalAuth } from "@/context/PortalAuthContext";
 
 export default function LandlordMessagesPage() {
   const { user: currentUser } = usePortalAuth();
+  const searchParams = useSearchParams();
+  const initialConversationId = searchParams?.get("conversationId");
   const [convos, setConvos] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [text, setText] = useState("");
@@ -119,8 +122,62 @@ export default function LandlordMessagesPage() {
           formattedConvos.push(adminConvo, ...otherConvos);
         }
 
+        // If a conversationId is provided in the URL, ensure it's in the list.
+        const queryConversationId = initialConversationId;
+        if (queryConversationId && !formattedConvos.some(c => c.id === queryConversationId)) {
+          try {
+            const msgsResp = await authenticatedFetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations/${queryConversationId}/messages`
+            );
+            if (msgsResp.ok) {
+              const msgsData = await msgsResp.json();
+              let messagesArray = [];
+              if (Array.isArray(msgsData)) {
+                messagesArray = msgsData;
+              } else if (msgsData.data && Array.isArray(msgsData.data)) {
+                messagesArray = msgsData.data;
+              } else if (msgsData.messages && Array.isArray(msgsData.messages)) {
+                messagesArray = msgsData.messages;
+              }
+
+              const formattedMessages = formatMessages(messagesArray, currentUser?.id);
+              const firstMsg = messagesArray[0] || {};
+              const otherName = firstMsg.sender?.name || firstMsg.senderName || firstMsg.sender_name || 'Conversation';
+              const otherRole = firstMsg.sender?.role || 'TENANT';
+              const avatar = otherName ? otherName.split(" ").map(n => n[0]).slice(0,1).join("").toUpperCase() : '?';
+              const preview = formattedMessages.length ? formattedMessages[formattedMessages.length - 1].text : 'No messages';
+
+              const newConvo = {
+                id: queryConversationId,
+                name: otherName,
+                role: otherRole,
+                avatar,
+                preview,
+                unread: 0,
+                messages: formattedMessages,
+              };
+
+              // Insert after admin (if admin exists) else at start
+              const adminIndex = formattedConvos.findIndex(c => c.role === 'ADMIN');
+              if (adminIndex >= 0) {
+                formattedConvos.splice(adminIndex + 1, 0, newConvo);
+              } else {
+                formattedConvos.unshift(newConvo);
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to fetch messages for query conversationId', queryConversationId, err);
+          }
+        }
+
         setConvos(formattedConvos);
-        setActiveId(formattedConvos[0].id);
+        // Choose active conversation: prefer query param, else top item
+        if (initialConversationId && formattedConvos.some(c => c.id === initialConversationId)) {
+          setActiveId(initialConversationId);
+          setShowChat(true);
+        } else {
+          setActiveId(formattedConvos[0].id);
+        }
       } catch (error) {
         console.error("Error fetching conversations:", error);
       } finally {
@@ -129,7 +186,7 @@ export default function LandlordMessagesPage() {
     };
 
     fetchConvos();
-  }, []);
+  }, [initialConversationId]);
 
   // Fetch messages for active conversation
   useEffect(() => {
