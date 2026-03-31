@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, User, Home, FileText, ClipboardList,
   MapPin, Phone, Mail, CalendarDays, Shield, Plus,
   Edit, Download, BadgeCheck, Key, AlertTriangle, CheckCircle2, TrendingUp,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -17,7 +18,8 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { PROPERTY_FINANCES } from "@/data/finances";
+import { authenticatedFetch } from "@/utils/authFetch";
+import Pagination from "@/components/portal/Pagination";
 
 /* ─── Mock data (replace with Supabase query) ─── */
 const landlord = {
@@ -32,11 +34,7 @@ const landlord = {
   address: "28 Perkside Plaza, Dublin 4",
 };
 
-const properties = [
-  { id: "1", address: "Apt 5B Rosewood Close", status: "Notice", statusColor: "bg-orange-100 text-orange-600", tenant: "Kevin Madden", rent: "€1,750", rtb: "Registered" },
-  { id: "2", address: "Apt 306 Fairview Rd", status: "Let", statusColor: "bg-teal-100 text-teal-700", tenant: "Stephen Blake", rent: "€1,850", rtb: "Registered" },
-  { id: "3", address: "Apt 22 Parkside Plaza", status: "Vacant", statusColor: "bg-slate-100 text-slate-500", tenant: "–", rent: "€1,500", rtb: "Pending" },
-];
+// properties list is loaded from the API per-landlord (see fetch below)
 
 const documents = [
   { name: "Landlord Agreement 2022.pdf", type: "Agreement", date: "Oct 10, 2022", size: "248 KB" },
@@ -78,6 +76,14 @@ const docTypeColors = {
   ID: "bg-purple-50 text-purple-700",
 };
 
+function mapPropertyStatus(status) {
+  const s = (status || "").toString().toUpperCase();
+  if (s === "LET") return { label: "Let", color: "bg-teal-100 text-teal-700" };
+  if (s === "NOTICE") return { label: "Notice", color: "bg-amber-100 text-amber-600" };
+  if (s === "VACANT") return { label: "Vacant", color: "bg-slate-100 text-slate-500" };
+  return { label: s ? s[0] + s.slice(1).toLowerCase() : "Unknown", color: "bg-slate-100 text-slate-500" };
+}
+
 function InfoRow({ label, value, mono = false, masked = false, children }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 py-3 border-b border-slate-100 last:border-0">
@@ -96,63 +102,171 @@ export default function AdminLandlordProfilePage() {
   const [activeTab, setActiveTab] = useState("properties");
   const [showPps, setShowPps] = useState(false);
 
-  const landlordFinanceId = LANDLORD_FINANCE_MAP[id] || "landlord-1";
-  const financeProperties = Object.values(PROPERTY_FINANCES).filter((p) => p.landlordId === landlordFinanceId);
-  const monthOptions = Array.from(new Set(financeProperties.flatMap((p) => p.months.map((m) => m.month))));
-  const [selectedMonth, setSelectedMonth] = useState(monthOptions[0] || "March 2026");
+  // Landlord properties (loaded from API)
+  const [landlordProperties, setLandlordProperties] = useState([]);
+  const [propsLoading, setPropsLoading] = useState(false);
+  const [propsError, setPropsError] = useState(null);
+  const [propsPage, setPropsPage] = useState(1);
+  const [propsItemsPerPage, setPropsItemsPerPage] = useState(10);
+  const [propsTotalItems, setPropsTotalItems] = useState(0);
+  const [propsTotalPages, setPropsTotalPages] = useState(1);
 
-  const monthlyTrend = monthOptions
-    .map((month) => {
-      const totals = financeProperties.reduce(
-        (acc, prop) => {
-          const row = prop.months.find((m) => m.month === month);
-          if (row) {
-            acc.rent += row.rentCollected;
-            acc.deductions += row.deductionTotal;
-            acc.net += row.netAmount;
-          }
-          return acc;
-        },
-        { rent: 0, deductions: 0, net: 0 }
-      );
-      return { month, ...totals };
-    })
-    .reverse();
+  const [financeOverview, setFinanceOverview] = useState(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [financeError, setFinanceError] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(null);
+  // Per-property pagination (client-side)
+  const [propPage, setPropPage] = useState(1);
+  const [expandedProp, setExpandedProp] = useState(null);
+  const PROP_ITEMS_PER_PAGE = 5;
 
-  const selectedMonthRows = financeProperties
-    .map((prop) => {
-      const row = prop.months.find((m) => m.month === selectedMonth);
-      return row
-        ? {
-            propertyId: prop.propertyId,
-            propertyName: prop.propertyName,
-            rentCollected: row.rentCollected,
-            deductionTotal: row.deductionTotal,
-            netAmount: row.netAmount,
-            status: row.status,
-            maintenanceCost: row.deductions
-              .filter((d) => d.type.toLowerCase() === "maintenance")
-              .reduce((sum, d) => sum + d.amount, 0),
-          }
-        : null;
-    })
-    .filter(Boolean);
+  useEffect(() => {
+    let mounted = true;
+    const fetchOverview = async () => {
+      setFinanceLoading(true);
+      try {
+        const res = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/admin/landlord/${id}/overview`
+        );
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to load finances (${res.status})`);
+        }
+        const result = await res.json();
+        const data = result.data || null;
+        if (mounted) {
+          setFinanceOverview(data);
+          setSelectedYear(data?.year ?? new Date().getFullYear());
+        }
+      } catch (err) {
+        console.error("Finance overview error:", err);
+        if (mounted) setFinanceError(err.message || "Failed to load finances");
+      } finally {
+        if (mounted) setFinanceLoading(false);
+      }
+    };
+    fetchOverview();
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
 
-  const totals = selectedMonthRows.reduce(
-    (acc, row) => {
-      acc.rent += row.rentCollected;
-      acc.deductions += row.deductionTotal;
-      acc.net += row.netAmount;
-      acc.maintenance += row.maintenanceCost;
-      return acc;
-    },
-    { rent: 0, deductions: 0, net: 0, maintenance: 0 }
-  );
+  // Fetch properties for this landlord (dynamic landlordId = route id) - server-side pagination
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const fetchProperties = async () => {
+      setPropsLoading(true);
+      setPropsError(null);
+      try {
+        const params = new URLSearchParams();
+        if (id) params.append("landlordId", id);
+        params.append("page", String(propsPage));
+        params.append("limit", String(propsItemsPerPage));
 
-  const portfolioValuation = selectedMonthRows.reduce(
-    (sum, row) => sum + (PROPERTY_VALUATIONS[row.propertyId] || 0),
-    0
-  );
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties?${params.toString()}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to load properties (${res.status})`);
+        }
+        const result = await res.json();
+        const items = result.data || [];
+        const mapped = items.map((p) => {
+          const s = mapPropertyStatus(p.status);
+          return {
+            id: p.id,
+            name: p.name || p.address || "",
+            address: p.address || "",
+            status: s.label,
+            statusColor: s.color,
+            eircode: p.eircode || "–",
+            rent: Number(p.rent) || 0,
+            rtb: p.rtbRegistration ? (p.rtbRegistration === "REGISTERED" ? "Registered" : (p.rtbRegistration[0] + p.rtbRegistration.slice(1).toLowerCase())) : "—",
+          };
+        });
+
+        const pagination = result.meta?.pagination || {};
+        const total = pagination.totalItems ?? items.length ?? 0;
+        const totalPages = pagination.totalPages ?? Math.max(1, Math.ceil(total / propsItemsPerPage));
+
+        if (mounted) {
+          setLandlordProperties(mapped);
+          setPropsTotalItems(total);
+          setPropsTotalPages(totalPages);
+        }
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+        if (mounted) setPropsError(err.message || "Failed to load properties");
+        console.error("Properties fetch error:", err);
+      } finally {
+        if (mounted) setPropsLoading(false);
+      }
+    };
+    if (id) fetchProperties();
+    return () => { mounted = false; controller.abort(); };
+  }, [id, propsPage, propsItemsPerPage]);
+
+  // Keep page within range when total items or itemsPerPage change
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(propsTotalItems / propsItemsPerPage));
+    if (propsPage > total) setPropsPage(1);
+  }, [propsTotalItems, propsItemsPerPage]);
+
+  // Reset page when landlord id changes
+  useEffect(() => {
+    setPropsPage(1);
+  }, [id]);
+
+  const chartData = (financeOverview?.propertyBreakdown || []).map((p) => ({
+    name: p.propertyName,
+    collected: p.collected || 0,
+    pending: p.pending || 0,
+  }));
+
+  const propertyRows = (financeOverview?.propertyBreakdown || []).map((p) => ({
+    propertyId: p.propertyId,
+    propertyName: p.propertyName,
+    propertyAddress: p.propertyAddress,
+    monthlyRent: p.monthlyRent,
+    collected: p.collected,
+    overdue: p.overdue,
+    pending: p.pending,
+    paymentsCount: p.paymentsCount,
+  }));
+
+  // Pagination helpers for per-property breakdown
+  const totalProperties = propertyRows.length;
+  const totalPropPages = Math.max(1, Math.ceil(totalProperties / PROP_ITEMS_PER_PAGE));
+  const propStartIndex = (propPage - 1) * PROP_ITEMS_PER_PAGE;
+  const propEndIndex = Math.min(propStartIndex + PROP_ITEMS_PER_PAGE, totalProperties);
+  const paginatedProperties = propertyRows.slice(propStartIndex, propEndIndex);
+
+  // Keep page within range if data changes
+  useEffect(() => {
+    if (propPage > totalPropPages) setPropPage(1);
+  }, [totalProperties, totalPropPages]);
+
+  const getPropPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, propPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPropPages, start + maxVisible - 1);
+    if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+    if (start > 1) { pages.push(1); if (start > 2) pages.push("..."); }
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPropPages) { if (end < totalPropPages - 1) pages.push("..."); pages.push(totalPropPages); }
+    return pages;
+  };
+
+  const totals = {
+    rent: financeOverview?.totalCollected ?? 0,
+    deductions: 0,
+    net: financeOverview?.totalCollected ?? 0,
+    maintenance: 0,
+  };
+
+  const portfolioValuation = propertyRows.reduce((sum, r) => sum + (PROPERTY_VALUATIONS[r.propertyId] || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -180,9 +294,6 @@ export default function AdminLandlordProfilePage() {
             >
               <Mail size={14} className="text-teal-600" /> Contact
             </a>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition">
-              <Edit size={14} /> Edit Landlord
-            </button>
           </div>
         </div>
       </div>
@@ -210,34 +321,82 @@ export default function AdminLandlordProfilePage() {
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Home size={16} className="text-teal-600" />Properties</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Address</th>
-                  <th className="text-left px-5 py-3">Status</th>
-                  <th className="text-left px-5 py-3">Current Tenant</th>
-                  <th className="text-left px-5 py-3">Rent</th>
-                  <th className="text-left px-5 py-3">RTB</th>
-                  <th className="text-right px-5 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {properties.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-slate-700">{p.address}</td>
-                    <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${p.statusColor}`}>{p.status}</span></td>
-                    <td className="px-5 py-4 text-slate-600 text-sm">{p.tenant}</td>
-                    <td className="px-5 py-4 font-bold text-slate-700">{p.rent}</td>
-                    <td className="px-5 py-4 text-sm text-slate-500">{p.rtb}</td>
-                    <td className="px-5 py-4 text-right">
-                      <Link href={`/admin/properties/${p.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
-                        <BadgeCheck size={13} /> View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {propsLoading ? (
+              <div className="p-6 text-center">
+                <p className="text-sm text-slate-500">Loading properties...</p>
+              </div>
+            ) : propsError ? (
+              <div className="p-6 text-center">
+                <p className="text-sm text-rose-600">Failed to load properties: {propsError}</p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile cards (visible on small screens) */}
+                <div className="lg:hidden p-3 space-y-3">
+                  {landlordProperties.map((p) => (
+                    <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{p.name || p.address}</p>
+                          <p className="text-xs text-slate-400 truncate">{p.address}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className={`text-xs font-semibold px-2 py-1 rounded-full ${p.statusColor}`}>{p.status}</div>
+                          <div className="text-sm font-bold text-slate-900">€{(p.rent ?? 0).toLocaleString()}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="text-xs text-slate-500">Eircode: <span className="text-slate-700 font-medium">{p.eircode}</span></div>
+                        <Link href={`/admin/properties/${p.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
+                          <BadgeCheck size={13} /> View
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table (hidden on small screens) */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                        <th className="text-left px-5 py-3">Address</th>
+                        <th className="text-left px-5 py-3">Status</th>
+                        <th className="text-left px-5 py-3">Eircode</th>
+                        <th className="text-left px-5 py-3">Rent</th>
+                        <th className="text-left px-5 py-3">RTB</th>
+                        <th className="text-right px-5 py-3">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {landlordProperties.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-5 py-4 font-semibold text-slate-700">{p.name || p.address}</td>
+                          <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${p.statusColor}`}>{p.status}</span></td>
+                          <td className="px-5 py-4 text-slate-600 text-sm">{p.eircode}</td>
+                          <td className="px-5 py-4 font-bold text-slate-700">€{(p.rent ?? 0).toLocaleString()}</td>
+                          <td className="px-5 py-4 text-sm text-slate-500">{p.rtb}</td>
+                          <td className="px-5 py-4 text-right">
+                            <Link href={`/admin/properties/${p.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
+                              <BadgeCheck size={13} /> View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <Pagination
+                    total={propsTotalItems}
+                    itemsPerPage={propsItemsPerPage}
+                    currentPage={propsPage}
+                    onPageChange={(p) => setPropsPage(p)}
+                    onItemsPerPageChange={(n) => setPropsItemsPerPage(n)}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -245,104 +404,192 @@ export default function AdminLandlordProfilePage() {
       {/* ── Finances ── */}
       {activeTab === "finances" && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
-                <TrendingUp size={16} className="text-teal-600" /> Landlord Finances
-              </h2>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
-              >
-                {monthOptions.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+          {financeLoading ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+              <p className="text-sm text-slate-500">Loading finances...</p>
             </div>
+          ) : financeError ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+              <p className="text-sm text-rose-600">Failed to load finances: {financeError}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+                    <TrendingUp size={16} className="text-teal-600" /> Landlord Finances
+                  </h2>
+                  <div className="px-3 py-2 rounded-lg text-sm text-slate-700 border border-slate-200">
+                    {selectedYear ?? financeOverview?.year ?? new Date().getFullYear()}
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
-                <p className="text-xs font-semibold text-slate-500 uppercase">Rent Collected</p>
-                <p className="text-2xl font-bold text-slate-900 mt-1">EUR {totals.rent.toLocaleString()}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">Rent Collected</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">€{(financeOverview?.totalCollected ?? 0).toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-xl border border-rose-100 p-4 bg-rose-50/40">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">Total Overdue</p>
+                    <p className="text-2xl font-bold text-rose-600 mt-1">€{(financeOverview?.totalOverdue ?? 0).toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-xl border border-teal-100 p-4 bg-teal-50/40">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">Total Pending</p>
+                    <p className="text-2xl font-bold text-teal-700 mt-1">€{(financeOverview?.totalPending ?? 0).toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-100 p-4 bg-amber-50/40">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">Properties</p>
+                    <p className="text-2xl font-bold text-amber-700 mt-1">{financeOverview?.totalProperties ?? 0}</p>
+                    <p className="text-xs text-slate-400 mt-1">All units combined</p>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border border-rose-100 p-4 bg-rose-50/40">
-                <p className="text-xs font-semibold text-slate-500 uppercase">Total Deductions</p>
-                <p className="text-2xl font-bold text-rose-600 mt-1">-EUR {totals.deductions.toLocaleString()}</p>
-              </div>
-              <div className="rounded-xl border border-teal-100 p-4 bg-teal-50/40">
-                <p className="text-xs font-semibold text-slate-500 uppercase">Net Paid Out</p>
-                <p className="text-2xl font-bold text-teal-700 mt-1">EUR {totals.net.toLocaleString()}</p>
-              </div>
-              <div className="rounded-xl border border-amber-100 p-4 bg-amber-50/40">
-                <p className="text-xs font-semibold text-slate-500 uppercase">Portfolio Value</p>
-                <p className="text-2xl font-bold text-amber-700 mt-1">EUR {portfolioValuation.toLocaleString()}</p>
-                <p className="text-xs text-slate-400 mt-1">All units combined</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-slate-700 mb-3">Monthly Trend (Rent vs Net)</h3>
-            <div style={{ height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#eef2f7" />
-                  <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(value) => [`EUR ${value.toLocaleString()}`, ""]} />
-                  <Bar dataKey="rent" fill="#14b8a6" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="net" fill="#0f766e" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Per-Property Collected vs Pending</h3>
+                <div style={{ height: 260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#eef2f7" />
+                      <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(value) => [`€${value.toLocaleString()}`, ""]} />
+                      <Bar dataKey="collected" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="pending" fill="#0f766e" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-700">Per-Property Breakdown ({selectedMonth})</h3>
-              <p className="text-sm text-slate-500">Maintenance: EUR {totals.maintenance.toLocaleString()}</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                    <th className="text-left px-5 py-3">Property</th>
-                    <th className="text-right px-5 py-3">Rent</th>
-                    <th className="text-right px-5 py-3">Deductions</th>
-                    <th className="text-right px-5 py-3">Maintenance</th>
-                    <th className="text-right px-5 py-3">Net</th>
-                    <th className="text-center px-5 py-3">Status</th>
-                    <th className="text-right px-5 py-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {selectedMonthRows.map((row) => (
-                    <tr key={row.propertyId} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{row.propertyName}</td>
-                      <td className="px-5 py-4 text-right text-slate-700">EUR {row.rentCollected.toLocaleString()}</td>
-                      <td className="px-5 py-4 text-right text-rose-600">-EUR {row.deductionTotal.toLocaleString()}</td>
-                      <td className="px-5 py-4 text-right text-amber-700">EUR {row.maintenanceCost.toLocaleString()}</td>
-                      <td className="px-5 py-4 text-right text-teal-700 font-semibold">EUR {row.netAmount.toLocaleString()}</td>
-                      <td className="px-5 py-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${row.status === "Paid" ? "bg-teal-100 text-teal-700" : "bg-amber-100 text-amber-700"}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        <Link
-                          href={`/admin/properties/${row.propertyId}/finances`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-base font-bold text-slate-700">Per-Property Breakdown ({selectedYear ?? financeOverview?.year ?? new Date().getFullYear()})</h3>
+                  <p className="text-sm text-slate-500">Total Pending: €{(financeOverview?.totalPending ?? 0).toLocaleString()}</p>
+                </div>
+
+                {/* Accordion mobile list */}
+                <div className="p-2 lg:hidden space-y-2">
+                  {paginatedProperties.map((row) => {
+                    const isOpen = expandedProp === row.propertyId;
+                    return (
+                      <div key={row.propertyId} className="border border-slate-100 rounded-lg overflow-hidden bg-white">
+                        <button
+                          onClick={() => setExpandedProp(isOpen ? null : row.propertyId)}
+                          className="w-full p-3 flex items-center justify-between gap-3"
                         >
-                          <BadgeCheck size={13} /> View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <div className="min-w-0 text-left">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{row.propertyName}</p>
+                            <p className="text-xs text-slate-400 truncate">{row.propertyAddress}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-sm font-semibold">€{(row.monthlyRent ?? 0).toLocaleString()}</div>
+                            <ChevronRight size={18} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`} />
+                          </div>
+                        </button>
+
+                        {isOpen && (
+                          <div className="px-3 pb-3 pt-0 border-t border-slate-100">
+                            <div className="grid grid-cols-3 gap-3 text-xs">
+                              <div>
+                                <div className="text-slate-400">Collected</div>
+                                <div className="font-semibold text-slate-800">€{(row.collected ?? 0).toLocaleString()}</div>
+                              </div>
+                              <div>
+                                <div className="text-slate-400">Overdue</div>
+                                <div className="font-semibold text-rose-600">€{(row.overdue ?? 0).toLocaleString()}</div>
+                              </div>
+                              <div>
+                                <div className="text-slate-400">Pending</div>
+                                <div className="font-semibold text-amber-700">€{(row.pending ?? 0).toLocaleString()}</div>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+                              <span>Payments: {row.paymentsCount ?? 0}</span>
+                              <Link href={`/admin/properties/${row.propertyId}`} className="text-teal-600 font-semibold text-sm">View</Link>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Pagination for mobile */}
+                  {totalProperties > PROP_ITEMS_PER_PAGE && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between px-2 py-3 border-t border-slate-100">
+                        <div className="text-sm text-slate-500">{propStartIndex + 1}-{propEndIndex} of {totalProperties}</div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setPropPage((p) => Math.max(1, p - 1))} disabled={propPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                            <ChevronLeft size={18} />
+                          </button>
+                          <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propPage}</span>
+                          <button onClick={() => setPropPage((p) => Math.min(totalPropPages, p + 1))} disabled={propPage === totalPropPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                        <th className="text-left px-5 py-3">Property</th>
+                        <th className="text-right px-5 py-3">Monthly Rent</th>
+                        <th className="text-right px-5 py-3">Collected</th>
+                        <th className="text-right px-5 py-3">Overdue</th>
+                        <th className="text-right px-5 py-3">Pending</th>
+                        <th className="text-right px-5 py-3">Payments</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {paginatedProperties.map((row) => (
+                        <tr key={row.propertyId} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{row.propertyName}<div className="text-xs text-slate-400">{row.propertyAddress}</div></td>
+                          <td className="px-5 py-4 text-right text-slate-700">€{(row.monthlyRent ?? 0).toLocaleString()}</td>
+                          <td className="px-5 py-4 text-right text-slate-700">€{(row.collected ?? 0).toLocaleString()}</td>
+                          <td className="px-5 py-4 text-right text-rose-600">€{(row.overdue ?? 0).toLocaleString()}</td>
+                          <td className="px-5 py-4 text-right text-amber-700">€{(row.pending ?? 0).toLocaleString()}</td>
+                          <td className="px-5 py-4 text-right text-slate-700">{row.paymentsCount ?? 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Desktop pagination */}
+                  {totalProperties > PROP_ITEMS_PER_PAGE && (
+                    <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
+                      <div className="text-sm text-slate-500">{propStartIndex + 1}-{propEndIndex} of {totalProperties}</div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setPropPage((p) => Math.max(1, p - 1))} disabled={propPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                          <ChevronLeft size={18} />
+                        </button>
+                        <div className="hidden sm:flex items-center gap-1">
+                          {getPropPageNumbers().map((page, idx) =>
+                            page === "..." ? (
+                              <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-slate-400 font-medium">…</span>
+                            ) : (
+                              <button key={page} onClick={() => setPropPage(page)} className={`w-8 h-8 flex items-center justify-center rounded-lg font-semibold text-sm transition ${propPage === page ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
+                                {page}
+                              </button>
+                            )
+                          )}
+                        </div>
+                        <span className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propPage}</span>
+                        <button onClick={() => setPropPage((p) => Math.min(totalPropPages, p + 1))} disabled={propPage === totalPropPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
