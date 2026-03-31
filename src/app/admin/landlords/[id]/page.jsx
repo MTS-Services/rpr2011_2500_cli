@@ -49,7 +49,6 @@ const auditLog = [
 ];
 
 const TABS = [
-  { key: "overview",   label: "Overview",          Icon: User },
   { key: "properties", label: "Properties",         Icon: Home },
   { key: "finances",   label: "Finances",           Icon: TrendingUp },
   { key: "rtb",        label: "RTB Registration",   Icon: Key },
@@ -94,7 +93,7 @@ function InfoRow({ label, value, mono = false, masked = false, children }) {
 
 export default function AdminLandlordProfilePage() {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("properties");
   const [showPps, setShowPps] = useState(false);
 
   const landlordFinanceId = LANDLORD_FINANCE_MAP[id] || "landlord-1";
@@ -202,39 +201,7 @@ export default function AdminLandlordProfilePage() {
         ))}
       </div>
 
-      {/* ── Overview ── */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><User size={16} className="text-teal-600" />Personal Details</h2>
-            <InfoRow label="Full Name" value={landlord.name} />
-            <InfoRow label="Date of Birth" value={landlord.dob} />
-            <InfoRow label="PPS Number">
-              <div className="flex items-center gap-2">
-                <p className="text-base font-mono font-semibold text-slate-700">
-                  {showPps ? landlord.pps : "••••••••"}
-                </p>
-                <button
-                  onClick={() => setShowPps(!showPps)}
-                  className="text-xs text-teal-600 hover:text-teal-700 font-semibold border border-teal-200 px-2 py-0.5 rounded-md"
-                >
-                  {showPps ? "Hide" : "Reveal"}
-                </button>
-              </div>
-            </InfoRow>
-            <InfoRow label="Address" value={landlord.address} />
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><Mail size={16} className="text-teal-600" />Contact</h2>
-            <InfoRow label="Email" value={landlord.email} />
-            <InfoRow label="Mobile" value={landlord.mobile} />
-            <div className="mt-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
-              <Shield size={15} className="text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">PPS and DOB are encrypted at database level. Only Admin/Staff can reveal these fields.</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Overview removed by request */}
 
       {/* ── Properties ── */}
       {activeTab === "properties" && (
