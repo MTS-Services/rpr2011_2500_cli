@@ -33,6 +33,9 @@ export default function AdminMaintenancePage() {
   const [costVendor, setCostVendor] = useState("");
   const [costDate, setCostDate] = useState("");
   const [costs, setCosts] = useState({});
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedDetails, setSelectedDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Helper: Generate initials from name
   const getInitials = (name) => {
@@ -89,6 +92,7 @@ export default function AdminMaintenancePage() {
             id: item.id,
             col: mapStatus(item.status),
             title: item.title,
+            description: item.description,
             priority: mapPriority(item.priority),
             assignee: {
               initials: getInitials(item.reportedBy?.user?.name),
@@ -96,7 +100,15 @@ export default function AdminMaintenancePage() {
             },
             name: item.reportedBy?.user?.name || "Unknown",
             property: item.property?.address || item.property?.name || "Unknown Property",
-            age: computeAge(item.createdAt)
+            propertyRaw: item.property || null,
+            reportedByRaw: item.reportedBy || null,
+            age: computeAge(item.createdAt),
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            closedAt: item.closedAt,
+            cost: item.cost != null ? Number(item.cost) : null,
+            isCharged: !!item.isCharged,
+            chargeNote: item.chargeNote || null,
           }));
           setRequests(mapped);
         }
@@ -246,6 +258,27 @@ export default function AdminMaintenancePage() {
     }
   };
 
+  // Fetch maintenance details for modal
+  const handleViewDetails = async (requestId) => {
+    try {
+      setDetailsLoading(true);
+      const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${requestId}`);
+      if (!res.ok) throw new Error('Failed to fetch details');
+      const json = await res.json();
+      if (json.success && json.data) {
+        setSelectedDetails(json.data);
+        setDetailsOpen(true);
+      } else {
+        Swal.fire('Error', 'Failed to load details', 'error');
+      }
+    } catch (err) {
+      console.error('Error fetching details:', err);
+      Swal.fire('Error', 'Failed to load details', 'error');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
   
 
   const filtered = requests.filter((r) => {
@@ -336,10 +369,16 @@ export default function AdminMaintenancePage() {
                 <option value="Closed">Closed</option>
               </select>
             </div>
-            <div className="flex items-center justify-end pt-2">
-              <button onClick={() => handleDeleteMaintenance(r.id, r.title)} className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition" title="Delete maintenance request">
-                <Trash2 size={14} />
-              </button>
+            <div className="flex items-center justify-between pt-2">
+              <div className="text-sm font-semibold text-slate-700">€{r.cost ? Number(r.cost).toLocaleString() : '0'}</div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleViewDetails(r.id)} className="p-2 bg-[#f0fdfa] text-teal-700 rounded-md hover:bg-teal-100 transition" title="View details">
+                  <Eye size={14} />
+                </button>
+                <button onClick={() => handleDeleteMaintenance(r.id, r.title)} className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition" title="Delete maintenance request">
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -361,7 +400,8 @@ export default function AdminMaintenancePage() {
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Priority</th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Reported</th>
-              <th className="px-4 py-3 text-right font-semibold text-base text-slate-600">Action</th>
+                <th className="px-4 py-3 text-left font-semibold text-base text-slate-600">Cost</th>
+                <th className="px-4 py-3 text-right font-semibold text-base text-slate-600">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -392,10 +432,16 @@ export default function AdminMaintenancePage() {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-slate-400">{r.age}</td>
+                <td className="px-4 py-3 text-slate-700">€{r.cost ? Number(r.cost).toLocaleString() : '0'}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDeleteMaintenance(r.id, r.title)} className="w-9 h-9 inline-flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition" title="Delete maintenance request">
-                    <Trash2 size={15} />
-                  </button>
+                  <div className="inline-flex items-center justify-end gap-2">
+                    <button onClick={() => handleViewDetails(r.id)} className="w-9 h-9 inline-flex items-center justify-center bg-[#f0fdfa] hover:bg-teal-100 text-teal-700 rounded-md transition" title="View details">
+                      <Eye size={15} />
+                    </button>
+                    <button onClick={() => handleDeleteMaintenance(r.id, r.title)} className="w-9 h-9 inline-flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition" title="Delete maintenance request">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -469,6 +515,101 @@ export default function AdminMaintenancePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Details Modal */}
+      {detailsOpen && selectedDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setDetailsOpen(false)} />
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Maintenance Details</h3>
+                <p className="text-sm text-slate-500 mt-1">Request information and charge note</p>
+              </div>
+              <button aria-label="Close" onClick={() => setDetailsOpen(false)} className="text-slate-500 hover:text-slate-700 text-lg">✕</button>
+            </div>
+
+            {detailsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Title</p>
+                  <p className="text-sm text-slate-700 font-medium">{selectedDetails.title}</p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Description</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{selectedDetails.description}</p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Property</p>
+                  <p className="text-sm text-slate-700">{selectedDetails.property?.address || selectedDetails.property?.name || 'N/A'}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Priority</p>
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${PRIORITY_STYLE[mapPriority(selectedDetails.priority)]}`}>
+                      {mapPriority(selectedDetails.priority)}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Status</p>
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_STYLE[mapStatus(selectedDetails.status)]}`}>
+                      {mapStatus(selectedDetails.status)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Reported By</p>
+                  <p className="text-sm text-slate-700">{selectedDetails.reportedBy?.user?.name || 'Unknown'}</p>
+                  <p className="text-xs text-slate-500">{selectedDetails.reportedBy?.user?.email || 'N/A'}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Created</p>
+                    <p className="text-sm text-slate-700">{selectedDetails.createdAt ? new Date(selectedDetails.createdAt).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Updated</p>
+                    <p className="text-sm text-slate-700">{selectedDetails.updatedAt ? new Date(selectedDetails.updatedAt).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Cost</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-semibold text-slate-700">{selectedDetails.cost != null ? `€${Number(selectedDetails.cost).toLocaleString()}` : '€0'}</div>
+                    {selectedDetails.isCharged && <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Charged</span>}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Charge Note</p>
+                  <p className="text-sm text-slate-600">{selectedDetails.chargeNote ?? 'No charge note'}</p>
+                </div>
+
+                {selectedDetails.closedAt && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Closed</p>
+                    <p className="text-sm text-slate-700">{new Date(selectedDetails.closedAt).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end pt-4 border-t border-slate-200">
+              <button onClick={() => setDetailsOpen(false)} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition">Close</button>
+            </div>
           </div>
         </div>
       )}

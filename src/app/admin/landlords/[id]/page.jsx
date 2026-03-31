@@ -137,6 +137,15 @@ export default function AdminLandlordProfilePage() {
   const [docsTotalItems, setDocsTotalItems] = useState(0);
   const [docsTotalPages, setDocsTotalPages] = useState(1);
 
+  // Audit logs (server-driven)
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState(null);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditItemsPerPage, setAuditItemsPerPage] = useState(8);
+  const [auditTotalItems, setAuditTotalItems] = useState(0);
+  const [auditTotalPages, setAuditTotalPages] = useState(1);
+
   useEffect(() => {
     let mounted = true;
     const fetchOverview = async () => {
@@ -371,6 +380,58 @@ export default function AdminLandlordProfilePage() {
     const total = Math.max(1, Math.ceil(docsTotalItems / docsItemsPerPage));
     if (docsPage > total) setDocsPage(1);
   }, [docsTotalItems, docsItemsPerPage]);
+
+  // Fetch audit logs for landlord when Audit tab is active
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const fetchAudit = async () => {
+      setAuditLoading(true);
+      setAuditError(null);
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/audit-logs/user/${id}?page=${auditPage}&limit=${auditItemsPerPage}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to load audit logs (${res.status})`);
+        }
+        const result = await res.json();
+        const items = result.data || [];
+        const mapped = items.map((a) => ({
+          id: a.id,
+          action: a.action,
+          target: a.target,
+          createdAt: a.createdAt ? new Date(a.createdAt).toLocaleString() : "—",
+          user: a.user || null,
+        }));
+
+        const pagination = result.meta?.pagination || {};
+        const total = pagination.totalItems ?? mapped.length ?? 0;
+        const totalPages = pagination.totalPages ?? Math.max(1, Math.ceil(total / auditItemsPerPage));
+
+        if (mounted) {
+          setAuditLogs(mapped);
+          setAuditTotalItems(total);
+          setAuditTotalPages(totalPages);
+        }
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+        console.error("Audit fetch error:", err);
+        if (mounted) setAuditError(err.message || "Failed to load audit logs");
+      } finally {
+        if (mounted) setAuditLoading(false);
+      }
+    };
+
+    if (activeTab === "audit" && id) fetchAudit();
+    return () => { mounted = false; controller.abort(); };
+  }, [id, activeTab, auditPage, auditItemsPerPage]);
+
+  // Keep audit page within range if totals change
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(auditTotalItems / auditItemsPerPage));
+    if (auditPage > total) setAuditPage(1);
+  }, [auditTotalItems, auditItemsPerPage]);
 
   const chartData = (financeOverview?.propertyBreakdown || []).map((p) => ({
     name: p.propertyName,
@@ -908,52 +969,81 @@ export default function AdminLandlordProfilePage() {
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><FileText size={16} className="text-teal-600" />Documents</h2>
           </div>
               <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Document</th>
-                  <th className="text-left px-5 py-3">Type</th>
-                  <th className="text-left px-5 py-3">Date</th>
-                  <th className="text-left px-5 py-3">Size</th>
-                  <th className="text-right px-5 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
                 {docsLoading ? (
-                  <tr><td colSpan={5} className="p-6 text-center"><p className="text-sm text-slate-500">Loading documents...</p></td></tr>
+                  <div className="p-6 text-center"><p className="text-sm text-slate-500">Loading documents...</p></div>
                 ) : docsError ? (
-                  <tr><td colSpan={5} className="p-6 text-center"><p className="text-sm text-rose-600">Failed to load documents: {docsError}</p></td></tr>
+                  <div className="p-6 text-center"><p className="text-sm text-rose-600">Failed to load documents: {docsError}</p></div>
                 ) : landlordDocuments.length === 0 ? (
-                  <tr><td colSpan={5} className="p-6 text-center"><p className="text-sm text-slate-500">No documents found.</p></td></tr>
+                  <div className="p-6 text-center"><p className="text-sm text-slate-500">No documents found.</p></div>
                 ) : (
-                  landlordDocuments.map((d) => (
-                    <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{d.name}<div className="text-xs text-slate-400">{d.property?.name ?? ''}</div></td>
-                      <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${docTypeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span></td>
-                      <td className="px-5 py-4 text-sm text-slate-500">{d.createdAt}</td>
-                      <td className="px-5 py-4 text-sm text-slate-400">{d.size}</td>
-                      <td className="px-5 py-4 text-right">
-                        <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</a>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  <>
+                    {/* Mobile cards */}
+                    <div className="lg:hidden p-3 space-y-3">
+                      {landlordDocuments.map((d) => (
+                        <div key={d.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{d.name}</p>
+                              <p className="text-xs text-slate-400 truncate mt-1">{d.property?.name ?? ''}</p>
+                            </div>
+                            <div className="text-xs text-slate-400">{d.createdAt}</div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-medium px-2 py-1 rounded-full ${docTypeColors[d.type] || 'bg-slate-100 text-slate-500'}`}>{d.type}</span>
+                              <div className="text-sm text-slate-500">{d.size}</div>
+                            </div>
+                            <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
+                              <Download size={13} /> Download
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
-            {/* Documents pagination */}
-            {(docsTotalItems > docsItemsPerPage) && (
-              <div className="px-4 py-3 border-t border-slate-100">
-                <Pagination
-                  total={docsTotalItems}
-                  itemsPerPage={docsItemsPerPage}
-                  currentPage={docsPage}
-                  onPageChange={(p) => setDocsPage(p)}
-                  onItemsPerPageChange={(n) => setDocsItemsPerPage(n)}
-                />
+                    {/* Desktop table (hidden on small screens) */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                            <th className="text-left px-5 py-3">Document</th>
+                            <th className="text-left px-5 py-3">Type</th>
+                            <th className="text-left px-5 py-3">Date</th>
+                            <th className="text-left px-5 py-3">Size</th>
+                            <th className="text-right px-5 py-3">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {landlordDocuments.map((d) => (
+                            <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{d.name}<div className="text-xs text-slate-400">{d.property?.name ?? ''}</div></td>
+                              <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${docTypeColors[d.type] || 'bg-slate-100 text-slate-600'}`}>{d.type}</span></td>
+                              <td className="px-5 py-4 text-sm text-slate-500">{d.createdAt}</td>
+                              <td className="px-5 py-4 text-sm text-slate-400">{d.size}</td>
+                              <td className="px-5 py-4 text-right">
+                                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</a>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Documents pagination */}
+                    {(docsTotalItems > docsItemsPerPage) && (
+                      <div className="px-4 py-3 border-t border-slate-100">
+                        <Pagination
+                          total={docsTotalItems}
+                          itemsPerPage={docsItemsPerPage}
+                          currentPage={docsPage}
+                          onPageChange={(p) => setDocsPage(p)}
+                          onItemsPerPageChange={(n) => setDocsItemsPerPage(n)}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            )}
-          </div>
         </div>
       )}
 
@@ -964,30 +1054,65 @@ export default function AdminLandlordProfilePage() {
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><ClipboardList size={16} className="text-teal-600" />Audit Log</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Timestamp</th>
-                  <th className="text-left px-5 py-3">Staff ID</th>
-                  <th className="text-left px-5 py-3">User</th>
-                  <th className="text-left px-5 py-3">Action</th>
-                  <th className="text-left px-5 py-3">Entity</th>
-                  <th className="text-left px-5 py-3">IP Address</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {auditLog.map((l, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 text-sm font-mono text-slate-600">{l.ts}</td>
-                    <td className="px-5 py-4 text-xs font-mono text-slate-500">{l.adminId}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-700">{l.user}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{l.action}</td>
-                    <td className="px-5 py-4 text-sm text-slate-500">{l.entity}</td>
-                    <td className="px-5 py-4 text-xs font-mono text-slate-400">{l.ip}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {auditLoading ? (
+              <div className="p-6 text-center"><p className="text-sm text-slate-500">Loading audit logs...</p></div>
+            ) : auditError ? (
+              <div className="p-6 text-center"><p className="text-sm text-rose-600">Failed to load audit logs: {auditError}</p></div>
+            ) : auditLogs.length === 0 ? (
+              <div className="p-6 text-center"><p className="text-sm text-slate-500">No audit entries found.</p></div>
+            ) : (
+              <>
+                {/* Mobile cards */}
+                <div className="lg:hidden p-3 space-y-3">
+                  {auditLogs.map((a) => (
+                    <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{a.action}</p>
+                          <p className="text-xs text-slate-500 mt-1">By: {a.user?.name ?? a.user?.email ?? 'System'}</p>
+                        </div>
+                        <div className="text-xs text-slate-400">{a.createdAt}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table (hidden on small screens) */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                        <th className="text-left px-5 py-3">Timestamp</th>
+                        <th className="text-left px-5 py-3">User ID</th>
+                        <th className="text-left px-5 py-3">User</th>
+                        <th className="text-left px-5 py-3">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {auditLogs.map((a) => (
+                        <tr key={a.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-5 py-4 text-sm font-mono text-slate-600">{a.createdAt}</td>
+                          <td className="px-5 py-4 text-xs font-mono text-slate-500">{a.user?.id ?? ''}</td>
+                          <td className="px-5 py-4 text-sm font-semibold text-slate-700">{a.user?.name ?? a.user?.email ?? '—'}</td>
+                          <td className="px-5 py-4 text-sm text-slate-600">{a.action}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination (shared component) */}
+                <div className="px-4 py-3 border-t border-slate-100">
+                  <Pagination
+                    total={auditTotalItems}
+                    itemsPerPage={auditItemsPerPage}
+                    currentPage={auditPage}
+                    onPageChange={(p) => setAuditPage(p)}
+                    onItemsPerPageChange={(n) => setAuditItemsPerPage(n)}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
