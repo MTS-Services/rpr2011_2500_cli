@@ -110,7 +110,16 @@ export default function AdminLandlordProfilePage() {
   const [propsItemsPerPage, setPropsItemsPerPage] = useState(10);
   const [propsTotalItems, setPropsTotalItems] = useState(0);
   const [propsTotalPages, setPropsTotalPages] = useState(1);
-
+ 
+  // Tenancies (RTB) - server driven for RTB tab
+  const [tenancies, setTenancies] = useState([]);
+  const [tenanciesLoading, setTenanciesLoading] = useState(false);
+  const [tenanciesError, setTenanciesError] = useState(null);
+  const [tenanciesPage, setTenanciesPage] = useState(1);
+  const [tenanciesItemsPerPage, setTenanciesItemsPerPage] = useState(10);
+  const [tenanciesTotalItems, setTenanciesTotalItems] = useState(0);
+  const [tenanciesTotalPages, setTenanciesTotalPages] = useState(1);
+  const [rtbFilter, setRtbFilter] = useState("");
   const [financeOverview, setFinanceOverview] = useState(null);
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeError, setFinanceError] = useState(null);
@@ -119,6 +128,14 @@ export default function AdminLandlordProfilePage() {
   const [propPage, setPropPage] = useState(1);
   const [expandedProp, setExpandedProp] = useState(null);
   const PROP_ITEMS_PER_PAGE = 5;
+  // Documents (server-driven)
+  const [landlordDocuments, setLandlordDocuments] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState(null);
+  const [docsPage, setDocsPage] = useState(1);
+  const [docsItemsPerPage, setDocsItemsPerPage] = useState(10);
+  const [docsTotalItems, setDocsTotalItems] = useState(0);
+  const [docsTotalPages, setDocsTotalPages] = useState(1);
 
   useEffect(() => {
     let mounted = true;
@@ -217,6 +234,143 @@ export default function AdminLandlordProfilePage() {
   useEffect(() => {
     setPropsPage(1);
   }, [id]);
+
+  // Reset tenancies page when landlord id changes
+  useEffect(() => {
+    setTenanciesPage(1);
+  }, [id]);
+
+  // Reset tenancies page when filter changes
+  useEffect(() => {
+    setTenanciesPage(1);
+  }, [rtbFilter]);
+
+  // Fetch tenancies for RTB tab with optional rtbRegistration filter
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const fetchTenancies = async () => {
+      setTenanciesLoading(true);
+      setTenanciesError(null);
+      try {
+        const params = new URLSearchParams();
+        if (id) params.append("landlordId", id);
+        params.append("page", String(tenanciesPage));
+        params.append("limit", String(tenanciesItemsPerPage));
+        if (rtbFilter) params.append("rtbRegistration", rtbFilter);
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies?${params.toString()}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to load tenancies (${res.status})`);
+        }
+        const result = await res.json();
+        const items = result.data || [];
+        const mapped = items.map((t) => {
+          const expiry = t.rtbExpiryDate ? new Date(t.rtbExpiryDate) : null;
+          const today = new Date();
+          const daysToExpiry = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null;
+          return {
+            id: t.id,
+            propertyId: t.property?.id || null,
+            propertyName: t.property?.name || t.property?.address || "",
+            rtbNumber: t.rtbNumber || "—",
+            tenantName: t.tenant?.name || "—",
+            rtbRegistration: t.rtbRegistration || "—",
+            createdAt: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : "—",
+            daysToExpiry,
+          };
+        });
+
+        const pagination = result.meta?.pagination || {};
+        const total = pagination.totalItems ?? items.length ?? 0;
+        const totalPages = pagination.totalPages ?? Math.max(1, Math.ceil(total / tenanciesItemsPerPage));
+
+        if (mounted) {
+          setTenancies(mapped);
+          setTenanciesTotalItems(total);
+          setTenanciesTotalPages(totalPages);
+        }
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+        if (mounted) setTenanciesError(err.message || "Failed to load tenancies");
+        console.error("Tenancies fetch error:", err);
+      } finally {
+        if (mounted) setTenanciesLoading(false);
+      }
+    };
+
+    if (activeTab === "rtb" && id) fetchTenancies();
+    return () => { mounted = false; controller.abort(); };
+  }, [id, activeTab, tenanciesPage, tenanciesItemsPerPage, rtbFilter]);
+
+  // Keep tenancies page within range when totals change
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(tenanciesTotalItems / tenanciesItemsPerPage));
+    if (tenanciesPage > total) setTenanciesPage(1);
+  }, [tenanciesTotalItems, tenanciesItemsPerPage]);
+
+  // Fetch documents for landlord when Documents tab is active
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const fetchDocs = async () => {
+      setDocsLoading(true);
+      setDocsError(null);
+      try {
+        const params = new URLSearchParams();
+        if (id) params.append("landlordId", id);
+        params.append("page", String(docsPage));
+        params.append("limit", String(docsItemsPerPage));
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents?${params.toString()}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to load documents (${res.status})`);
+        }
+        const result = await res.json();
+        const items = result.data || [];
+        const mapped = items.map((d) => ({
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          fileUrl: d.fileUrl,
+          size: d.fileSize || d.size || "—",
+          propertyId: d.propertyId,
+          property: d.property || null,
+          uploadedBy: d.uploadedBy || null,
+          createdAt: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "—",
+        }));
+
+        const pagination = result.meta?.pagination || {};
+        const total = pagination.totalItems ?? mapped.length ?? 0;
+        const totalPages = pagination.totalPages ?? Math.max(1, Math.ceil(total / docsItemsPerPage));
+
+        if (mounted) {
+          setLandlordDocuments(mapped);
+          setDocsTotalItems(total);
+          setDocsTotalPages(totalPages);
+        }
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+        console.error("Documents fetch error:", err);
+        if (mounted) setDocsError(err.message || "Failed to load documents");
+      } finally {
+        if (mounted) setDocsLoading(false);
+      }
+    };
+
+    if (activeTab === "documents" && id) fetchDocs();
+    return () => { mounted = false; controller.abort(); };
+  }, [id, activeTab, docsPage, docsItemsPerPage]);
+
+  // Keep documents page within range if totals change
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(docsTotalItems / docsItemsPerPage));
+    if (docsPage > total) setDocsPage(1);
+  }, [docsTotalItems, docsItemsPerPage]);
 
   const chartData = (financeOverview?.propertyBreakdown || []).map((p) => ({
     name: p.propertyName,
@@ -355,6 +509,24 @@ export default function AdminLandlordProfilePage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Mobile pagination for properties */}
+                {propsTotalItems > propsItemsPerPage && (
+                  <div className="lg:hidden mt-2">
+                    <div className="flex items-center justify-between px-3 py-3 border-t border-slate-100">
+                      <div className="text-sm text-slate-500">{Math.max(1, (propsPage - 1) * propsItemsPerPage + 1)}-{Math.min(propsPage * propsItemsPerPage, propsTotalItems)} of {propsTotalItems}</div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setPropsPage((p) => Math.max(1, p - 1))} disabled={propsPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                          <ChevronLeft size={18} />
+                        </button>
+                        <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propsPage}</span>
+                        <button onClick={() => setPropsPage((p) => Math.min(propsTotalPages, p + 1))} disabled={propsPage === propsTotalPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Desktop table (hidden on small screens) */}
                 <div className="hidden lg:block overflow-x-auto">
@@ -597,7 +769,7 @@ export default function AdminLandlordProfilePage() {
       {activeTab === "rtb" && (
         <div className="space-y-4">
           {/* Summary banner */}
-          {rtbRegistrations.some((r) => r.daysToExpiry !== null && r.daysToExpiry <= 30 && r.daysToExpiry >= 0) && (
+          {tenancies.some((t) => t.daysToExpiry !== null && t.daysToExpiry <= 30 && t.daysToExpiry >= 0) && (
             <div className="flex items-start gap-3 px-5 py-4 bg-amber-50 border border-amber-200 rounded-2xl">
               <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-800 font-medium">One or more RTB registrations expire within 30 days. Please renew promptly to avoid compliance issues.</p>
@@ -605,54 +777,125 @@ export default function AdminLandlordProfilePage() {
           )}
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Key size={16} className="text-teal-600" />RTB Registrations per Property</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2 min-w-0">
+                <Key size={16} className="text-teal-600" />
+                <h2 className="text-base font-bold text-slate-700 truncate">RTB Registrations per Property</h2>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto mt-3 sm:mt-0">
+                <div className="text-sm text-slate-500">Filter:</div>
+                <select
+                  value={rtbFilter}
+                  onChange={(e) => setRtbFilter(e.target.value)}
+                  className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition hover:border-slate-400 w-full sm:w-40"
+                >
+                  <option value="">All</option>
+                  <option value="REGISTERED">Registered</option>
+                  <option value="MISSING">Missing</option>
+                  <option value="PENDING">Pending</option>
+                </select>
+              </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                    <th className="text-left px-5 py-3">Property</th>
-                    <th className="text-left px-5 py-3">RTB Number</th>
-                    <th className="text-left px-5 py-3">Current Tenant</th>
-                    <th className="text-left px-5 py-3">Reg. Date</th>
-                    <th className="text-left px-5 py-3">Expiry Date</th>
-                    <th className="text-left px-5 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {rtbRegistrations.map((r) => {
-                    const expiring = r.daysToExpiry !== null && r.daysToExpiry <= 30 && r.daysToExpiry >= 0;
-                    const expired  = r.daysToExpiry !== null && r.daysToExpiry < 0;
-                    return (
-                      <tr key={r.id} className={`hover:bg-slate-50/60 transition-colors ${expiring ? "bg-amber-50/40" : ""}`}>
-                        <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{r.property}</td>
-                        <td className="px-5 py-4 font-mono text-xs text-slate-600">{r.rtbNumber}</td>
-                        <td className="px-5 py-4 text-sm text-slate-600">{r.tenant}</td>
-                        <td className="px-5 py-4 text-sm text-slate-500">{r.regDate}</td>
-                        <td className="px-5 py-4 text-sm">
-                          <span className={expired ? "text-red-600 font-semibold" : expiring ? "text-amber-600 font-semibold" : "text-slate-500"}>
-                            {r.expiryDate}
-                          </span>
-                          {expiring && <span className="ml-2 text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Expires soon</span>}
-                          {expired  && <span className="ml-2 text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Expired</span>}
-                        </td>
-                        <td className="px-5 py-4">
-                          {r.status === "Registered" ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
-                              <CheckCircle2 size={12} /> Registered
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              {tenanciesLoading ? (
+                <div className="p-6 text-center"><p className="text-sm text-slate-500">Loading tenancies...</p></div>
+              ) : tenanciesError ? (
+                <div className="p-6 text-center"><p className="text-sm text-rose-600">Failed to load tenancies: {tenanciesError}</p></div>
+              ) : tenancies.length === 0 ? (
+                <div className="p-6 text-center"><p className="text-sm text-slate-500">No tenancies found.</p></div>
+              ) : (
+                <>
+                  {/* Mobile cards */}
+                  <div className="lg:hidden p-3 space-y-3">
+                    {tenancies.map((t) => {
+                      const expiring = t.daysToExpiry !== null && t.daysToExpiry <= 30 && t.daysToExpiry >= 0;
+                      const expired = t.daysToExpiry !== null && t.daysToExpiry < 0;
+                      return (
+                        <div key={t.id} className={`bg-white rounded-xl border border-slate-200 p-4 shadow-sm ${expiring ? 'bg-amber-50/40' : ''}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{t.propertyName}</p>
+                              <p className="text-xs text-slate-400 font-mono truncate mt-1">{t.rtbNumber}</p>
+                              <p className="text-sm text-slate-500 mt-1">{t.tenantName}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-xs text-slate-400">{t.createdAt}</div>
+                              <div>
+                                {t.rtbRegistration === 'REGISTERED' ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full"><CheckCircle2 size={12} /> Registered</span>
+                                ) : t.rtbRegistration === 'PENDING' ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Pending</span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">Missing</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <div className="text-xs text-slate-500 mb-2">
+                              {expired && <span className="text-red-600 font-semibold">Expired</span>}
+                              {expiring && !expired && <span className="text-amber-600 font-semibold">Expires soon</span>}
+                            </div>
+                            {t.propertyId ? (
+                              <Link href={`/admin/properties/${t.propertyId}`} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold rounded-lg transition">
+                                <BadgeCheck size={13} /> View
+                              </Link>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop table (hidden on small screens) */}
+                  <div className="hidden lg:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                          <th className="text-left px-5 py-3">Property</th>
+                          <th className="text-left px-5 py-3">RTB Number</th>
+                          <th className="text-left px-5 py-3">Current Tenant</th>
+                          <th className="text-left px-5 py-3">Created</th>
+                          <th className="text-left px-5 py-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {tenancies.map((t) => {
+                          const expiring = t.daysToExpiry !== null && t.daysToExpiry <= 30 && t.daysToExpiry >= 0;
+                          const expired = t.daysToExpiry !== null && t.daysToExpiry < 0;
+                          return (
+                            <tr key={t.id} className={`hover:bg-slate-50/60 transition-colors ${expiring ? 'bg-amber-50/40' : ''}`}>
+                              <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{t.propertyName}</td>
+                              <td className="px-5 py-4 font-mono text-xs text-slate-600">{t.rtbNumber}</td>
+                              <td className="px-5 py-4 text-sm text-slate-600">{t.tenantName}</td>
+                              <td className="px-5 py-4 text-sm text-slate-500">{t.createdAt}</td>
+                              <td className="px-5 py-4">
+                                {t.rtbRegistration === 'REGISTERED' ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full"><CheckCircle2 size={12} /> Registered</span>
+                                ) : t.rtbRegistration === 'PENDING' ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Pending</span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">Missing</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination (shared component) */}
+                  <Pagination
+                    total={tenanciesTotalItems}
+                    itemsPerPage={tenanciesItemsPerPage}
+                    currentPage={tenanciesPage}
+                    onPageChange={(p) => setTenanciesPage(p)}
+                    onItemsPerPageChange={(n) => setTenanciesItemsPerPage(n)}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -664,7 +907,7 @@ export default function AdminLandlordProfilePage() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><FileText size={16} className="text-teal-600" />Documents</h2>
           </div>
-          <div className="overflow-x-auto">
+              <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
@@ -676,19 +919,40 @@ export default function AdminLandlordProfilePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {documents.map((d, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{d.name}</td>
-                    <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${docTypeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span></td>
-                    <td className="px-5 py-4 text-sm text-slate-500">{d.date}</td>
-                    <td className="px-5 py-4 text-sm text-slate-400">{d.size}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</button>
-                    </td>
-                  </tr>
-                ))}
+                {docsLoading ? (
+                  <tr><td colSpan={5} className="p-6 text-center"><p className="text-sm text-slate-500">Loading documents...</p></td></tr>
+                ) : docsError ? (
+                  <tr><td colSpan={5} className="p-6 text-center"><p className="text-sm text-rose-600">Failed to load documents: {docsError}</p></td></tr>
+                ) : landlordDocuments.length === 0 ? (
+                  <tr><td colSpan={5} className="p-6 text-center"><p className="text-sm text-slate-500">No documents found.</p></td></tr>
+                ) : (
+                  landlordDocuments.map((d) => (
+                    <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{d.name}<div className="text-xs text-slate-400">{d.property?.name ?? ''}</div></td>
+                      <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${docTypeColors[d.type] || "bg-slate-100 text-slate-600"}`}>{d.type}</span></td>
+                      <td className="px-5 py-4 text-sm text-slate-500">{d.createdAt}</td>
+                      <td className="px-5 py-4 text-sm text-slate-400">{d.size}</td>
+                      <td className="px-5 py-4 text-right">
+                        <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</a>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
+
+            {/* Documents pagination */}
+            {(docsTotalItems > docsItemsPerPage) && (
+              <div className="px-4 py-3 border-t border-slate-100">
+                <Pagination
+                  total={docsTotalItems}
+                  itemsPerPage={docsItemsPerPage}
+                  currentPage={docsPage}
+                  onPageChange={(p) => setDocsPage(p)}
+                  onItemsPerPageChange={(n) => setDocsItemsPerPage(n)}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
