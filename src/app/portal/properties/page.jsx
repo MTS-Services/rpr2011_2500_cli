@@ -6,6 +6,7 @@ import { Eye } from "lucide-react";
 import Link from "next/link";
 import { authenticatedFetch } from "@/utils/authFetch";
 import { usePortalAuth } from "@/context/PortalAuthContext";
+import Pagination from "@/components/portal/Pagination";
 
 // Transform API response to UI format
 function transformProperty(apiProp) {
@@ -47,8 +48,11 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [propertiesPage, setPropertiesPage] = useState(1);
+  const [propertiesLimit, setPropertiesLimit] = useState(10);
+  const [propertiesTotal, setPropertiesTotal] = useState(0);
 
-  // Fetch properties from API
+  // Fetch properties from API (server-side pagination)
   useEffect(() => {
     const fetchProperties = async () => {
       if (authLoading) return;
@@ -62,9 +66,15 @@ export default function PropertiesPage() {
       try {
         setError(null);
         setLoading(true);
+
+        const params = new URLSearchParams();
+        params.append("page", String(propertiesPage));
+        params.append("limit", String(propertiesLimit));
+
         const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/my`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/my?${params.toString()}`
         );
+
         if (!response.ok) {
           let message = "Failed to fetch properties";
           let errData = null;
@@ -83,7 +93,7 @@ export default function PropertiesPage() {
           // but can still access properties via the generic properties endpoint.
           if ((response.status === 404 || response.status === 400) && /landlord profile not found/i.test(message)) {
             const fallbackRes = await authenticatedFetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
+              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties?page=${propertiesPage}&limit=${propertiesLimit}`
             );
 
             if (fallbackRes.ok) {
@@ -97,6 +107,7 @@ export default function PropertiesPage() {
               );
 
               setProperties(mine.map((prop) => transformProperty(prop)));
+              setPropertiesTotal(mine.length);
               return;
             }
           }
@@ -106,10 +117,13 @@ export default function PropertiesPage() {
         }
 
         const data = await response.json();
-        if (data.success && data.data) {
-          const transformed = data.data.map(prop => transformProperty(prop));
-          setProperties(transformed);
-        }
+        const rows = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        const transformed = rows.map((prop) => transformProperty(prop));
+        setProperties(transformed);
+
+        // Try to read pagination info defensively
+        const pagination = data.meta?.pagination || data.data?.pagination || {};
+        setPropertiesTotal(pagination.totalItems || pagination.total || transformed.length);
       } catch (err) {
         console.warn("Properties fetch warning:", err?.message || err);
         setError(err.message || "Failed to load properties");
@@ -119,7 +133,7 @@ export default function PropertiesPage() {
     };
 
     fetchProperties();
-  }, [authLoading, user]);
+  }, [authLoading, user, propertiesPage, propertiesLimit]);
   const getRTBExpiryColor = (expiryDate) => {
     if (!expiryDate) return "";
     const today = new Date();
@@ -182,20 +196,12 @@ export default function PropertiesPage() {
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                 <div>
-                  <p className="text-slate-400">Tenant</p>
-                  <p className="text-slate-700 font-medium">{p.tenant}</p>
-                </div>
-                <div>
                   <p className="text-slate-400">Rent</p>
                   <p className="text-slate-700 font-bold">{p.rent}</p>
                 </div>
                 <div>
                   <p className="text-slate-400">RTB Status</p>
                   <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${p.rtb === "Registered" ? "bg-teal-50 text-teal-700" : "bg-amber-50 text-amber-700"}`}>{p.rtb}</span>
-                </div>
-                <div>
-                  <p className="text-slate-400">RTB Expiry</p>
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getRTBExpiryColor(p.rtbExpiry)}`}>{formatDate(p.rtbExpiry)}</span>
                 </div>
                 <div>
                   <p className="text-slate-400">MPRN</p>
@@ -214,15 +220,13 @@ export default function PropertiesPage() {
           <table className="w-full">
             <thead>
               <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                <th className="text-left px-5 py-3">Status</th>
-                <th className="text-left px-5 py-4">Property Address</th>
-                <th className="text-left px-5 py-4">Tenant</th>
-                <th className="text-left px-5 py-4">Rent</th>
-                <th className="text-left px-5 py-4">RTB Status</th>
-                <th className="text-left px-5 py-4">RTB Expiry</th>
-                <th className="text-left px-5 py-4">MPRN</th>
-                <th className="text-right px-5 py-3">Action</th>
-              </tr>
+                  <th className="text-left px-5 py-3">Status</th>
+                  <th className="text-left px-5 py-4">Property Address</th>
+                  <th className="text-left px-5 py-4">Rent</th>
+                  <th className="text-left px-5 py-4">RTB Status</th>
+                  <th className="text-left px-5 py-4">MPRN</th>
+                  <th className="text-right px-5 py-3">Action</th>
+                </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {properties.map((p, i) => (
@@ -235,18 +239,12 @@ export default function PropertiesPage() {
                   <td className="px-5 py-5">
                     <p className="text-base font-semibold text-slate-700">{p.address}</p>
                   </td>
-                  <td className="px-5 py-5 text-base text-slate-600">{p.tenant}</td>
                   <td className="px-5 py-5">
                     <p className="text-base font-bold text-slate-700">{p.rent}</p>
                   </td>
                   <td className="px-5 py-5">
                     <span className={`text-sm font-medium px-2.5 py-1 rounded-full ${p.rtb === "Registered" ? "bg-teal-50 text-teal-700" : "bg-amber-50 text-amber-700"}`}>
                       {p.rtb}
-                    </span>
-                  </td>
-                  <td className="px-5 py-5">
-                    <span className={`text-sm font-medium px-2.5 py-1 rounded-full ${getRTBExpiryColor(p.rtbExpiry)}`}>
-                      {formatDate(p.rtbExpiry)}
                     </span>
                   </td>
                   <td className="px-5 py-5 text-slate-500 font-mono text-sm">{p.mprn}</td>
@@ -260,6 +258,17 @@ export default function PropertiesPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          total={propertiesTotal}
+          itemsPerPage={propertiesLimit}
+          currentPage={propertiesPage}
+          onPageChange={setPropertiesPage}
+          onItemsPerPageChange={(value) => {
+            setPropertiesLimit(value);
+            setPropertiesPage(1);
+          }}
+        />
       </div>
       )}
     </PortalShell>

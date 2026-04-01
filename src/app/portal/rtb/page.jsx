@@ -28,36 +28,61 @@ function LandlordRTBInner() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
+  // Server-side pagination state
+  const [rtbPage, setRtbPage] = useState(1);
+  const [rtbLimit, setRtbLimit] = useState(10);
+  const [rtbTotal, setRtbTotal] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentTenancy, setCurrentTenancy] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchRTBData = async () => {
       try {
         setLoading(true);
-        const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/landlord`
-        );
+        setError(null);
+
+        const params = new URLSearchParams();
+        params.append("page", String(rtbPage));
+        params.append("limit", String(rtbLimit));
+        if (search && search.trim().length > 0) params.append("search", search.trim());
+        if (statusFilter && statusFilter !== "All Statuses") params.append("status", statusFilter);
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/landlord?${params.toString()}`;
+        const response = await authenticatedFetch(url, { signal: controller.signal });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch RTB data: ${response.statusText}`);
         }
 
         const json = await response.json();
-        if (json.success && json.data) {
-          setTenancies(json.data);
-        }
+        // Support multiple response shapes: { success, data: [...] } or { data: { rows: [...], pagination: {} } }
+        const rows = Array.isArray(json.data)
+          ? json.data
+          : (Array.isArray(json?.data?.rows) ? json.data.rows : (Array.isArray(json) ? json : []));
+
+        setTenancies(rows || []);
+
+        const pagination = json.meta?.pagination || json.data?.pagination || json.data?.meta?.pagination || {};
+        setRtbTotal(pagination.totalItems || pagination.total || pagination.totalRecords || rows.length);
       } catch (err) {
-        console.error("Error fetching RTB data:", err);
-        setError(err.message || "Failed to load RTB data");
+        if (err.name !== "AbortError") {
+          console.error("Error fetching RTB data:", err);
+          setError(err.message || "Failed to load RTB data");
+          setTenancies([]);
+          setRtbTotal(0);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchRTBData();
-  }, []);
+
+    return () => controller.abort();
+  }, [rtbPage, rtbLimit, search, statusFilter]);
 
   const handleEditClick = (tenancy) => {
     setCurrentTenancy({
@@ -120,16 +145,7 @@ function LandlordRTBInner() {
     }
   };
 
-  const filtered = tenancies.filter((t) => {
-    const matchSearch = 
-      (t.tenant?.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (t.property?.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (t.rtbNumber || "").toLowerCase().includes(search.toLowerCase());
-    
-    const matchStatus = statusFilter === "All Statuses" || t.rtbRegistration === statusFilter;
-    
-    return matchSearch && matchStatus;
-  });
+  // Server provides filtered/paginated rows — use `tenancies` directly.
 
   return (
     <PortalShell>
@@ -148,14 +164,14 @@ function LandlordRTBInner() {
               type="text"
               placeholder="Search registrations..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setRtbPage(1); }}
               className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition-all font-medium"
             />
           </div>
           <div className="w-full sm:w-[240px]">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setRtbPage(1); }}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition-all font-medium cursor-pointer"
             >
               <option value="All Statuses">All Registrations</option>
@@ -179,17 +195,17 @@ function LandlordRTBInner() {
             <p className="text-red-800 font-semibold text-lg">Failed to load data</p>
             <p className="text-red-600 mt-1">{error}</p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : tenancies.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
             <FileText size={48} className="text-slate-300 mx-auto mb-4" />
             <p className="text-slate-800 font-semibold text-lg">No records found</p>
             <p className="text-slate-500 mt-1">Try adjusting your filters or search terms.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             {/* Mobile View — Cards */}
-            <div className="lg:hidden space-y-3">
-              {filtered.map((t) => {
+            <div className="lg:hidden p-3 space-y-3">
+              {tenancies.map((t) => {
                 const style = REG_STATUS_STYLE[t.rtbRegistration] || REG_STATUS_STYLE.UNKNOWN;
                 const StatusIcon = style.icon;
                 return (
@@ -237,8 +253,7 @@ function LandlordRTBInner() {
             </div>
 
             {/* Desktop View — Table */}
-            <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
@@ -250,7 +265,7 @@ function LandlordRTBInner() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filtered.map((t) => {
+                    {tenancies.map((t) => {
                       const style = REG_STATUS_STYLE[t.rtbRegistration] || REG_STATUS_STYLE.UNKNOWN;
                       const StatusIcon = style.icon;
                       return (
@@ -300,9 +315,17 @@ function LandlordRTBInner() {
                     })}
                   </tbody>
                 </table>
-              </div>
             </div>
-            <Pagination total={filtered.length} />
+            <Pagination
+              total={rtbTotal}
+              itemsPerPage={rtbLimit}
+              currentPage={rtbPage}
+              onPageChange={setRtbPage}
+              onItemsPerPageChange={(value) => {
+                setRtbLimit(value);
+                setRtbPage(1);
+              }}
+            />
           </div>
         )}
 
