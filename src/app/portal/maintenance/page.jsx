@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import PortalShell from "@/components/portal/PortalShell";
 import Pagination from "@/components/portal/Pagination";
-import { Eye, Search, ChevronDown, X } from "lucide-react";
+import { Eye, Search, ChevronDown, X, Edit } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
@@ -31,6 +31,14 @@ export default function MaintenancePage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedDetails, setSelectedDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [chargeValue, setChargeValue] = useState(0);
+  const [chargeUpdating, setChargeUpdating] = useState(false);
+  const [summary, setSummary] = useState({ totalCostCharged: 0, chargedRequestsCount: 0 });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editCost, setEditCost] = useState(0);
+  const [editChargeNote, setEditChargeNote] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   // CSS to hide scrollbars
   const hideScrollbarStyle = `
@@ -77,18 +85,56 @@ export default function MaintenancePage() {
         );
         if (!response.ok) throw new Error("Failed to fetch maintenance");
         const result = await response.json();
-        if (result.success && result.data) {
-          const mapped = result.data.map((item) => ({
-            id: item.id,
-            property: item.property?.address || item.property?.name || "Unknown Property",
-            issue: item.title,
-            description: item.description,
-            age: computeAge(item.createdAt),
-            priority: mapPriority(item.priority),
-            status: mapStatus(item.status),
-            updated: computeAge(item.updatedAt),
-            reportedBy: item.reportedBy?.user?.name || "Unknown"
-          }));
+        if (result.success) {
+          // capture summary if present
+          const s = result.data?.summary;
+          setSummary({
+            totalCostCharged: s?.totalCostCharged ?? 0,
+            chargedRequestsCount: s?.chargedRequestsCount ?? 0,
+          });
+
+          // Normalize different possible response shapes to an array (prefer result.data.requests)
+          let dataItems = [];
+          if (Array.isArray(result.data?.requests)) {
+            dataItems = result.data.requests;
+          } else if (Array.isArray(result.data)) {
+            dataItems = result.data;
+          } else if (Array.isArray(result.data?.data)) {
+            dataItems = result.data.data;
+          } else if (Array.isArray(result.data?.items)) {
+            dataItems = result.data.items;
+          } else if (result.data && typeof result.data === "object") {
+            // fallback: try to extract array-like values
+            const vals = Object.values(result.data).filter(v => Array.isArray(v));
+            if (vals.length) dataItems = vals[0];
+            else {
+              // last resort: wrap single object as array
+              dataItems = [result.data];
+            }
+          } else {
+            console.warn("Unexpected maintenance API data shape:", result.data);
+            dataItems = [];
+          }
+
+          const mapped = dataItems.map((item) => {
+            const c = item.cost != null ? Number(item.cost) : 0;
+            return ({
+              id: item.id,
+              property: item.property?.address || item.property?.name || "Unknown Property",
+              issue: item.title,
+              description: item.description,
+              age: computeAge(item.createdAt),
+              priority: mapPriority(item.priority),
+              status: mapStatus(item.status),
+              updated: computeAge(item.updatedAt),
+              reportedBy: item.reportedBy?.user?.name || "Unknown",
+              // cost comes from backend (string or null) — default to 0
+              cost: c,
+              costDisplay: `€${c.toLocaleString()}`,
+              isCharged: !!item.isCharged,
+              chargeNote: item.chargeNote || null,
+            });
+          });
           setItems(mapped);
         }
       } catch (error) {
@@ -153,6 +199,8 @@ export default function MaintenancePage() {
       const result = await response.json();
       if (result.success && result.data) {
         setSelectedDetails(result.data);
+        // Set editable charge value (backend may return string or null)
+        setChargeValue(result.data.cost != null ? Number(result.data.cost) : 0);
         setDetailsOpen(true);
       }
     } catch (error) {
@@ -161,6 +209,76 @@ export default function MaintenancePage() {
     } finally {
       setDetailsLoading(false);
     }
+  };
+
+  // Update maintenance charge (PUT /api/v1/maintenance/{id}/charge)
+  // If costOverride is provided, use it; otherwise use current `chargeValue` state
+  const handleUpdateCharge = async (itemId, costOverride) => {
+    const costToSend = costOverride !== undefined ? Number(costOverride) : Number(chargeValue);
+    try {
+      setChargeUpdating(true);
+      const payload = { cost: costToSend };
+      const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${itemId}/charge`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to update charge (${res.status})`);
+      }
+      await res.json();
+      // Update selected details and list
+      setSelectedDetails((prev) => prev ? { ...prev, cost: costToSend } : prev);
+      setItems((prev) => prev.map((it) => it.id === itemId ? { ...it, cost: costToSend, costDisplay: `€${costToSend.toLocaleString()}`, isCharged: true } : it));
+      Swal.fire({ title: "Updated", text: "Charge updated", icon: "success", timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      console.error("Charge update error:", err);
+      Swal.fire("Error", "Failed to update charge", "error");
+    } finally {
+      setChargeUpdating(false);
+    }
+  };
+
+    // Save edit from the custom modal (includes chargeNote)
+    const handleSaveEdit = async () => {
+      if (!editingItem) return;
+      const itemId = editingItem.id;
+      try {
+        setEditSaving(true);
+        const payload = { cost: Number(editCost) };
+        if (editChargeNote !== undefined && editChargeNote !== null) payload.chargeNote = editChargeNote;
+        const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${itemId}/charge`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to update charge (${res.status})`);
+        }
+        await res.json();
+        // Update list and details locally
+        setItems((prev) => prev.map((it) => it.id === itemId ? { ...it, cost: Number(editCost), costDisplay: `€${Number(editCost).toLocaleString()}`, isCharged: true, chargeNote: editChargeNote } : it));
+        setSelectedDetails((prev) => prev && prev.id === itemId ? { ...prev, cost: Number(editCost), isCharged: true, chargeNote: editChargeNote } : prev);
+        setEditOpen(false);
+        setEditingItem(null);
+        Swal.fire({ title: "Updated", text: "Charge updated", icon: "success", timer: 1500, showConfirmButton: false });
+      } catch (err) {
+        console.error("Charge update error:", err);
+        Swal.fire("Error", "Failed to update charge", "error");
+      } finally {
+        setEditSaving(false);
+      }
+    };
+
+  // Quick edit flow: open custom edit modal (landlord only)
+  const handleQuickEdit = (item) => {
+    setEditingItem(item);
+    // show placeholder when no cost set by leaving value empty string
+    setEditCost(item.cost != null ? item.cost : "");
+    setEditChargeNote(item.chargeNote ?? "");
+    setEditOpen(true);
   };
 
   const filtered = items.filter((item) => {
@@ -187,6 +305,20 @@ export default function MaintenancePage() {
       <style>{hideScrollbarStyle}</style>
       <div className="mb-3 lg:mb-5">
         <h1 className="text-2xl lg:text-3xl font-bold text-slate-800">Maintenance</h1>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <p className="text-xs text-slate-500 uppercase mb-2">Total Charged</p>
+          <div className="text-2xl font-semibold text-slate-800">€{Number(summary.totalCostCharged ?? 0).toLocaleString()}</div>
+          <p className="text-sm text-slate-400 mt-1">Total amount charged across requests</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <p className="text-xs text-slate-500 uppercase mb-2">Charged Requests</p>
+          <div className="text-2xl font-semibold text-slate-800">{summary.chargedRequestsCount ?? 0}</div>
+          <p className="text-sm text-slate-400 mt-1">Requests marked as charged</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -250,6 +382,14 @@ export default function MaintenancePage() {
                   <option value="In Progress">In Progress</option>
                   <option value="Closed">Closed</option>
                 </select>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-slate-700">€{item.cost.toLocaleString()}</div>
+                  {item.isCharged && <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Charged</span>}
+                  <button onClick={() => handleQuickEdit(item)} aria-label="Quick edit cost" className="inline-flex items-center gap-2 px-3 py-1 text-sm font-semibold bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                    <Edit size={14} />
+                    <span>Edit</span>
+                  </button>
+                </div>
               </div>
               <button onClick={() => handleViewDetails(item.id)} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
                 <Eye size={13} /> View Details
@@ -262,12 +402,13 @@ export default function MaintenancePage() {
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
                 <th className="text-left px-5 py-3">Property</th>
                 <th className="text-left px-5 py-4">Issue</th>
                 <th className="text-left px-5 py-4">Priority</th>
                 <th className="text-left px-5 py-4">Status</th>
                 <th className="text-left px-5 py-4">Last Updated</th>
+                <th className="text-left px-5 py-4">Cost</th>
                 <th className="text-right px-6 py-4">Action</th>
               </tr>
             </thead>
@@ -292,10 +433,16 @@ export default function MaintenancePage() {
                     </select>
                   </td>
                   <td className="px-5 py-5 text-sm text-slate-400">{item.updated}</td>
+                  <td className="px-5 py-5 text-sm text-slate-700">€{item.cost.toLocaleString()}</td>
                   <td className="px-6 py-5 text-right">
-                    <button onClick={() => handleViewDetails(item.id)} aria-label="View maintenance details" className="inline-flex items-center justify-center px-3 py-2 bg-[#f0fdfa] text-gray-800 rounded-lg transition hover:bg-teal-100">
-                      <Eye size={16} />
-                    </button>
+                    <div className="inline-flex items-center justify-end gap-2">
+                      <button onClick={() => handleQuickEdit(item)} aria-label="Edit cost" className="inline-flex items-center justify-center px-3 py-2 bg-white text-gray-800 rounded-lg border border-slate-100 transition hover:bg-slate-50">
+                        <Edit size={16} />
+                      </button>
+                      <button onClick={() => handleViewDetails(item.id)} aria-label="View maintenance details" className="inline-flex items-center justify-center px-3 py-2 bg-[#f0fdfa] text-gray-800 rounded-lg transition hover:bg-teal-100">
+                        <Eye size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -313,6 +460,69 @@ export default function MaintenancePage() {
           }}
         />
       </div>
+
+      {/* Edit Charge Modal (landlord-only) */}
+      {editOpen && editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/35" onClick={() => { setEditOpen(false); setEditingItem(null); }} />
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg z-50 overflow-hidden max-h-[90vh] overflow-y-auto hide-scrollbar" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">Edit Charge</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Set cost and add an optional charge note</p>
+              </div>
+              <button 
+                onClick={() => { setEditOpen(false); setEditingItem(null); }} 
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Cost (EUR)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 50.00"
+                  value={editCost}
+                  onChange={(e) => setEditCost(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Charge Note</label>
+                <textarea
+                  placeholder="e.g. Plumber callout fee"
+                  value={editChargeNote}
+                  onChange={(e) => setEditChargeNote(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                onClick={() => { setEditOpen(false); setEditingItem(null); }}
+                className="px-4 py-2 bg-white border border-slate-200 text-sm rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editSaving}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-60"
+              >
+                {editSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Details Modal */}
       {detailsOpen && selectedDetails && (
@@ -383,6 +593,19 @@ export default function MaintenancePage() {
                     <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Updated</p>
                     <p className="text-sm text-slate-700">{new Date(selectedDetails.updatedAt).toLocaleDateString()}</p>
                   </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Cost</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-semibold text-slate-700">{selectedDetails.cost != null ? `€${Number(selectedDetails.cost).toLocaleString()}` : '€0'}</div>
+                    {selectedDetails.isCharged && <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Charged</span>}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Charge Note</p>
+                  <p className="text-sm text-slate-600">{selectedDetails.chargeNote ?? 'No charge note'}</p>
                 </div>
 
                 {selectedDetails.closedAt && (

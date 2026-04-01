@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Plus, ChevronDown, Search,
@@ -7,7 +7,13 @@ import {
   ArrowUpDown, Home, Users, Eye, Edit, Trash
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
+import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
+const COLOR_PALETTE = [
+  "bg-teal-500", "bg-orange-400", "bg-slate-500", "bg-sky-600",
+  "bg-emerald-500", "bg-teal-700", "bg-slate-400", "bg-indigo-400",
+  "bg-pink-400", "bg-violet-400"
+];
 
 const LANDLORDS = [
   { id: 1, name: "Joan Doyle",      initials: "JD", color: "bg-teal-500",    sub: "Apt 28 Perkside Plaza",  properties: 12, tenants: 9,  mobile: "085-323-8927", pps: "3276513B",  pps2: "325-0305597", dob: "14 Mar 1972", email: "joan.doyle@email.com" },
@@ -24,19 +30,117 @@ const LANDLORDS = [
 export default function AdminLandlordsPage() {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
-  const [landlords, setLandlords] = useState(LANDLORDS);
+  const [landlords, setLandlords] = useState([]);
   const [countyFilter, setCountyFilter] = useState("All County/City");
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [triggerFetch, setTriggerFetch] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const uniqueSubs = Array.from(new Set(LANDLORDS.map((l) => l.sub))).slice(0, 50);
+  const uniqueSubs = Array.from(new Set(landlords.map((l) => l.sub || l.address).filter(Boolean))).slice(0, 50);
 
-  const filtered = landlords.filter(
-    (l) =>
-      (l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase())) &&
-      (countyFilter === "All County/City" ? true : l.sub === countyFilter)
-  );
+  // Helper to show 'N/A' when a string is missing or empty
+  const fmtString = (v) => {
+    if (v === null || v === undefined) return "N/A";
+    if (typeof v === "string" && v.trim() === "") return "N/A";
+    return v;
+  };
+
+  // When using server-side pagination the API returns already filtered results.
+  // `filtered` represents the currently loaded page of landlords.
+  const filtered = landlords;
+
+  // Debounce search input to avoid excessive requests
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [debouncedSearch, countyFilter]);
+
+  // Ensure current page is valid when totals change
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    if (currentPage > total) setCurrentPage(1);
+  }, [totalItems, itemsPerPage]);
+
+  // Fetch landlords from server with pagination
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchLandlords = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        params.append("page", String(currentPage));
+        params.append("limit", String(itemsPerPage));
+        if (debouncedSearch) params.append("search", debouncedSearch);
+        if (countyFilter && countyFilter !== "All County/City") params.append("sub", countyFilter);
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/role/LANDLORD?${params.toString()}`;
+        const response = await authenticatedFetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error("Failed to fetch landlords");
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const users = Array.isArray(result.data) ? result.data : (result.data.users || []);
+          const pagination = result.meta?.pagination || result.data.pagination || {};
+
+          const mapped = users.map((u, idx) => {
+            const name = fmtString(u.name);
+            const initials = ((u.name && u.name.trim()) ? u.name : 'NA')
+              .split(' ')
+              .map((p) => p[0] || '')
+              .join('')
+              .toUpperCase()
+              .substring(0, 2);
+            const properties = Number.isFinite(u.propertiesCount) ? u.propertiesCount : (u.profile?.propertiesManaged ?? 0);
+            const tenants = Number.isFinite(u.tenantsCount) ? u.tenantsCount : (u.profile?.totalTenancies ?? 0);
+            return {
+              id: u.id,
+              name,
+              initials,
+              color: COLOR_PALETTE[idx % COLOR_PALETTE.length],
+              sub: fmtString(u.address),
+              address: fmtString(u.address),
+              properties,
+              tenants,
+              mobile: fmtString(u.phone),
+              dob: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A',
+              email: fmtString(u.email),
+            };
+          });
+
+          setLandlords(mapped);
+          setTotalItems(pagination.totalItems ?? users.length ?? 0);
+          setTotalPages(pagination.totalPages ?? Math.max(1, Math.ceil((pagination.totalItems ?? users.length ?? 0) / itemsPerPage)));
+        } else {
+          setLandlords([]);
+          setTotalItems(0);
+          setTotalPages(1);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching landlords:", err);
+          Swal.fire({ title: "Error", text: "Failed to load landlords", icon: "error" });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLandlords();
+    return () => controller.abort();
+  }, [currentPage, itemsPerPage, debouncedSearch, countyFilter, triggerFetch]);
 
   const toggleAll = () =>
     setSelected(selected.length === filtered.length ? [] : filtered.map((l) => l.id));
@@ -51,17 +155,110 @@ export default function AdminLandlordsPage() {
     closeAdd();
   };
 
-  const openEdit = (l) => { setEditing(l); setEditOpen(true); };
+  const openEdit = (l) => {
+    setEditing({
+      ...l,
+      // keep edit inputs empty rather than showing 'N/A'
+      mobile: l.mobile === 'N/A' ? '' : (l.mobile || ''),
+      email: l.email === 'N/A' ? '' : (l.email || ''),
+      sub: l.sub === 'N/A' ? '' : (l.sub || ''),
+    });
+    setEditOpen(true);
+  };
   const closeEdit = () => { setEditing(null); setEditOpen(false); };
-  const handleEdit = (updated) => {
-    setLandlords((p) => p.map(x => x.id === updated.id ? {...x, ...updated} : x));
-    closeEdit();
+  
+  const mapUserToRow = (u, prev = null, idx = 0) => {
+    const name = fmtString(u.name);
+    const initials = ((u.name && u.name.trim()) ? u.name : 'NA')
+      .split(' ')
+      .map((p) => p[0] || '')
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+    const properties = Number.isFinite(u.propertiesCount) ? u.propertiesCount : (u.profile?.propertiesManaged ?? 0);
+    const tenants = Number.isFinite(u.tenantsCount) ? u.tenantsCount : (u.profile?.totalTenancies ?? 0);
+    return {
+      id: u.id,
+      name,
+      initials,
+      color: prev?.color ?? COLOR_PALETTE[idx % COLOR_PALETTE.length],
+      sub: fmtString(u.address),
+      address: fmtString(u.address),
+      properties,
+      tenants,
+      mobile: fmtString(u.phone),
+      dob: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A',
+      email: fmtString(u.email),
+    };
   };
 
-  const handleDelete = (id) => {
-    if (!confirm('Delete landlord?')) return;
-    setLandlords((p) => p.filter(x => x.id !== id));
-    setSelected((s) => s.filter(x => x !== id));
+  const handleEdit = async (updated) => {
+    try {
+      // Prepare payload mapping frontend field names to API
+      const payload = {
+        name: updated.name,
+        email: updated.email,
+        phone: updated.mobile || updated.phone || null,
+        address: updated.sub || updated.address || null,
+      };
+
+      const res = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${updated.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `Failed to update user: ${res.status}`);
+      }
+
+      const result = await res.json();
+      const user = result.data || result.data?.user || null;
+      if (!user) {
+        throw new Error(result.message || "Invalid response from server");
+      }
+
+      // Update local state, preserving existing color when available
+      setLandlords((prev) => prev.map((l, i) => (l.id === updated.id ? mapUserToRow(user, l, i) : l)));
+
+      await Swal.fire({ icon: "success", title: "Updated!", text: "Landlord updated successfully.", timer: 1800, showConfirmButton: false });
+      closeEdit();
+    } catch (err) {
+      console.error("Error updating landlord:", err);
+      await Swal.fire({ icon: "error", title: "Error", text: err.message || "Failed to update landlord" });
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const choice = await Swal.fire({
+      title: 'Delete landlord?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+
+    if (!choice.isConfirmed) return;
+
+    try {
+      const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to delete user (${res.status})`);
+      }
+      setLandlords((p) => p.filter(x => x.id !== id));
+      setSelected((s) => s.filter(x => x !== id));
+      await Swal.fire({ icon: 'success', title: 'Deleted', text: 'Landlord deleted.', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      console.error('Error deleting landlord:', err);
+      await Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to delete landlord' });
+    }
   };
 
   const exportSelected = () => {
@@ -80,7 +277,7 @@ export default function AdminLandlordsPage() {
     const a = document.createElement('a'); a.href = url; a.download = 'landlords.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   };
 
-  const deleteSelected = () => {
+  const deleteSelected = async () => {
     if (selected.length === 0) {
       Swal.fire({
         title: 'No Selection',
@@ -89,9 +286,34 @@ export default function AdminLandlordsPage() {
       });
       return;
     }
-    if (!confirm(`Delete ${selected.length} landlords?`)) return;
-    setLandlords((p) => p.filter(l => !selected.includes(l.id)));
-    setSelected([]);
+
+    const choice = await Swal.fire({
+      title: `Delete ${selected.length} landlords?`,
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+
+    if (!choice.isConfirmed) return;
+
+    try {
+      const promises = selected.map((id) => authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${id}`, { method: 'DELETE' }));
+      const results = await Promise.allSettled(promises);
+
+      const successIds = results.map((r, idx) => (r.status === 'fulfilled' && r.value && r.value.ok ? selected[idx] : null)).filter(Boolean);
+      const failedCount = results.length - successIds.length;
+
+      setLandlords((p) => p.filter((l) => !successIds.includes(l.id)));
+      setSelected([]);
+
+      await Swal.fire({ icon: 'success', title: 'Delete complete', text: `${successIds.length} deleted, ${failedCount} failed`, timer: 2000, showConfirmButton: false });
+    } catch (err) {
+      console.error('Error deleting selected landlords:', err);
+      await Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to delete selected landlords' });
+    }
   };
 
   return (
@@ -141,18 +363,14 @@ export default function AdminLandlordsPage() {
                 <p className="text-xs text-slate-400 mb-0.5">Properties</p>
                 <p className="font-semibold text-slate-700 flex items-center gap-1"><Home size={12} className="text-slate-400" />{landlord.properties}</p>
               </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Tenants</p>
-                <p className="font-semibold text-slate-700 flex items-center gap-1"><Users size={12} className="text-slate-400" />{landlord.tenants}</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Mobile</p>
-                <p className="font-medium text-slate-700">{landlord.mobile}</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Date of Birth</p>
-                <p className="font-medium text-slate-700">{landlord.dob}</p>
-              </div>
+                <div className="bg-slate-50 rounded-lg p-2">
+                  <p className="text-xs text-slate-400 mb-0.5">Tenants</p>
+                  <p className="font-semibold text-slate-700 flex items-center gap-1"><Users size={12} className="text-slate-400" />{landlord.tenants}</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-2">
+                  <p className="text-xs text-slate-400 mb-0.5">Mobile</p>
+                  <p className="font-medium text-slate-700">{landlord.mobile}</p>
+                </div>
             </div>
             <p className="text-xs text-slate-400 truncate">{landlord.email}</p>
             <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
@@ -169,7 +387,16 @@ export default function AdminLandlordsPage() {
           </div>
         ))}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <Pagination total={filtered.length} />
+          <Pagination
+            total={totalItems}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 
@@ -195,9 +422,7 @@ export default function AdminLandlordsPage() {
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Mobile</th>
               
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                <span className="flex whitespace-nowrap items-center gap-1">Date of Birth <ArrowUpDown size={13} className="text-slate-400" /></span>
-              </th>
+              {/* Date of Birth column removed per UI update */}
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Email</th>
               <th className="w-28 px-4 py-3 text-right font-semibold text-slate-600">Action</th>
             </tr>
@@ -228,10 +453,7 @@ export default function AdminLandlordsPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <div className="flex flex-col items-center gap-1 text-slate-700">
-                    <div className="text-sm font-medium text-slate-700">{landlord.properties}</div>
-                    <p className="text-sm text-slate-400">{landlord.properties} properties</p>
-                  </div>
+                  <div className="text-sm font-medium text-slate-700">{landlord.properties}</div>
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div className="text-sm font-medium text-slate-700">{landlord.tenants}</div>
@@ -240,7 +462,7 @@ export default function AdminLandlordsPage() {
                   <p className="text-slate-700 text-sm">{landlord.mobile}</p>
                 </td>
                 
-                <td className="px-4 py-3 text-slate-600 text-sm">{landlord.dob}</td>
+                {/* Date of Birth cell removed per UI update */}
                 <td className="px-4 py-3 text-slate-400 text-sm">{landlord.email}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -259,7 +481,18 @@ export default function AdminLandlordsPage() {
             ))}
           </tbody>
         </table>
-        <Pagination total={filtered.length} />
+        <div className="border-t border-slate-100 px-4 py-3">
+          <Pagination
+            total={totalItems}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
       </div>
       {/* Add / Edit modals */}
       {addOpen && (

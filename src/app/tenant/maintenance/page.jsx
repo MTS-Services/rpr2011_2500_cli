@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
 import Pagination from "@/components/portal/Pagination";
-import { Wrench, Plus, Clock, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Wrench, Plus, Clock, CheckCircle2, AlertCircle, X, Eye } from "lucide-react";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
@@ -72,6 +72,10 @@ export default function TenantMaintenancePage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [tenantProperty, setTenantProperty] = useState(null);
+  const [summary, setSummary] = useState({ totalCostCharged: 0, chargedRequestsCount: 0 });
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Fetch maintenance requests and properties from API
   useEffect(() => {
@@ -90,8 +94,22 @@ export default function TenantMaintenancePage() {
         const requestsData = await requestsResponse.json();
         
         if (requestsData.success && requestsData.data) {
+          // capture summary if present
+          const s = requestsData.data?.summary;
+          setSummary({
+            totalCostCharged: s?.totalCostCharged ?? 0,
+            chargedRequestsCount: s?.chargedRequestsCount ?? 0,
+          });
+
+          // Prefer 'requests' array inside data when present
+          const raw = Array.isArray(requestsData.data.requests)
+            ? requestsData.data.requests
+            : Array.isArray(requestsData.data)
+            ? requestsData.data
+            : [];
+
           // Transform API response to match UI format
-          const transformed = requestsData.data.map((req) => ({
+          const transformed = raw.map((req) => ({
             id: req.id,
             title: req.title,
             desc: req.description,
@@ -102,12 +120,17 @@ export default function TenantMaintenancePage() {
             priorityColor: getPriorityColor(mapPriority(req.priority)),
             apiStatus: req.status,
             propertyName: req.property?.name || "Unknown Property",
+            // preserve raw fields used elsewhere
+            cost: req.cost,
+            isCharged: req.isCharged,
+            chargeNote: req.chargeNote,
           }));
+
           setRequests(transformed);
-          
+
           // Extract tenant's property (all requests should be for same property)
-          if (requestsData.data.length > 0 && requestsData.data[0].property) {
-            setTenantProperty(requestsData.data[0].property);
+          if (raw.length > 0 && raw[0].property) {
+            setTenantProperty(raw[0].property);
           }
         } else {
           setRequests([]);
@@ -187,7 +210,13 @@ export default function TenantMaintenancePage() {
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json();
           if (refreshData.success && refreshData.data) {
-            const transformed = refreshData.data.map((req) => ({
+            const raw = Array.isArray(refreshData.data.requests)
+              ? refreshData.data.requests
+              : Array.isArray(refreshData.data)
+              ? refreshData.data
+              : [];
+
+            const transformed = raw.map((req) => ({
               id: req.id,
               title: req.title,
               desc: req.description,
@@ -198,8 +227,15 @@ export default function TenantMaintenancePage() {
               priorityColor: getPriorityColor(mapPriority(req.priority)),
               apiStatus: req.status,
               propertyName: req.property?.name || "Unknown Property",
+              cost: req.cost,
+              isCharged: req.isCharged,
+              chargeNote: req.chargeNote,
             }));
             setRequests(transformed);
+
+            if (raw.length > 0 && raw[0].property) {
+              setTenantProperty(raw[0].property);
+            }
           }
         }
       } else {
@@ -212,6 +248,27 @@ export default function TenantMaintenancePage() {
       setSubmitting(false);
     }
   }
+
+  // Fetch and show request details in a modal
+  const handleViewDetails = async (id) => {
+    try {
+      setDetailsLoading(true);
+      const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${id}`);
+      if (!res.ok) throw new Error('Failed to fetch details');
+      const result = await res.json();
+      if (result.success && result.data) {
+        setSelectedRequest(result.data);
+        setDetailsOpen(true);
+      } else {
+        Swal.fire('Error', 'Failed to load details', 'error');
+      }
+    } catch (err) {
+      console.error('Error fetching details:', err);
+      Swal.fire('Error', 'Failed to load details', 'error');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   // Pagination logic
   const totalPages = Math.ceil(requests.length / itemsPerPage);
@@ -241,6 +298,20 @@ export default function TenantMaintenancePage() {
         >
           <Plus size={15} /> Report Issue
         </button>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <p className="text-xs text-slate-500 uppercase mb-2">Total Charged</p>
+          <div className="text-2xl font-semibold text-slate-800">€{Number(summary.totalCostCharged ?? 0).toLocaleString()}</div>
+          <p className="text-sm text-slate-400 mt-1">Total amount charged across requests</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <p className="text-xs text-slate-500 uppercase mb-2">Charged Requests</p>
+          <div className="text-2xl font-semibold text-slate-800">{summary.chargedRequestsCount ?? 0}</div>
+          <p className="text-sm text-slate-400 mt-1">Requests marked as charged</p>
+        </div>
       </div>
 
       {/* New Request Form (inline) */}
@@ -344,8 +415,10 @@ export default function TenantMaintenancePage() {
               <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
                 <th className="text-left px-5 py-3">Issue</th>
                 <th className="text-left px-5 py-4">Submitted</th>
+                <th className="text-left px-5 py-4">Cost</th>
                 <th className="text-left px-5 py-4">Priority</th>
                 <th className="text-left px-5 py-4">Status</th>
+                <th className="text-right px-6 py-4">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -363,6 +436,7 @@ export default function TenantMaintenancePage() {
                     </div>
                   </td>
                   <td className="px-5 py-5 text-sm text-slate-500">{r.date}</td>
+                  <td className="px-5 py-5 text-sm text-slate-700">€{r.cost ? Number(r.cost).toLocaleString() : '0'}</td>
                   <td className="px-5 py-5">
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full ${r.priorityColor}`}>
                       {r.priority}
@@ -380,6 +454,11 @@ export default function TenantMaintenancePage() {
                         <option value="Closed">Closed</option>
                       </select>
                     )}
+                  </td>
+                  <td className="px-6 py-5 text-right">
+                    <button onClick={() => handleViewDetails(r.id)} aria-label="View maintenance details" className="inline-flex items-center justify-center px-3 py-2 bg-[#f0fdfa] text-gray-800 rounded-lg transition hover:bg-teal-100">
+                      <Eye size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -420,6 +499,15 @@ export default function TenantMaintenancePage() {
                 )}
               </div>
             </div>
+
+            <div className="mt-3 flex items-center justify-between">
+              <div className="text-sm font-semibold text-slate-700">€{r.cost ? Number(r.cost).toLocaleString() : '0'}</div>
+              {r.isCharged && <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Charged</span>}
+            </div>
+
+            <button onClick={() => handleViewDetails(r.id)} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition mt-3">
+              <Eye size={13} /> View Details
+            </button>
           </div>
         ))}\n      </div>
 
@@ -433,6 +521,95 @@ export default function TenantMaintenancePage() {
             onPageChange={handlePageChange}
             onItemsPerPageChange={handleItemsPerPageChange}
           />
+        </div>
+      )}
+
+      {/* Details Modal */}
+      {detailsOpen && selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/35" onClick={() => setDetailsOpen(false)} />
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg z-50 overflow-hidden max-h-[90vh] overflow-y-auto hide-scrollbar">
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">Maintenance Details</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Request information and charge note</p>
+              </div>
+              <button onClick={() => setDetailsOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition">
+                <X size={20} />
+              </button>
+            </div>
+
+            {detailsLoading ? (
+              <div className="flex items-center justify-center py-12 px-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              </div>
+            ) : (
+              <div className="px-6 py-5 space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Title</p>
+                  <p className="text-sm text-slate-700 font-medium">{selectedRequest.title}</p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Description</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{selectedRequest.description}</p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Property</p>
+                  <p className="text-sm text-slate-700">{selectedRequest.property?.address || selectedRequest.property?.name || "N/A"}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Priority</p>
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${getPriorityColor(mapPriority(selectedRequest.priority))}`}>
+                      {mapPriority(selectedRequest.priority)}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Status</p>
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${getStatusColor(mapStatus(selectedRequest.status))}`}>
+                      {mapStatus(selectedRequest.status)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Reported By</p>
+                  <p className="text-sm text-slate-700">{selectedRequest.reportedBy?.user?.name || selectedRequest.reportedBy?.user?.email || "Unknown"}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Created</p>
+                    <p className="text-sm text-slate-700">{selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Updated</p>
+                    <p className="text-sm text-slate-700">{selectedRequest.updatedAt ? new Date(selectedRequest.updatedAt).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Cost</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-semibold text-slate-700">{selectedRequest.cost != null ? `€${Number(selectedRequest.cost).toLocaleString()}` : '€0'}</div>
+                    {selectedRequest.isCharged && <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Charged</span>}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Charge Note</p>
+                  <p className="text-sm text-slate-600">{selectedRequest.chargeNote ?? 'No charge note'}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setDetailsOpen(false)} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition">Close</button>
+            </div>
+          </div>
         </div>
       )}
         </>
