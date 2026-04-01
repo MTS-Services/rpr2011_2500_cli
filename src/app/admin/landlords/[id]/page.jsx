@@ -663,88 +663,96 @@ export default function AdminLandlordProfilePage() {
               </div>
             ) : (
               <>
-                {/* Mobile cards (visible on small screens) */}
-                <div className="lg:hidden p-3 space-y-3">
-                  {landlordProperties.map((p) => (
-                    <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{p.name || p.address}</p>
-                          <p className="text-xs text-slate-400 truncate">{p.address}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <div className={`text-xs font-semibold px-2 py-1 rounded-full ${p.statusColor}`}>{p.status}</div>
-                          <div className="text-sm font-bold text-slate-900">€{(p.rent ?? 0).toLocaleString()}</div>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="text-xs text-slate-500">Eircode: <span className="text-slate-700 font-medium">{p.eircode}</span></div>
-                        <Link href={`/admin/properties/${p.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
-                          <BadgeCheck size={13} /> View
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Mobile pagination for properties */}
-                {propsTotalItems > propsItemsPerPage && (
-                  <div className="lg:hidden mt-2">
-                    <div className="flex items-center justify-between px-3 py-3 border-t border-slate-100">
-                      <div className="text-sm text-slate-500">{Math.max(1, (propsPage - 1) * propsItemsPerPage + 1)}-{Math.min(propsPage * propsItemsPerPage, propsTotalItems)} of {propsTotalItems}</div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setPropsPage((p) => Math.max(1, p - 1))} disabled={propsPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
-                          <ChevronLeft size={18} />
-                        </button>
-                        <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propsPage}</span>
-                        <button onClick={() => setPropsPage((p) => Math.min(propsTotalPages, p + 1))} disabled={propsPage === propsTotalPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
-                          <ChevronRight size={18} />
-                        </button>
-                      </div>
-                    </div>
+                {landlordProperties.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <p className="text-sm text-slate-500">No data found for this section.</p>
                   </div>
-                )}
-
-                {/* Desktop table (hidden on small screens) */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                        <th className="text-left px-5 py-3">Address</th>
-                        <th className="text-left px-5 py-3">Status</th>
-                        <th className="text-left px-5 py-3">Eircode</th>
-                        <th className="text-left px-5 py-3">Rent</th>
-                        <th className="text-left px-5 py-3">RTB</th>
-                        <th className="text-right px-5 py-3">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
+                ) : (
+                  <>
+                    {/* Mobile cards (visible on small screens) */}
+                    <div className="lg:hidden p-3 space-y-3">
                       {landlordProperties.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-4 font-semibold text-slate-700">{p.name || p.address}</td>
-                          <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${p.statusColor}`}>{p.status}</span></td>
-                          <td className="px-5 py-4 text-slate-600 text-sm">{p.eircode}</td>
-                          <td className="px-5 py-4 font-bold text-slate-700">€{(p.rent ?? 0).toLocaleString()}</td>
-                          <td className="px-5 py-4 text-sm text-slate-500">{p.rtb}</td>
-                          <td className="px-5 py-4 text-right">
+                        <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{p.name || p.address}</p>
+                              <p className="text-xs text-slate-400 truncate">{p.address}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <div className={`text-xs font-semibold px-2 py-1 rounded-full ${p.statusColor}`}>{p.status}</div>
+                              <div className="text-sm font-bold text-slate-900">€{(p.rent ?? 0).toLocaleString()}</div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between">
+                            <div className="text-xs text-slate-500">Eircode: <span className="text-slate-700 font-medium">{p.eircode}</span></div>
                             <Link href={`/admin/properties/${p.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
                               <BadgeCheck size={13} /> View
                             </Link>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
 
-                  <Pagination
-                    total={propsTotalItems}
-                    itemsPerPage={propsItemsPerPage}
-                    currentPage={propsPage}
-                    onPageChange={(p) => setPropsPage(p)}
-                    onItemsPerPageChange={(n) => setPropsItemsPerPage(n)}
-                  />
-                </div>
+                    {/* Mobile pagination for properties */}
+                    {propsTotalItems > propsItemsPerPage && (
+                      <div className="lg:hidden mt-2">
+                        <div className="flex items-center justify-between px-3 py-3 border-t border-slate-100">
+                          <div className="text-sm text-slate-500">{Math.max(1, (propsPage - 1) * propsItemsPerPage + 1)}-{Math.min(propsPage * propsItemsPerPage, propsTotalItems)} of {propsTotalItems}</div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setPropsPage((p) => Math.max(1, p - 1))} disabled={propsPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                              <ChevronLeft size={18} />
+                            </button>
+                            <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propsPage}</span>
+                            <button onClick={() => setPropsPage((p) => Math.min(propsTotalPages, p + 1))} disabled={propsPage === propsTotalPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                              <ChevronRight size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Desktop table (hidden on small screens) */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                            <th className="text-left px-5 py-3">Address</th>
+                            <th className="text-left px-5 py-3">Status</th>
+                            <th className="text-left px-5 py-3">Eircode</th>
+                            <th className="text-left px-5 py-3">Rent</th>
+                            <th className="text-left px-5 py-3">RTB</th>
+                            <th className="text-right px-5 py-3">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {landlordProperties.map((p) => (
+                            <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-5 py-4 font-semibold text-slate-700">{p.name || p.address}</td>
+                              <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${p.statusColor}`}>{p.status}</span></td>
+                              <td className="px-5 py-4 text-slate-600 text-sm">{p.eircode}</td>
+                              <td className="px-5 py-4 font-bold text-slate-700">€{(p.rent ?? 0).toLocaleString()}</td>
+                              <td className="px-5 py-4 text-sm text-slate-500">{p.rtb}</td>
+                              <td className="px-5 py-4 text-right">
+                                <Link href={`/admin/properties/${p.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition">
+                                  <BadgeCheck size={13} /> View
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <Pagination
+                        total={propsTotalItems}
+                        itemsPerPage={propsItemsPerPage}
+                        currentPage={propsPage}
+                        onPageChange={(p) => setPropsPage(p)}
+                        onItemsPerPageChange={(n) => setPropsItemsPerPage(n)}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -797,18 +805,24 @@ export default function AdminLandlordProfilePage() {
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Per-Property Collected vs Pending</h3>
-                <div style={{ height: 260 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#eef2f7" />
-                      <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(value) => [`€${value.toLocaleString()}`, ""]} />
-                      <Bar dataKey="collected" fill="#14b8a6" radius={[6, 6, 0, 0]} />
-                      <Bar dataKey="pending" fill="#0f766e" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {chartData.length === 0 ? (
+                  <div className="h-[260px] flex items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/40">
+                    <p className="text-sm text-slate-500">No finance data found for this section.</p>
+                  </div>
+                ) : (
+                  <div style={{ height: 260 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#eef2f7" />
+                        <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <Tooltip formatter={(value) => [`€${value.toLocaleString()}`, ""]} />
+                        <Bar dataKey="collected" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="pending" fill="#0f766e" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -817,126 +831,134 @@ export default function AdminLandlordProfilePage() {
                   <p className="text-sm text-slate-500">Total Pending: €{(financeOverview?.totalPending ?? 0).toLocaleString()}</p>
                 </div>
 
-                {/* Accordion mobile list */}
-                <div className="p-2 lg:hidden space-y-2">
-                  {paginatedProperties.map((row) => {
-                    const isOpen = expandedProp === row.propertyId;
-                    return (
-                      <div key={row.propertyId} className="border border-slate-100 rounded-lg overflow-hidden bg-white">
-                        <button
-                          onClick={() => setExpandedProp(isOpen ? null : row.propertyId)}
-                          className="w-full p-3 flex items-center justify-between gap-3"
-                        >
-                          <div className="min-w-0 text-left">
-                            <p className="text-sm font-semibold text-slate-800 truncate">{row.propertyName}</p>
-                            <p className="text-xs text-slate-400 truncate">{row.propertyAddress}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-sm font-semibold">€{(row.monthlyRent ?? 0).toLocaleString()}</div>
-                            <ChevronRight size={18} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`} />
-                          </div>
-                        </button>
-
-                        {isOpen && (
-                          <div className="px-3 pb-3 pt-0 border-t border-slate-100">
-                            <div className="grid grid-cols-3 gap-3 text-xs">
-                              <div>
-                                <div className="text-slate-400">Collected</div>
-                                <div className="font-semibold text-slate-800">€{(row.collected ?? 0).toLocaleString()}</div>
+                {totalProperties === 0 ? (
+                  <div className="p-5 text-center text-sm text-slate-500">
+                    No per-property finance data found for this section.
+                  </div>
+                ) : (
+                  <>
+                    {/* Accordion mobile list */}
+                    <div className="p-2 lg:hidden space-y-2">
+                      {paginatedProperties.map((row) => {
+                        const isOpen = expandedProp === row.propertyId;
+                        return (
+                          <div key={row.propertyId} className="border border-slate-100 rounded-lg overflow-hidden bg-white">
+                            <button
+                              onClick={() => setExpandedProp(isOpen ? null : row.propertyId)}
+                              className="w-full p-3 flex items-center justify-between gap-3"
+                            >
+                              <div className="min-w-0 text-left">
+                                <p className="text-sm font-semibold text-slate-800 truncate">{row.propertyName}</p>
+                                <p className="text-xs text-slate-400 truncate">{row.propertyAddress}</p>
                               </div>
-                              <div>
-                                <div className="text-slate-400">Overdue</div>
-                                <div className="font-semibold text-rose-600">€{(row.overdue ?? 0).toLocaleString()}</div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-sm font-semibold">€{(row.monthlyRent ?? 0).toLocaleString()}</div>
+                                <ChevronRight size={18} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`} />
                               </div>
-                              <div>
-                                <div className="text-slate-400">Pending</div>
-                                <div className="font-semibold text-amber-700">€{(row.pending ?? 0).toLocaleString()}</div>
-                              </div>
-                            </div>
+                            </button>
 
-                            <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
-                              <span>Payments: {row.paymentsCount ?? 0}</span>
-                              <Link href={`/admin/properties/${row.propertyId}`} className="text-teal-600 font-semibold text-sm">View</Link>
-                            </div>
+                            {isOpen && (
+                              <div className="px-3 pb-3 pt-0 border-t border-slate-100">
+                                <div className="grid grid-cols-3 gap-3 text-xs">
+                                  <div>
+                                    <div className="text-slate-400">Collected</div>
+                                    <div className="font-semibold text-slate-800">€{(row.collected ?? 0).toLocaleString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-slate-400">Overdue</div>
+                                    <div className="font-semibold text-rose-600">€{(row.overdue ?? 0).toLocaleString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-slate-400">Pending</div>
+                                    <div className="font-semibold text-amber-700">€{(row.pending ?? 0).toLocaleString()}</div>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+                                  <span>Payments: {row.paymentsCount ?? 0}</span>
+                                  <Link href={`/admin/properties/${row.propertyId}`} className="text-teal-600 font-semibold text-sm">View</Link>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
 
-                  {/* Pagination for mobile */}
-                  {totalProperties > PROP_ITEMS_PER_PAGE && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between px-2 py-3 border-t border-slate-100">
-                        <div className="text-sm text-slate-500">{propStartIndex + 1}-{propEndIndex} of {totalProperties}</div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setPropPage((p) => Math.max(1, p - 1))} disabled={propPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
-                            <ChevronLeft size={18} />
-                          </button>
-                          <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propPage}</span>
-                          <button onClick={() => setPropPage((p) => Math.min(totalPropPages, p + 1))} disabled={propPage === totalPropPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
-                            <ChevronRight size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Desktop table */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                        <th className="text-left px-5 py-3">Property</th>
-                        <th className="text-right px-5 py-3">Monthly Rent</th>
-                        <th className="text-right px-5 py-3">Collected</th>
-                        <th className="text-right px-5 py-3">Overdue</th>
-                        <th className="text-right px-5 py-3">Pending</th>
-                        <th className="text-right px-5 py-3">Payments</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {paginatedProperties.map((row) => (
-                        <tr key={row.propertyId} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{row.propertyName}<div className="text-xs text-slate-400">{row.propertyAddress}</div></td>
-                          <td className="px-5 py-4 text-right text-slate-700">€{(row.monthlyRent ?? 0).toLocaleString()}</td>
-                          <td className="px-5 py-4 text-right text-slate-700">€{(row.collected ?? 0).toLocaleString()}</td>
-                          <td className="px-5 py-4 text-right text-rose-600">€{(row.overdue ?? 0).toLocaleString()}</td>
-                          <td className="px-5 py-4 text-right text-amber-700">€{(row.pending ?? 0).toLocaleString()}</td>
-                          <td className="px-5 py-4 text-right text-slate-700">{row.paymentsCount ?? 0}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Desktop pagination */}
-                  {totalProperties > PROP_ITEMS_PER_PAGE && (
-                    <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
-                      <div className="text-sm text-slate-500">{propStartIndex + 1}-{propEndIndex} of {totalProperties}</div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setPropPage((p) => Math.max(1, p - 1))} disabled={propPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
-                          <ChevronLeft size={18} />
-                        </button>
-                        <div className="hidden sm:flex items-center gap-1">
-                          {getPropPageNumbers().map((page, idx) =>
-                            page === "..." ? (
-                              <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-slate-400 font-medium">…</span>
-                            ) : (
-                              <button key={page} onClick={() => setPropPage(page)} className={`w-8 h-8 flex items-center justify-center rounded-lg font-semibold text-sm transition ${propPage === page ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
-                                {page}
+                      {/* Pagination for mobile */}
+                      {totalProperties > PROP_ITEMS_PER_PAGE && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between px-2 py-3 border-t border-slate-100">
+                            <div className="text-sm text-slate-500">{propStartIndex + 1}-{propEndIndex} of {totalProperties}</div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => setPropPage((p) => Math.max(1, p - 1))} disabled={propPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                                <ChevronLeft size={18} />
                               </button>
-                            )
-                          )}
+                              <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propPage}</span>
+                              <button onClick={() => setPropPage((p) => Math.min(totalPropPages, p + 1))} disabled={propPage === totalPropPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                                <ChevronRight size={18} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <span className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propPage}</span>
-                        <button onClick={() => setPropPage((p) => Math.min(totalPropPages, p + 1))} disabled={propPage === totalPropPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
-                          <ChevronRight size={18} />
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                            <th className="text-left px-5 py-3">Property</th>
+                            <th className="text-right px-5 py-3">Monthly Rent</th>
+                            <th className="text-right px-5 py-3">Collected</th>
+                            <th className="text-right px-5 py-3">Overdue</th>
+                            <th className="text-right px-5 py-3">Pending</th>
+                            <th className="text-right px-5 py-3">Payments</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {paginatedProperties.map((row) => (
+                            <tr key={row.propertyId} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{row.propertyName}<div className="text-xs text-slate-400">{row.propertyAddress}</div></td>
+                              <td className="px-5 py-4 text-right text-slate-700">€{(row.monthlyRent ?? 0).toLocaleString()}</td>
+                              <td className="px-5 py-4 text-right text-slate-700">€{(row.collected ?? 0).toLocaleString()}</td>
+                              <td className="px-5 py-4 text-right text-rose-600">€{(row.overdue ?? 0).toLocaleString()}</td>
+                              <td className="px-5 py-4 text-right text-amber-700">€{(row.pending ?? 0).toLocaleString()}</td>
+                              <td className="px-5 py-4 text-right text-slate-700">{row.paymentsCount ?? 0}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Desktop pagination */}
+                      {totalProperties > PROP_ITEMS_PER_PAGE && (
+                        <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
+                          <div className="text-sm text-slate-500">{propStartIndex + 1}-{propEndIndex} of {totalProperties}</div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setPropPage((p) => Math.max(1, p - 1))} disabled={propPage === 1} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                              <ChevronLeft size={18} />
+                            </button>
+                            <div className="hidden sm:flex items-center gap-1">
+                              {getPropPageNumbers().map((page, idx) =>
+                                page === "..." ? (
+                                  <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-slate-400 font-medium">…</span>
+                                ) : (
+                                  <button key={page} onClick={() => setPropPage(page)} className={`w-8 h-8 flex items-center justify-center rounded-lg font-semibold text-sm transition ${propPage === page ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
+                                    {page}
+                                  </button>
+                                )
+                              )}
+                            </div>
+                            <span className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-teal-600 text-white font-semibold text-sm">{propPage}</span>
+                            <button onClick={() => setPropPage((p) => Math.min(totalPropPages, p + 1))} disabled={propPage === totalPropPages} className="p-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 rounded-lg">
+                              <ChevronRight size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

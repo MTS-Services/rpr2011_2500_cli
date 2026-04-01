@@ -86,6 +86,14 @@ export default function AdminDashboardPage() {
   const monthlyRevenue = Array.isArray(systemOverview?.monthlyRevenue)
     ? systemOverview.monthlyRevenue
     : [];
+  const [showAllMonths, setShowAllMonths] = useState(false);
+  const visibleMonths = showAllMonths ? monthlyRevenue : monthlyRevenue.slice(-2);
+  const hasAnyData = Boolean(
+    (profile && Object.keys(profile).length > 0) ||
+    (summary && Object.keys(summary).length > 0) ||
+    (systemOverview && Object.keys(systemOverview).length > 0) ||
+    (monthlyRevenue && monthlyRevenue.length > 0)
+  );
 
   const kpis = useMemo(
     () => [
@@ -144,12 +152,27 @@ export default function AdminDashboardPage() {
     );
   }
 
+  // If the API returned successfully but no meaningful dashboard data was provided,
+  // show a small, friendly message instead of empty placeholders.
+  if (dashboardResponse && !hasAnyData) {
+    return (
+      <div className="min-h-[45vh] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-slate-800">No dashboard data available</p>
+          <p className="text-sm text-slate-500 mt-2">No data was returned from the server. Please check back later.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Admin Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">
-          {dashboardResponse?.message || "Admin dashboard retrieved successfully"}
+          {profile?.name
+            ? `Welcome back, ${profile.name}. Here's an overview of your organisation's current status.`
+            : "Overview of system status."}
         </p>
         <p className="text-xs text-slate-500 mt-3">
           Last updated: {formatDateTime(dashboardResponse?.timestamp)}
@@ -219,7 +242,7 @@ export default function AdminDashboardPage() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-800">Monthly Revenue</h2>
-          <p className="text-sm text-slate-500 mt-1">Data from `systemOverview.monthlyRevenue`</p>
+          <p className="text-sm text-slate-500 mt-1">Monthly collections and payment breakdowns.</p>
         </div>
         <div className="p-4 lg:p-5">
           {monthlyRevenue.length === 0 ? (
@@ -227,12 +250,13 @@ export default function AdminDashboardPage() {
               No monthly revenue data available.
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              {monthlyRevenue.map((entry, index) => (
-                <div
-                  key={entry?.month || entry?.period || index}
-                  className="rounded-xl border border-slate-100 bg-slate-50/50 p-4"
-                >
+            <>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {visibleMonths.map((entry, index) => (
+                  <div
+                    key={entry?.month || entry?.period || index}
+                    className="rounded-xl border border-slate-100 bg-slate-50/50 p-4"
+                  >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="text-base font-bold text-slate-800">{entry?.period || "Monthly Revenue"}</h3>
@@ -286,8 +310,21 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {monthlyRevenue.length > 2 && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMonths((s) => !s)}
+                    className="px-4 py-2 text-sm rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                  >
+                    {showAllMonths ? "Show less" : "Show all months"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
