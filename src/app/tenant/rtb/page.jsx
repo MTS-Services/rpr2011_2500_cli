@@ -14,6 +14,32 @@ const formatDate = (dateString) => {
   });
 };
 
+const getRegistrationBadgeStyles = (registration) => {
+  switch ((registration || "").toUpperCase()) {
+    case "REGISTERED":
+      return "bg-teal-100 text-teal-700";
+    case "PENDING":
+      return "bg-amber-100 text-amber-700";
+    case "UNREGISTERED":
+    case "EXPIRED":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
+
+const getTenancyStatusBadgeStyles = (status) => {
+  switch ((status || "").toUpperCase()) {
+    case "ACTIVE":
+      return "bg-teal-100 text-teal-700";
+    case "TERMINATED":
+    case "ENDED":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
+
 function InfoRow({ label, value, mono = false }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 py-3 border-b border-slate-100 last:border-0">
@@ -34,13 +60,17 @@ export default function TenantRTBPage() {
       setError(null);
       try {
         const res = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/my/rtb`
+          `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/tenancies/my/rtb`
         );
         if (!res.ok) {
-          throw new Error("Failed to fetch RTB registration details");
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.message || "Failed to fetch RTB registration details");
         }
         const json = await res.json();
-        setRtbData(json.data);
+        if (!json?.success) {
+          throw new Error(json?.message || "Failed to fetch RTB registration details");
+        }
+        setRtbData(json?.data || null);
       } catch (err) {
         console.warn("Error fetching RTB details:", err);
         setError(err.message);
@@ -68,7 +98,7 @@ export default function TenantRTBPage() {
     );
   }
 
-  if (error || !rtbData) {
+  if (error) {
     return (
       <TenantShell>
         <div className="mb-3 xl:mb-5">
@@ -91,6 +121,28 @@ export default function TenantRTBPage() {
       </TenantShell>
     );
   }
+
+  if (!rtbData) {
+    return (
+      <TenantShell>
+        <div className="mb-3 xl:mb-5">
+          <h1 className="text-3xl font-bold text-slate-800">RTB Registration</h1>
+          <p className="text-slate-500 mt-1 text-sm">
+            Your tenancy registration with the Residential Tenancies Board (RTB)
+          </p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
+          <p className="text-sm font-semibold text-slate-700">No RTB registration details found</p>
+          <p className="text-sm text-slate-500 mt-1">There is currently no RTB data available for your tenancy.</p>
+        </div>
+      </TenantShell>
+    );
+  }
+
+  const propertyDisplay = [rtbData?.property?.address, rtbData?.property?.county]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <TenantShell>
       <div className="mb-3 xl:mb-5">
@@ -112,15 +164,16 @@ export default function TenantRTBPage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h2 className="text-xl font-bold text-slate-800">Registration Status</h2>
+                  <h2 className="text-xl font-bold text-slate-800">Registration Overview</h2>
                   <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full ${
-                    rtbData?.rtbStatus === "Active"
-                      ? "bg-teal-100 text-teal-700"
-                      : rtbData?.rtbStatus === "Inactive"
-                      ? "bg-slate-100 text-slate-700"
-                      : "bg-amber-100 text-amber-700"
+                    getRegistrationBadgeStyles(rtbData?.rtbRegistration)
                   }`}>
-                    <CheckCircle2 size={14} /> {rtbData?.rtbStatus || "—"}
+                    <CheckCircle2 size={14} /> {rtbData?.rtbRegistration || "—"}
+                  </span>
+                  <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full ${
+                    getTenancyStatusBadgeStyles(rtbData?.status)
+                  }`}>
+                    <Shield size={14} /> {rtbData?.status || "—"}
                   </span>
                 </div>
                 <p className="text-sm text-slate-500 mt-1.5">
@@ -138,11 +191,14 @@ export default function TenantRTBPage() {
               <h3 className="text-base font-bold text-slate-800">Registration Details</h3>
             </div>
             <div className="px-5 py-2">
+              <InfoRow label="Tenancy ID" value={rtbData?.tenancyId || "—"} mono />
               <InfoRow label="RTB Registration Number" value={rtbData?.rtbNumber || "—"} mono />
+              <InfoRow label="RTB Status" value={rtbData?.rtbStatus || "—"} />
+              <InfoRow label="RTB Registration" value={rtbData?.rtbRegistration || "—"} />
               <InfoRow label="Registration Date" value={formatDate(rtbData?.rtbRegistrationDate)} />
               <InfoRow label="Registration Expiry" value={formatDate(rtbData?.rtbExpiryDate)} />
               <InfoRow label="Tenancy Start Date" value={formatDate(rtbData?.startDate)} />
-              <InfoRow label="Property" value={`${rtbData?.property?.address}, ${rtbData?.property?.county}` || "—"} />
+              <InfoRow label="Property" value={propertyDisplay || "—"} />
               <InfoRow label="Landlord" value={rtbData?.landlord?.name || "—"} />
             </div>
           </div>
@@ -158,17 +214,20 @@ export default function TenantRTBPage() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Tenant</p>
                 <p className="text-sm font-semibold text-slate-800">{rtbData?.tenant?.name || "—"}</p>
                 <p className="text-xs text-slate-500 mt-1">{rtbData?.tenant?.email || "—"}</p>
+                <p className="text-xs text-slate-400 mt-1 font-mono">{rtbData?.tenant?.id || "—"}</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-xl">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Landlord</p>
                 <p className="text-sm font-semibold text-slate-800">{rtbData?.landlord?.name || "—"}</p>
                 <p className="text-xs text-slate-500 mt-1">{rtbData?.landlord?.email || "—"}</p>
+                <p className="text-xs text-slate-400 mt-1 font-mono">{rtbData?.landlord?.id || "—"}</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-xl">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Property</p>
                 <p className="text-sm font-semibold text-slate-800">{rtbData?.property?.name || "—"}</p>
                 <p className="text-xs text-slate-500 mt-1">{rtbData?.property?.address || "—"}</p>
                 <p className="text-xs text-slate-500">{rtbData?.property?.county || "—"}</p>
+                <p className="text-xs text-slate-400 mt-1 font-mono">{rtbData?.property?.id || "—"}</p>
               </div>
             </div>
           </div>

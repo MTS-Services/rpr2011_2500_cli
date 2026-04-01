@@ -76,32 +76,124 @@ export default function AdminPropertiesPage() {
   const [editFormData, setEditFormData] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [landlords, setLandlords] = useState([]);
+  const [creatingProperty, setCreatingProperty] = useState(false);
 
-  // Fetch properties from API
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
+  const loadProperties = async ({ showLoader = false, signal } = {}) => {
+    try {
+      if (showLoader) {
         setLoading(true);
-        const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
-        );
-        if (!response.ok) {
-          throw new Error(`Failed to fetch properties: ${response.statusText}`);
-        }
-        const data = await response.json();
-        if (data.success && data.data) {
-          const transformed = data.data.map(prop => transformProperty(prop));
-          setProperties(transformed);
-        }
-      } catch (err) {
+        setError(null);
+      }
+
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
+        { signal }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch properties: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        const rows = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.data?.properties)
+          ? data.data.properties
+          : [];
+        const transformed = rows.map((prop) => transformProperty(prop));
+        setProperties(transformed);
+      } else {
+        setProperties([]);
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
         console.error("Error fetching properties:", err);
         setError(err.message || "Failed to load properties");
-      } finally {
+      }
+    } finally {
+      if (showLoader) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchProperties();
+  const loadLandlords = async ({ signal } = {}) => {
+    try {
+      let page = 1;
+      const limit = 100;
+      let hasNextPage = true;
+      const allLandlords = [];
+
+      while (hasNextPage) {
+        const params = new URLSearchParams();
+        params.append("page", String(page));
+        params.append("limit", String(limit));
+
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/role/LANDLORD?${params.toString()}`,
+          { signal }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch landlords");
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+          break;
+        }
+
+        const users = Array.isArray(result.data)
+          ? result.data
+          : Array.isArray(result.data?.users)
+          ? result.data.users
+          : [];
+
+        allLandlords.push(...users);
+
+        const pagination = result.meta?.pagination || result.data?.pagination || {};
+        if (typeof pagination.hasNextPage === "boolean") {
+          hasNextPage = pagination.hasNextPage;
+        } else if (pagination.currentPage && pagination.totalPages) {
+          hasNextPage = pagination.currentPage < pagination.totalPages;
+        } else {
+          hasNextPage = users.length === limit;
+        }
+
+        page += 1;
+        if (page > 50) hasNextPage = false;
+      }
+
+      const uniqueLandlords = Array.from(
+        new Map(
+          allLandlords
+            .filter((user) => user?.id)
+            .map((user) => [
+              user.id,
+              {
+                id: user.id,
+                name: user.name || user.email || "Unknown Landlord",
+              },
+            ])
+        ).values()
+      ).sort((a, b) => a.name.localeCompare(b.name));
+
+      setLandlords(uniqueLandlords);
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error("Error fetching landlords:", err);
+        setLandlords([]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadProperties({ showLoader: true, signal: controller.signal });
+    loadLandlords({ signal: controller.signal });
+    return () => controller.abort();
   }, []);
 
   const filtered = properties;
@@ -111,9 +203,57 @@ export default function AdminPropertiesPage() {
   const toggleRow = (id) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
-  const handleAddProperty = (formData) => {
-    console.log("New property:", formData);
-    // TODO: Add API call to save the property
+  const handleAddProperty = async (formData) => {
+    try {
+      setCreatingProperty(true);
+
+      const payload = new FormData();
+      payload.append("name", formData.name.trim());
+      payload.append("propertyType", formData.propertyType);
+      payload.append("bedrooms", String(Number(formData.bedrooms) || 0));
+      payload.append("bathrooms", String(Number(formData.bathrooms) || 0));
+      payload.append("address", (formData.address || "").trim());
+      payload.append("county", (formData.county || "").trim());
+      payload.append("eircode", (formData.eircode || "").trim());
+      payload.append("landlordId", formData.landlordId);
+      payload.append("status", formData.status || "VACANT");
+      payload.append("rent", String(Number(formData.rent) || 0));
+
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
+        {
+          method: "POST",
+          body: payload,
+        }
+      );
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || `Failed to create property (${response.status})`);
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to create property");
+      }
+
+      await loadProperties({ showLoader: false });
+      await Swal.fire({
+        icon: "success",
+        title: "Property Added!",
+        text: "Property has been created successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      return true;
+    } catch (err) {
+      console.error("Error creating property:", err);
+      await Swal.fire("Error", err.message || "Failed to create property", "error");
+      return false;
+    } finally {
+      setCreatingProperty(false);
+    }
   };
 
   const openEditModal = (prop) => {
@@ -181,15 +321,7 @@ export default function AdminPropertiesPage() {
           timer: 2000,
           showConfirmButton: false,
         });
-        // Refresh properties list
-        const propResponse = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
-        );
-        const propData = await propResponse.json();
-        if (propData.success && propData.data) {
-          const transformed = propData.data.map((prop) => transformProperty(prop));
-          setProperties(transformed);
-        }
+        await loadProperties({ showLoader: false });
         closeEditModal();
       }
     } catch (err) {
@@ -460,6 +592,8 @@ export default function AdminPropertiesPage() {
         isOpen={addPropertyModalOpen}
         onClose={() => setAddPropertyModalOpen(false)}
         onSubmit={handleAddProperty}
+        landlords={landlords}
+        submitting={creatingProperty}
       />
 
       {/* Edit Property Modal */}

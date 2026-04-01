@@ -1,54 +1,79 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import Swal from "sweetalert2";
 
-export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
+const INITIAL_FORM_DATA = {
+  name: "",
+  propertyType: "",
+  bedrooms: "0",
+  bathrooms: "0",
+  address: "",
+  county: "",
+  eircode: "",
+  landlordId: "",
+  status: "VACANT",
+  rent: "0",
+};
+
+const PROPERTY_TYPES = ["House", "Townhouse", "Other"];
+const PROPERTY_STATUSES = [
+  { label: "Vacant", value: "VACANT" },
+  { label: "Let", value: "LET" },
+  { label: "Notice Served", value: "NOTICE_SERVED" },
+];
+
+export default function AddPropertyModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  landlords = [],
+  submitting = false,
+}) {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    bedrooms: "",
-    bathrooms: "",
-    address: "",
-    county: "",
-    eircode: "",
-    landlord: "",
+    ...INITIAL_FORM_DATA,
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({ ...INITIAL_FORM_DATA });
+    }
+  }, [isOpen]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.type || !formData.landlord) {
+    if (!formData.name || !formData.propertyType || !formData.landlordId) {
       Swal.fire({
-        title: 'Incomplete Form',
-        text: 'Please fill in all required fields',
-        icon: 'warning',
+        title: "Incomplete Form",
+        text: "Please fill in all required fields",
+        icon: "warning",
       });
       return;
     }
-    onSubmit(formData);
-    setFormData({
-      name: "",
-      type: "",
-      bedrooms: "",
-      bathrooms: "",
-      address: "",
-      county: "",
-      eircode: "",
-      landlord: "",
+
+    const success = await onSubmit({
+      ...formData,
+      bedrooms: Number(formData.bedrooms) || 0,
+      bathrooms: Number(formData.bathrooms) || 0,
+      rent: Number(formData.rent) || 0,
     });
-    onClose();
+
+    if (success) {
+      setFormData({ ...INITIAL_FORM_DATA });
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" />
+      <div className="fixed inset-0 bg-black/40" onClick={() => !submitting && onClose()} />
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 flex flex-col max-h-[90vh]">
         {/* Sticky Header */}
         <div className="sticky top-0 flex items-start justify-between p-6 border-b border-slate-200 bg-white rounded-t-xl">
@@ -56,7 +81,12 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
             <h3 className="text-xl font-semibold text-slate-800">Add New Property</h3>
             <p className="text-base text-slate-500 mt-1">Fill in the property details below</p>
           </div>
-          <button aria-label="Close" onClick={onClose} className="text-slate-500 hover:text-slate-700 flex-shrink-0">
+          <button
+            aria-label="Close"
+            onClick={() => !submitting && onClose()}
+            className="text-slate-500 hover:text-slate-700 flex-shrink-0"
+            disabled={submitting}
+          >
             <X size={18} />
           </button>
         </div>
@@ -84,17 +114,17 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
               Property Type <span className="text-red-500">*</span>
             </label>
             <select
-              name="type"
-              value={formData.type}
+              name="propertyType"
+              value={formData.propertyType}
               onChange={handleFormChange}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             >
               <option value="">Select a type</option>
-              <option value="apartment">Apartment</option>
-              <option value="house">House</option>
-              <option value="townhouse">Townhouse</option>
-              <option value="studio">Studio</option>
-              <option value="other">Other</option>
+              {PROPERTY_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -171,21 +201,56 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
               Assigned Landlord <span className="text-red-500">*</span>
             </label>
             <select
-              name="landlord"
-              value={formData.landlord}
+              name="landlordId"
+              value={formData.landlordId}
               onChange={handleFormChange}
+              disabled={landlords.length === 0}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             >
-              <option value="">Select a landlord</option>
-              <option value="Edward O'Neill">Edward O'Neill</option>
-              <option value="Joan Doyle">Joan Doyle</option>
-              <option value="Zoe Finnegan">Zoe Finnegan</option>
-              <option value="Brendan Walsh">Brendan Walsh</option>
-              <option value="Mary Bennett">Mary Bennett</option>
-              <option value="Mark Sheehan">Mark Sheehan</option>
-              <option value="Tony Brennan">Tony Brennan</option>
+              <option value="">
+                {landlords.length === 0 ? "No landlords found" : "Select a landlord"}
+              </option>
+              {landlords.map((landlord) => (
+                <option key={landlord.id} value={landlord.id}>
+                  {landlord.name}
+                </option>
+              ))}
             </select>
           </div>
+
+          {/* Status & Rent */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-base font-medium text-slate-700 mb-1">Status</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              >
+                {PROPERTY_STATUSES.map((statusOption) => (
+                  <option key={statusOption.value} value={statusOption.value}>
+                    {statusOption.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-base font-medium text-slate-700 mb-1">Rent</label>
+              <input
+                type="number"
+                name="rent"
+                value={formData.rent}
+                onChange={handleFormChange}
+                min="0"
+                step="0.01"
+                placeholder="e.g., 2500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Image removed per request */}
         </form>
 
         {/* Sticky Footer */}
@@ -193,6 +258,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
           <button
             type="button"
             onClick={onClose}
+            disabled={submitting}
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition"
           >
             Cancel
@@ -200,9 +266,10 @@ export default function AddPropertyModal({ isOpen, onClose, onSubmit }) {
           <button
             type="submit"
             form="addPropertyForm"
+            disabled={submitting}
             className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition"
           >
-            Add Property
+            {submitting ? "Adding..." : "Add Property"}
           </button>
         </div>
       </div>

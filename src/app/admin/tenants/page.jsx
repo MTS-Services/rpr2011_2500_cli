@@ -7,6 +7,7 @@ import {
   Edit,
   Trash,
 } from "lucide-react";
+import Pagination from "@/components/portal/Pagination";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
@@ -24,52 +25,110 @@ export default function AdminTenantsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [triggerFetch, setTriggerFetch] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const fetchTenants = async () => {
-    try {
-      setLoading(true);
-      const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch tenants");
-      }
-      const result = await response.json();
-      const tenantUsers = result.data
-        .filter((user) => user.role === "TENANT")
-        .map((user) => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone || "N/A",
-          status: user.profileSummary?.status || "ACTIVE",
-          createdAt: user.createdAt,
-        }));
-      setTenants(tenantUsers);
-    } catch (error) {
-      console.error("Error fetching tenants:", error);
-      Swal.fire({
-        title: "Error!",
-        text: "Failed to load tenants",
-        icon: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Debounce search to reduce API calls
   useEffect(() => {
-    fetchTenants();
-  }, [triggerFetch]);
+    const id = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+    return () => clearTimeout(id);
+  }, [searchTerm]);
 
-  const filtered = tenants
-    .filter((tenant) => {
-      const searchMatch =
-        tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tenant.email.toLowerCase().includes(searchTerm.toLowerCase());
-      return searchMatch;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // Fetch tenants from server with pagination
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+
+        const params = new URLSearchParams();
+        params.append("role", "TENANT");
+        params.append("page", String(currentPage));
+        params.append("limit", String(itemsPerPage));
+        if (debouncedSearch) params.append("search", debouncedSearch);
+
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?${params.toString()}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch tenants");
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          const users = Array.isArray(result.data)
+            ? result.data
+            : Array.isArray(result.data?.users)
+            ? result.data.users
+            : [];
+
+          const tenantUsers = users
+            .filter((user) => !user.role || (user.role || "").toUpperCase() === "TENANT")
+            .map((user) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone || "N/A",
+              status: user.profileSummary?.status || "ACTIVE",
+              createdAt: user.createdAt,
+            }));
+
+          const pagination = result.meta?.pagination || result.data?.pagination || {};
+          const total = pagination.totalItems ?? tenantUsers.length ?? 0;
+
+          setTenants(tenantUsers);
+          setSelectedTenants([]);
+          setTotalItems(total);
+          setTotalPages(
+            pagination.totalPages ?? Math.max(1, Math.ceil(total / itemsPerPage))
+          );
+        } else {
+          setTenants([]);
+          setSelectedTenants([]);
+          setTotalItems(0);
+          setTotalPages(1);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching tenants:", error);
+          Swal.fire({
+            title: "Error!",
+            text: "Failed to load tenants",
+            icon: "error",
+          });
+          setTenants([]);
+          setSelectedTenants([]);
+          setTotalItems(0);
+          setTotalPages(1);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTenants();
+    return () => controller.abort();
+  }, [currentPage, itemsPerPage, debouncedSearch, triggerFetch]);
+
+  // Ensure current page is valid when totals change
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    if (currentPage > total) setCurrentPage(1);
+  }, [totalItems, itemsPerPage]);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [debouncedSearch]);
+
+  // Current page data is already server-filtered and server-paginated
+  const filtered = tenants;
 
   const handleAdd = () => {
     setShowAddModal(true);
@@ -225,7 +284,7 @@ export default function AdminTenantsPage() {
 
   const toggleSelectAll = (checked) => {
     if (checked) {
-      setSelectedTenants(filtered.map((t) => t.id));
+      setSelectedTenants(paginatedTenants.map((t) => t.id));
     } else {
       setSelectedTenants([]);
     }
@@ -317,13 +376,13 @@ export default function AdminTenantsPage() {
         </div>
       )}
 
-      {!loading && tenants.length === 0 && (
+      {!loading && totalItems === 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
           <p className="text-slate-600">No tenants found.</p>
         </div>
       )}
 
-      {!loading && tenants.length > 0 && (
+      {!loading && totalItems > 0 && (
         <>
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
@@ -409,127 +468,153 @@ export default function AdminTenantsPage() {
                 </div>
               </div>
             ))}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <Pagination
+                total={totalItems}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
 
           {/* Table — visible lg+ */}
-          <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
-            <table className="w-full text-base table-fixed">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
-                  <th className="w-10 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedTenants.length === filtered.length &&
-                        filtered.length > 0
-                      }
-                      onChange={(e) => toggleSelectAll(e.target.checked)}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-2 focus:ring-teal-500 cursor-pointer"
-                      aria-label="Select all tenants"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                    Phone
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                    Status
-                  </th>
-                  <th className="w-28 px-4 py-3 text-right font-semibold text-slate-700">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((tenant) => (
-                  <tr
-                    key={tenant.id}
-                    className={`hover:bg-slate-50/70 transition ${
-                      selectedTenants.includes(tenant.id) ? "bg-teal-50/40" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-3">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hidden lg:block">
+            <div className="overflow-x-auto">
+              <table className="w-full text-base table-fixed">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                    <th className="w-10 px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={selectedTenants.includes(tenant.id)}
-                        onChange={() => toggleSelectRow(tenant.id)}
+                        checked={
+                          selectedTenants.length === filtered.length &&
+                          filtered.length > 0
+                        }
+                        onChange={(e) => toggleSelectAll(e.target.checked)}
                         className="rounded border-slate-300 text-teal-600 focus:ring-2 focus:ring-teal-500 cursor-pointer"
-                        aria-label={`Select ${tenant.name}`}
+                        aria-label="Select all tenants"
                       />
-                    </td>
-                    <td className="px-4 py-3 truncate">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full ${getColorForInitials(
-                            tenant.name
-                          )} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
-                        >
-                          {getInitials(tenant.name)}
-                        </div>
-                        <p className="font-semibold text-slate-900 text-sm">
-                          {tenant.name}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 text-sm truncate">
-                      {tenant.email}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 text-sm truncate">
-                      {tenant.phone}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-sm font-semibold ${
-                          STATUS_STYLES[tenant.status] ||
-                          "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {tenant.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          aria-label={`Edit ${tenant.name}`}
-                          onClick={() => openEditModal(tenant)}
-                          className="w-9 h-9 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 text-slate-600 rounded-md transition"
-                          title="Edit tenant"
-                        >
-                          <Edit size={16} aria-hidden="true" />
-                        </button>
-                        <button
-                          aria-label={`Delete ${tenant.name}`}
-                          onClick={() => {
-                            Swal.fire({
-                              title: "Delete Tenant?",
-                              text: `Are you sure you want to delete ${tenant.name}? This action cannot be undone.`,
-                              icon: "warning",
-                              showCancelButton: true,
-                              confirmButtonColor: "#dc2626",
-                              cancelButtonColor: "#6b7280",
-                              confirmButtonText: "Delete",
-                            }).then((result) => {
-                              if (result.isConfirmed) {
-                                handleDeleteTenant(tenant.id);
-                              }
-                            });
-                          }}
-                          className="w-9 h-9 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded-md transition"
-                          title="Delete tenant"
-                        >
-                          <Trash size={16} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </td>
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Phone
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Status
+                    </th>
+                    <th className="w-28 px-4 py-3 text-right font-semibold text-slate-700">
+                      Action
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.map((tenant) => (
+                    <tr
+                      key={tenant.id}
+                      className={`hover:bg-slate-50/70 transition ${
+                        selectedTenants.includes(tenant.id) ? "bg-teal-50/40" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedTenants.includes(tenant.id)}
+                          onChange={() => toggleSelectRow(tenant.id)}
+                          className="rounded border-slate-300 text-teal-600 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                          aria-label={`Select ${tenant.name}`}
+                        />
+                      </td>
+                      <td className="px-4 py-3 truncate">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full ${getColorForInitials(
+                              tenant.name
+                            )} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
+                          >
+                            {getInitials(tenant.name)}
+                          </div>
+                          <p className="font-semibold text-slate-900 text-sm">
+                            {tenant.name}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 text-sm truncate">
+                        {tenant.email}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 text-sm truncate">
+                        {tenant.phone}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-sm font-semibold ${
+                            STATUS_STYLES[tenant.status] ||
+                            "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {tenant.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            aria-label={`Edit ${tenant.name}`}
+                            onClick={() => openEditModal(tenant)}
+                            className="w-9 h-9 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 text-slate-600 rounded-md transition"
+                            title="Edit tenant"
+                          >
+                            <Edit size={16} aria-hidden="true" />
+                          </button>
+                          <button
+                            aria-label={`Delete ${tenant.name}`}
+                            onClick={() => {
+                              Swal.fire({
+                                title: "Delete Tenant?",
+                                text: `Are you sure you want to delete ${tenant.name}? This action cannot be undone.`,
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#dc2626",
+                                cancelButtonColor: "#6b7280",
+                                confirmButtonText: "Delete",
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  handleDeleteTenant(tenant.id);
+                                }
+                              });
+                            }}
+                            className="w-9 h-9 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded-md transition"
+                            title="Delete tenant"
+                          >
+                            <Trash size={16} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t border-slate-100 px-4 py-3">
+              <Pagination
+                total={totalItems}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
 
           {/* Add Modal */}
