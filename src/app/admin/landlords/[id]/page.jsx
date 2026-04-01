@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, User, Home, FileText, ClipboardList,
@@ -102,6 +102,103 @@ export default function AdminLandlordProfilePage() {
   const [activeTab, setActiveTab] = useState("properties");
   const [showPps, setShowPps] = useState(false);
 
+  const router = useRouter();
+
+  // Landlord data (fetched from API)
+  const [landlord, setLandlord] = useState(null);
+  const [landlordLoading, setLandlordLoading] = useState(false);
+  const [landlordError, setLandlordError] = useState(null);
+  const [contactLoading, setContactLoading] = useState(false);
+
+  // Handle starting a conversation
+  const handleStartConversation = async () => {
+    if (!landlord?.id) return;
+    try {
+      setContactLoading(true);
+      const res = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ participantId: landlord.id }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to start conversation (${res.status})`);
+      }
+      const result = await res.json();
+      const conversationId = result.data?.id || result.data?.conversationId;
+      if (conversationId) {
+        router.push(`/admin/messages?conversationId=${conversationId}`);
+      } else {
+        throw new Error('No conversation ID returned');
+      }
+    } catch (err) {
+      console.error('Error starting conversation:', err);
+      alert('Failed to start conversation: ' + (err.message || 'Unknown error'));
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  // Fetch landlord details
+  useEffect(() => {
+    let mounted = true;
+    const fetchLandlord = async () => {
+      if (!id) return;
+      try {
+        setLandlordLoading(true);
+        setLandlordError(null);
+        const res = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${id}`
+        );
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Failed to load landlord (${res.status})`);
+        }
+        const result = await res.json();
+        if (result.success && result.data) {
+          const user = result.data;
+          // Generate initials
+          const initials = ((user.name && user.name.trim()) ? user.name : 'NA')
+            .split(' ')
+            .map((p) => p[0] || '')
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+          // Get a color (simple approach: use hash of id)
+          const colors = ['bg-teal-500', 'bg-indigo-500', 'bg-orange-500', 'bg-sky-600', 'bg-emerald-600'];
+          const colorIndex = (user.id ? user.id.charCodeAt(0) : 0) % colors.length;
+          if (mounted) {
+            setLandlord({
+              id: user.id,
+              name: user.name || 'N/A',
+              initials,
+              color: colors[colorIndex],
+              email: user.email || 'N/A',
+              mobile: user.phone || 'N/A',
+              address: user.address || 'N/A',
+              dob: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+              pps: user.ppsNumber || 'N/A',
+            });
+          }
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (err) {
+        if (mounted) {
+          setLandlordError(err.message || 'Failed to load landlord');
+          console.error('Landlord fetch error:', err);
+        }
+      } finally {
+        if (mounted) setLandlordLoading(false);
+      }
+    };
+    fetchLandlord();
+    return () => { mounted = false; };
+  }, [id]);
+
   // Landlord properties (loaded from API)
   const [landlordProperties, setLandlordProperties] = useState([]);
   const [propsLoading, setPropsLoading] = useState(false);
@@ -142,7 +239,7 @@ export default function AdminLandlordProfilePage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState(null);
   const [auditPage, setAuditPage] = useState(1);
-  const [auditItemsPerPage, setAuditItemsPerPage] = useState(8);
+  const [auditItemsPerPage, setAuditItemsPerPage] = useState(10);
   const [auditTotalItems, setAuditTotalItems] = useState(0);
   const [auditTotalPages, setAuditTotalPages] = useState(1);
 
@@ -490,8 +587,25 @@ export default function AdminLandlordProfilePage() {
         <ArrowLeft size={15} /> Back to Landlords
       </Link>
 
+      {/* Loading State */}
+      {landlordLoading && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            <span className="ml-3 text-slate-600">Loading landlord...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {landlordError && !landlordLoading && (
+        <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-4">
+          <p className="text-red-800 font-medium">Error: {landlordError}</p>
+        </div>
+      )}
+
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5">
+      {!landlordLoading && landlord && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-4">
             <div className={`w-14 h-14 rounded-2xl ${landlord.color} flex items-center justify-center text-white text-xl font-bold shrink-0`}>
@@ -503,17 +617,19 @@ export default function AdminLandlordProfilePage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href={`/admin/messages?compose=1&to=landlord:${landlord.id}&name=${encodeURIComponent(landlord.name)}&email=${encodeURIComponent(landlord.email)}`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition"
+            <button
+              onClick={handleStartConversation}
+              disabled={contactLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Mail size={14} className="text-teal-600" /> Contact
-            </a>
+              <Mail size={14} className="text-teal-600" /> {contactLoading ? 'Starting...' : 'Contact'}
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
+      {!landlordLoading && landlord && (
       <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 overflow-x-auto shadow-sm">
         {TABS.map(({ key, label, Icon }) => (
           <button
@@ -526,6 +642,7 @@ export default function AdminLandlordProfilePage() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Overview removed by request */}
 

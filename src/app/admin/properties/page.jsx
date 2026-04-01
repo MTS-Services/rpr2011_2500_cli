@@ -46,9 +46,7 @@ function transformProperty(apiProp) {
     statusProp,
     statusRTB: statusProp,
     landlord: apiProp.landlord?.name || "Unknown",
-    tenant: "–", // Will need to fetch from tenancies if available
     rent: `€${apiProp.rent || "0"}`,
-    mprn: apiProp.mprn || "N/A",
     rtb,
     rtbStyle,
     bedrooms: apiProp.bedrooms,
@@ -300,10 +298,6 @@ export default function AdminPropertiesPage() {
                 <p className="font-medium text-slate-700 truncate">{p.landlord}</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Tenant</p>
-                <p className="font-medium text-slate-700 truncate">{p.tenant}</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-xs text-slate-400 mb-0.5">Rent</p>
                 <p className="font-semibold text-slate-800">{p.rent}</p>
               </div>
@@ -359,11 +353,7 @@ export default function AdminPropertiesPage() {
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
                 <span className="flex items-center gap-1">Landlord </span>
               </th>
-              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
-                <span className="flex items-center gap-1">Tenant </span>
-              </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">Rent</th>
-              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">MPRN</th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
                 <span className="flex items-center gap-1">RTB # </span>
               </th>
@@ -396,11 +386,7 @@ export default function AdminPropertiesPage() {
                 <td className="w-48 px-3 py-3">
                   <p className="text-slate-800 font-medium text-base truncate">{p.landlord}</p>
                 </td>
-                <td className="w-48 px-3 py-3">
-                  <p className="text-slate-700 text-base font-medium truncate">{p.tenant}</p>
-                </td>
                 <td className="w-48 px-3 py-3 font-semibold text-slate-800 text-base">{p.rent}</td>
-                <td className="w-48 px-3 py-3 text-slate-600 text-base">{p.mprn}</td>
                 <td className="w-48 px-3 py-3">
                   <span className={`flex items-center gap-1 text-base font-medium ${p.rtbStyle}`}>
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" />
@@ -458,9 +444,7 @@ export default function AdminPropertiesPage() {
               <img src={activeProp.img} alt={activeProp.name} className="w-full h-40 object-cover rounded-md sm:col-span-1" />
               <div className="sm:col-span-2 space-y-2">
                 <p className="text-sm"><strong>Landlord:</strong> {activeProp.landlord}</p>
-                <p className="text-sm"><strong>Tenant:</strong> {activeProp.tenant}</p>
                 <p className="text-sm"><strong>Rent:</strong> {activeProp.rent}</p>
-                <p className="text-sm"><strong>MPRN:</strong> {activeProp.mprn}</p>
                 <p className="text-sm"><strong>RTB #:</strong> <span className={activeProp.rtbStyle}>{activeProp.rtb}</span></p>
                 <p className="text-sm"><strong>Status:</strong> {activeProp.statusProp}</p>
               </div>

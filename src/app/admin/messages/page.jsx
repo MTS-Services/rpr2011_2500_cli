@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { MessageSquare, Send, Search, ArrowLeft, Plus, Copy, Check } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
 import { usePortalAuth } from "@/context/PortalAuthContext";
@@ -31,6 +32,7 @@ const ALL_LANDLORDS = [
 
 export default function AdminMessagesPage() {
   const { user: currentUser } = usePortalAuth();
+  const searchParams = useSearchParams();
   const [convos, setConvos]         = useState([]);
   const [activeId, setActiveId]     = useState(null);
   const [text, setText]             = useState("");
@@ -104,7 +106,19 @@ export default function AdminMessagesPage() {
         });
 
         setConvos(formattedConvos);
-        if (formattedConvos.length > 0) {
+        
+        // Check if a specific conversation was requested via query params
+        const conversationIdFromQuery = searchParams.get('conversationId');
+        if (conversationIdFromQuery) {
+          // Set active to the requested conversation
+          const foundConvo = formattedConvos.find(c => c.id === conversationIdFromQuery);
+          if (foundConvo) {
+            setActiveId(conversationIdFromQuery);
+          } else if (formattedConvos.length > 0) {
+            // Fallback to first if not found
+            setActiveId(formattedConvos[0].id);
+          }
+        } else if (formattedConvos.length > 0) {
           setActiveId(formattedConvos[0].id);
         }
       } catch (error) {
@@ -115,7 +129,7 @@ export default function AdminMessagesPage() {
     };
 
     fetchConvos();
-  }, []);
+  }, [searchParams]);
 
   // Fetch messages for active conversation
   useEffect(() => {

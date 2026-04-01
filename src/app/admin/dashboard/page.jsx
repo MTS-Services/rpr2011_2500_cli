@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/utils/authFetch";
 import {
   Building2,
   Users,
   Wrench,
   FolderOpen,
-  Wallet,
   CreditCard,
-  DollarSign,
   Loader2,
-  Plus,
-  FileText,
-  Upload,
+  User,
 } from "lucide-react";
 
 /* ─── Sub-components ──────────────────────────── */
@@ -43,9 +38,18 @@ function formatCurrency(amount) {
   }).format(Number(amount));
 }
 
+function formatDateTime(value) {
+  if (!value) return "-";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-IE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(dt);
+}
+
 export default function AdminDashboardPage() {
-  const router = useRouter();
-  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardResponse, setDashboardResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -63,7 +67,7 @@ export default function AdminDashboardPage() {
         }
 
         const json = await response.json();
-        setDashboardData(json?.data || null);
+        setDashboardResponse(json || null);
       } catch (err) {
         console.error("Error fetching admin dashboard:", err);
         setError(err?.message || "Failed to load admin dashboard");
@@ -75,9 +79,13 @@ export default function AdminDashboardPage() {
     fetchDashboard();
   }, []);
 
+  const dashboardData = dashboardResponse?.data || {};
   const profile = dashboardData?.profile || {};
   const summary = dashboardData?.summary || {};
   const systemOverview = dashboardData?.systemOverview || {};
+  const monthlyRevenue = Array.isArray(systemOverview?.monthlyRevenue)
+    ? systemOverview.monthlyRevenue
+    : [];
 
   const kpis = useMemo(
     () => [
@@ -113,6 +121,13 @@ export default function AdminDashboardPage() {
     [summary]
   );
 
+  const breakdownStyles = {
+    paid: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    pending: "bg-amber-50 text-amber-700 border-amber-100",
+    late: "bg-orange-50 text-orange-700 border-orange-100",
+    overdue: "bg-rose-50 text-rose-700 border-rose-100",
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-[45vh] flex items-center justify-center">
@@ -131,131 +146,149 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-4">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Welcome, {profile?.name || "Admin"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => router.push('/admin/documents')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-lg shadow-sm transition">
-            <Upload size={15} className="text-slate-500" />
-            <span className="hidden xl:inline">Upload Document</span>
-          </button>
-          <button onClick={() => router.push('/admin/tenancies')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-lg shadow-sm transition">
-            <FileText size={15} className="text-slate-500" />
-            <span className="hidden xl:inline">Add Tenancy</span>
-          </button>
-          <button onClick={() => router.push('/admin/properties')} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-            <Plus size={16} />
-            <span className="hidden xl:inline">Add Property</span>
-          </button>
-        </div>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Admin Dashboard</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          {dashboardResponse?.message || "Admin dashboard retrieved successfully"}
+        </p>
+        <p className="text-xs text-slate-500 mt-3">
+          Last updated: {formatDateTime(dashboardResponse?.timestamp)}
+        </p>
       </div>
 
-      {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {kpis.map((k) => (
           <KpiCard key={k.label} {...k} />
         ))}
       </div>
 
-      {/* RTB Registration Overview */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/30">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <FileText size={18} className="text-teal-600" />
-            RTB Registration Summary
+            <User size={18} className="text-slate-600" />
+            Profile
           </h2>
-          <button 
-            onClick={() => router.push('/admin/rtb')}
-            className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition"
-          >
-            Manage RTB →
-          </button>
-        </div>
-        <div className="p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: "Registered", value: summary?.rtbStatus?.REGISTERED ?? 0, color: "text-teal-600", bg: "bg-teal-50" },
-              { label: "Pending", value: summary?.rtbStatus?.PENDING ?? 0, color: "text-amber-600", bg: "bg-amber-50" },
-              { label: "Missing", value: summary?.rtbStatus?.MISSING ?? 0, color: "text-rose-600", bg: "bg-rose-50" },
-              { label: "Unknown", value: summary?.rtbStatus?.UNKNOWN ?? 0, color: "text-slate-600", bg: "bg-slate-50" },
-            ].map((stat, i) => (
-              <div key={i} className={`${stat.bg} p-4 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md cursor-pointer hover:-translate-y-1 duration-300 flex flex-col justify-center`} onClick={() => router.push('/admin/rtb')}>
-                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-tight sm:tracking-wider leading-none mb-2">{stat.label}</p>
-                <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* System overview */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">System Overview</h2>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 lg:p-5">
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-700">Users</h3>
-              <Users size={16} className="text-sky-600" />
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{systemOverview?.users?.total ?? 0}</p>
-            <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
-              <span>Landlords: {systemOverview?.users?.landlords ?? 0}</span>
-              <span>Tenants: {systemOverview?.users?.tenants ?? 0}</span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-700">Payments</h3>
-              <CreditCard size={16} className="text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{systemOverview?.payments?.total ?? 0}</p>
-            <p className="mt-3 text-sm text-slate-600">
-              Overdue: <span className="font-semibold">{systemOverview?.payments?.overdue ?? 0}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-4">
+            <p className="text-slate-600">
+              ID: <span className="font-semibold text-slate-800">{profile?.id || "-"}</span>
+            </p>
+            <p className="text-slate-600">
+              Role: <span className="font-semibold text-slate-800">{profile?.role || "-"}</span>
+            </p>
+            <p className="text-slate-600">
+              Name: <span className="font-semibold text-slate-800">{profile?.name || "-"}</span>
+            </p>
+            <p className="text-slate-600">
+              Phone: <span className="font-semibold text-slate-800">{profile?.phone || "-"}</span>
+            </p>
+            <p className="text-slate-600 md:col-span-2">
+              Email: <span className="font-semibold text-slate-800">{profile?.email || "-"}</span>
             </p>
           </div>
+        </div>
 
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-700">Monthly Revenue</h3>
-              <DollarSign size={16} className="text-amber-600" />
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h2 className="text-lg font-bold text-slate-800">System Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-700">Users</h3>
+                <Users size={16} className="text-sky-600" />
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{systemOverview?.users?.total ?? 0}</p>
+              <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
+                <span>Landlords: {systemOverview?.users?.landlords ?? 0}</span>
+                <span>Tenants: {systemOverview?.users?.tenants ?? 0}</span>
+              </div>
             </div>
-            <p className="text-sm text-slate-500 mb-2">{systemOverview?.monthlyRevenue?.period || "Current Period"}</p>
-            <div className="space-y-1.5 text-sm text-slate-700">
-              <p>Expected: <span className="font-semibold">{formatCurrency(systemOverview?.monthlyRevenue?.totalExpected)}</span></p>
-              <p>Paid: <span className="font-semibold">{formatCurrency(systemOverview?.monthlyRevenue?.totalPaid)}</span></p>
-              <p>Payments Count: <span className="font-semibold">{systemOverview?.monthlyRevenue?.paymentsCount?.id ?? 0}</span></p>
+
+            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-700">Payments</h3>
+                <CreditCard size={16} className="text-emerald-600" />
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{systemOverview?.payments?.total ?? 0}</p>
+              <p className="mt-3 text-sm text-slate-600">
+                Overdue: <span className="font-semibold">{systemOverview?.payments?.overdue ?? 0}</span>
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-bold text-slate-800">Admin Profile</h2>
-          <Wallet size={18} className="text-slate-500" />
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-slate-800">Monthly Revenue</h2>
+          <p className="text-sm text-slate-500 mt-1">Data from `systemOverview.monthlyRevenue`</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <p className="text-slate-600">
-            Name: <span className="font-semibold text-slate-800">{profile?.name || "-"}</span>
-          </p>
-          <p className="text-slate-600">
-            Role: <span className="font-semibold text-slate-800">{profile?.role || "-"}</span>
-          </p>
-          <p className="text-slate-600">
-            Email: <span className="font-semibold text-slate-800">{profile?.email || "-"}</span>
-          </p>
-          <p className="text-slate-600">
-            Phone: <span className="font-semibold text-slate-800">{profile?.phone || "-"}</span>
-          </p>
+        <div className="p-4 lg:p-5">
+          {monthlyRevenue.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-500">
+              No monthly revenue data available.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {monthlyRevenue.map((entry, index) => (
+                <div
+                  key={entry?.month || entry?.period || index}
+                  className="rounded-xl border border-slate-100 bg-slate-50/50 p-4"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-800">{entry?.period || "Monthly Revenue"}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">{entry?.month || "-"}</p>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
+                      Collection: {entry?.collectionRate ?? 0}%
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                    <div className="rounded-lg bg-white border border-slate-100 p-2.5">
+                      <p className="text-slate-500 text-xs">Expected</p>
+                      <p className="font-semibold text-slate-800">{formatCurrency(entry?.totalExpected ?? 0)}</p>
+                    </div>
+                    <div className="rounded-lg bg-white border border-slate-100 p-2.5">
+                      <p className="text-slate-500 text-xs">Paid</p>
+                      <p className="font-semibold text-slate-800">{formatCurrency(entry?.totalPaid ?? 0)}</p>
+                    </div>
+                    <div className="rounded-lg bg-white border border-slate-100 p-2.5">
+                      <p className="text-slate-500 text-xs">Outstanding</p>
+                      <p className="font-semibold text-slate-800">{formatCurrency(entry?.totalOutstanding ?? 0)}</p>
+                    </div>
+                    <div className="rounded-lg bg-white border border-slate-100 p-2.5">
+                      <p className="text-slate-500 text-xs">Payments Count</p>
+                      <p className="font-semibold text-slate-800">{entry?.totalPaymentsCount ?? 0}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Breakdown</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { key: "paid", label: "Paid" },
+                        { key: "pending", label: "Pending" },
+                        { key: "late", label: "Late" },
+                        { key: "overdue", label: "Overdue" },
+                      ].map((item) => {
+                        const breakdown = entry?.breakdown?.[item.key] || {};
+                        return (
+                          <div
+                            key={item.key}
+                            className={`rounded-lg border p-2.5 ${breakdownStyles[item.key]}`}
+                          >
+                            <p className="text-xs font-semibold">{item.label}</p>
+                            <p className="text-xs mt-1">Count: {breakdown?.count ?? 0}</p>
+                            <p className="text-xs">Amount: {formatCurrency(breakdown?.amount ?? 0)}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -9,12 +9,6 @@ import Swal from "sweetalert2";
 import Pagination from "@/components/portal/Pagination";
 import { authenticatedFetch } from "@/utils/authFetch";
 
-const VIS_STYLE = {
-  TENANT: "bg-teal-100 text-teal-700",
-  LANDLORD: "bg-amber-100 text-amber-700",
-  ADMIN: "bg-slate-100 text-slate-600",
-};
-
 const TYPE_STYLE = {
   LEASE: "bg-teal-100 text-teal-700",
   INVOICE: "bg-teal-100 text-teal-700",
@@ -65,7 +59,6 @@ export default function AdminDocumentsPage() {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
-  const [visPopoverId, setVisPopoverId] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -323,13 +316,6 @@ export default function AdminDocumentsPage() {
         </div>
       )}
 
-      {/* No Results State */}
-      {!loading && !error && filtered.length === 0 && docs.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-          <p className="text-slate-600">No documents match your current filters.</p>
-        </div>
-      )}
-
       {/* Filters - always visible when not loading */}
       {!loading && !error && (
       <div className="flex flex-wrap items-center gap-2">
@@ -360,6 +346,13 @@ export default function AdminDocumentsPage() {
         {/* <div className="flex-1" /> */}
         {/* actions select removed as requested */}
       </div>
+      )}
+
+      {/* No Results State */}
+      {!loading && !error && filtered.length === 0 && docs.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <p className="text-slate-600">No documents match your current filters.</p>
+        </div>
       )}
 
       {/* Content - show when there is data OR when upload modal is open */}
@@ -648,7 +641,6 @@ export default function AdminDocumentsPage() {
               <th className="px-3 py-3 text-left font-semibold text-slate-600">
                 <span className="flex items-center gap-1">Property <ArrowUpDown size={12} className="text-slate-400" /></span>
               </th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">Visibility</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Uploaded By</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Uploaded</th>
               <th className="w-20 px-3 py-3 text-right font-semibold text-slate-600">Action</th>
@@ -688,44 +680,6 @@ export default function AdminDocumentsPage() {
                   {doc.property.split("\n").map((line, i) => (
                     <p key={i} className={`text-sm ${i === 0 ? "text-slate-700 font-medium" : "text-slate-400"}`}>{line}</p>
                   ))}
-                </td>
-                <td className="px-3 py-3 relative">
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const items = doc.visibility || [];
-                      if (items.length === 0) return null;
-                      if (items.length === 1) {
-                        const v = items[0];
-                        return (
-                          <span className={`px-2 py-0.5 rounded-md text-sm font-medium ${VIS_STYLE[v] || "bg-slate-100 text-slate-600"}`}>{v}</span>
-                        );
-                      }
-                      const count = items.length;
-                      return (
-                        <>
-                          <button
-                            onClick={() => setVisPopoverId(visPopoverId === doc.id ? null : doc.id)}
-                            aria-expanded={visPopoverId === doc.id}
-                            className="px-2 py-0.5 rounded-md text-sm font-medium bg-slate-100 text-slate-600"
-                          >
-                            {count}+ 
-                          </button>
-                          {visPopoverId === doc.id && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={() => setVisPopoverId(null)} />
-                              <div className="absolute right-0 top-full mt-2 z-50 w-44 bg-white border border-slate-200 rounded-md shadow-lg p-3">
-                                <div className="flex flex-col gap-2">
-                                  {items.map((v, idx) => (
-                                    <span key={idx} className={`px-2 py-1 rounded-md text-sm font-medium ${VIS_STYLE[v] || "bg-slate-100 text-slate-600"}`}>{v}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
                 </td>
                 <td className="px-3 py-3 text-slate-700 text-sm font-medium">{doc.uploader}</td>
                 <td className="px-3 py-3 text-slate-400 text-sm">{doc.age}</td>

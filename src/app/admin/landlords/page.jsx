@@ -150,9 +150,61 @@ export default function AdminLandlordsPage() {
   const openAdd = () => setAddOpen(true);
   const closeAdd = () => setAddOpen(false);
 
-  const handleAdd = (newL) => {
-    setLandlords((p) => [{ id: (p[p.length - 1]?.id || 0) + 1, initials: newL.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(), color: 'bg-slate-400', sub: newL.sub || '', properties: 0, tenants: 0, mobile: newL.mobile||'', pps: '', pps2: '', dob: '', email: newL.email||'' }, ...p]);
-    closeAdd();
+  // Replace client-side mock add with server-backed registration
+  const handleAddNewLandlord = async (newL) => {
+    try {
+      const payload = {
+        ...newL,
+        role: "LANDLORD",
+      };
+
+      const res = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to create landlord (${res.status})`);
+      }
+
+      setAddOpen(false);
+      await Swal.fire({
+        title: "Success!",
+        text: "Landlord created successfully.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // trigger a reload of the landlords list
+      setTriggerFetch((prev) => prev + 1);
+    } catch (err) {
+      console.error("Error creating landlord:", err);
+      await Swal.fire({
+        title: "Error!",
+        text: `Failed to create landlord: ${err.message}`,
+        icon: "error",
+      });
+    }
+  };
+
+  const handleAddSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    handleAddNewLandlord({
+      name: formData.get("name"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+      phone: formData.get("phone") || formData.get("mobile"),
+      address: formData.get("address") || formData.get("sub"),
+      ppsNumber: formData.get("ppsNumber"),
+      pps2: formData.get("pps2"),
+      dateOfBirth: formData.get("dateOfBirth"),
+    });
   };
 
   const openEdit = (l) => {
@@ -502,30 +554,46 @@ export default function AdminLandlordsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-slate-800">Add Landlord</h3>
-                <p className="text-sm text-slate-500 mt-1">Create a landlord (client-side mock).</p>
+                <p className="text-sm text-slate-500 mt-1">Create a landlord.</p>
               </div>
               <button aria-label="Close" onClick={closeAdd} className="text-slate-500 hover:text-slate-700">✕</button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); const f=e.target; handleAdd({ name: f.name.value, email: f.email.value, mobile: f.mobile.value, sub: f.sub.value }); }} className="mt-4 space-y-3">
+            <form onSubmit={handleAddSubmit} className="mt-4 space-y-3">
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Full name</label>
-                <input name="name" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="addName" className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+                <input id="addName" name="name" placeholder="e.g., John Doe" required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Email</label>
-                <input name="email" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="addEmail" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input id="addEmail" name="email" type="email" placeholder="e.g., john@example.com" required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Mobile</label>
-                <input name="mobile" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="addPassword" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                <input id="addPassword" name="password" type="password" placeholder="e.g., SecurePass123!" required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">Sub / Town</label>
-                <input name="sub" className="w-full px-3 py-2 border border-slate-200 rounded-lg" />
+                <label htmlFor="addPhone" className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                <input id="addPhone" name="phone" type="tel" placeholder="e.g., +353 87 123 4567" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label htmlFor="addAddress" className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                <input id="addAddress" name="address" placeholder="e.g., 123 Main Street, Dublin" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label htmlFor="addPpsNumber" className="block text-sm font-medium text-slate-700 mb-1">PPS Number</label>
+                <input id="addPpsNumber" name="ppsNumber" placeholder="e.g., 1234567AB" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label htmlFor="addPps2" className="block text-sm font-medium text-slate-700 mb-1">PPS2</label>
+                <input id="addPps2" name="pps2" placeholder="e.g., 7654321" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label htmlFor="addDateOfBirth" className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                <input id="addDateOfBirth" name="dateOfBirth" type="date" placeholder="mm/dd/yyyy" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
               </div>
               <div className="flex items-center gap-2 justify-end mt-4">
-                <button type="button" onClick={closeAdd} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md">Create</button>
+                <button type="button" onClick={closeAdd} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 rounded-md font-medium">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 text-white rounded-md font-medium">Add Landlord</button>
               </div>
             </form>
           </div>
