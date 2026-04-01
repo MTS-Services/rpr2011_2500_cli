@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { authenticatedFetch } from "@/utils/authFetch";
 import PortalShell from "@/components/portal/PortalShell";
+import Pagination from "@/components/portal/Pagination";
 import {
   Home,
   User,
@@ -26,48 +27,36 @@ import Link from "next/link";
 /* ─── Empty fallback for when API data isn't available ─── */
 const EMPTY_PROPERTY = {
   id: "",
-  name: "",
-  address: "",
-  area: "",
-  propertyType: "",
-  type: "",
-  bedrooms: null,
-  bathrooms: null,
-  mprn: "",
-  rent: "",
-  rentDue: "",
-  rentLate: null,
+  name: "N/A",
+  address: "N/A",
+  area: "N/A",
+  propertyType: "N/A",
+  type: "N/A",
+  bedrooms: "N/A",
+  bathrooms: "N/A"  ,
+  mprn: "N/A",
+  rent: "N/A",
+  rentDue: "N/A",
+  rentLate: "N/A",
   tenant: {
-    name: "",
-    email: "",
-    phone: "",
-    since: "",
+    name: "N/A",
+    email: "N/A",
+    phone: "N/A",
+    since: "N/A",
   },
   tenancy: {
-    rtbNumber: "",
-    registrationDate: "",
-    expiryDate: "",
-    leaseStart: "",
-    leaseEnd: "",
-    rentReviewDate: "",
-    rentReviewFrequency: "",
-    noticeGiven: "",
-    noticePeriod: "",
+    rtbNumber: "N/A",
+    registrationDate: "N/A",
+    expiryDate: "N/A",
+    leaseStart: "N/A",
+    leaseEnd: "N/A",
+    rentReviewDate: "N/A",
+    rentReviewFrequency: "N/A",
+    noticeGiven: "N/A",
+    noticePeriod: "N/A",
   },
   image: null,
 };
-
-const documents = [
-  { name: "Lease Agreement 2022.pdf", type: "Lease", date: "Oct 10, 2022", size: "248 KB" },
-  { name: "RTB Registration Cert.pdf", type: "RTB Registration", date: "Nov 5, 2022", size: "134 KB" },
-  { name: "Plumbing Invoice #0042.pdf", type: "Invoice", date: "Feb 28, 2024", size: "72 KB" },
-  { name: "Annual Inspection Report.pdf", type: "Inspection", date: "Jan 15, 2024", size: "320 KB" },
-];
-
-const maintenance = [
-  { issue: "Shower broken", priority: "Medium", status: "In Progress", updated: "1 day ago" },
-  { issue: "Leaky kitchen sink pipe", priority: "High", status: "Scheduled (30 Apr 2024)", updated: "8 days ago" },
-];
 
 const TABS = [
   { key: "overview",      label: "Overview",         Icon: Home },
@@ -102,6 +91,11 @@ const rentStatusStyle = {
 };
 
 const docTypeColors = {
+  LEASE: "bg-blue-50 text-blue-700",
+  RTB_REGISTRATION: "bg-purple-50 text-purple-700",
+  STATEMENT: "bg-teal-50 text-teal-700",
+  INSPECTION: "bg-amber-50 text-amber-700",
+  INVOICE: "bg-rose-50 text-rose-700",
   Lease: "bg-blue-50 text-blue-700",
   "RTB Registration": "bg-purple-50 text-purple-700",
   Statement: "bg-teal-50 text-teal-700",
@@ -124,6 +118,13 @@ function InfoRow({ label, value, mono = false }) {
   );
 }
 
+function formatDisplayDate(dateValue) {
+  if (!dateValue) return "—";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export default function PropertyProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
@@ -132,10 +133,44 @@ export default function PropertyProfilePage() {
   const [fetchedRentSummary, setFetchedRentSummary] = useState(null);
   const [fetchedRentCalendar, setFetchedRentCalendar] = useState(null);
   const [fetchedRentPayments, setFetchedRentPayments] = useState(null);
+  const [fetchedRtb, setFetchedRtb] = useState(null);
   const [fetchedMaintenance, setFetchedMaintenance] = useState(null);
   const [fetchedDocuments, setFetchedDocuments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [rtbLoading, setRtbLoading] = useState(false);
+  const [rtbError, setRtbError] = useState(null);
+
+  // Server-side pagination & filter state for payments
+  const [rentPaymentsPage, setRentPaymentsPage] = useState(1);
+  const [rentPaymentsLimit, setRentPaymentsLimit] = useState(5);
+  const [rentPaymentsTotal, setRentPaymentsTotal] = useState(0);
+  const [rentPaymentsTotalPages, setRentPaymentsTotalPages] = useState(0);
+  const [rentPaymentsLoading, setRentPaymentsLoading] = useState(false);
+  const [rentPaymentsError, setRentPaymentsError] = useState(null);
+  const [rentPaymentsStatus, setRentPaymentsStatus] = useState("ALL");
+
+  // Server-side pagination state for documents
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const [documentsLimit] = useState(5);
+  const [documentsTotal, setDocumentsTotal] = useState(0);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState(null);
+
+  // Server-side pagination state for maintenance requests
+  const [maintenancePage, setMaintenancePage] = useState(1);
+  const [maintenanceLimit] = useState(5);
+  const [maintenanceTotal, setMaintenanceTotal] = useState(0);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+  const [maintenanceError, setMaintenanceError] = useState(null);
+
+  useEffect(() => {
+    setDocumentsPage(1);
+  }, [id]);
+
+  useEffect(() => {
+    setMaintenancePage(1);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -168,7 +203,6 @@ export default function PropertyProfilePage() {
           const tenants = tenantsData.data || [];
           // Filter tenants for this property
           const propertyTenants = tenants.filter(t => t.property && t.property.id === id);
-          console.log("Property tenants:", propertyTenants);
           setFetchedTenants(propertyTenants);
         }
 
@@ -196,47 +230,9 @@ export default function PropertyProfilePage() {
           console.warn("Failed to fetch rent calendar:", err);
         }
 
-        // Fetch rent payment history
-        const rentPaymentsUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/rent-payments/landlord/property/${id}`;
-        try {
-          const rentPaymentsRes = await authenticatedFetch(rentPaymentsUrl);
-          if (rentPaymentsRes.ok) {
-            const rentPaymentsData = await rentPaymentsRes.json();
-            setFetchedRentPayments(rentPaymentsData.data || []);
-          }
-        } catch (err) {
-          console.warn("Failed to fetch rent payments:", err);
-        }
+        // Rent payments are fetched separately with server-side pagination
 
-        // Fetch maintenance requests
-        const maintenanceUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/maintenance/landlord`;
-        try {
-          const maintenanceRes = await authenticatedFetch(maintenanceUrl);
-          if (maintenanceRes.ok) {
-            const maintenanceData = await maintenanceRes.json();
-            const allMaintenance = maintenanceData.data || [];
-            // Filter maintenance for this specific property
-            const propertyMaintenance = allMaintenance.filter(m => m.propertyId === id);
-            setFetchedMaintenance(propertyMaintenance);
-          }
-        } catch (err) {
-          console.warn("Failed to fetch maintenance:", err);
-        }
-
-        // Fetch documents
-        const documentsUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/documents?propertyId=${id}`;
-        try {
-          const documentsRes = await authenticatedFetch(documentsUrl);
-          if (documentsRes.ok) {
-            const documentsData = await documentsRes.json();
-            const allDocuments = documentsData.data || [];
-            // Filter documents for this specific property
-            const propertyDocuments = allDocuments.filter(d => d.propertyId === id);
-            setFetchedDocuments(propertyDocuments);
-          }
-        } catch (err) {
-          console.warn("Failed to fetch documents:", err);
-        }
+        // Documents are fetched separately with server-side pagination
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err.message || String(err));
@@ -248,10 +244,189 @@ export default function PropertyProfilePage() {
     fetchData();
   }, [id]);
 
+  // Fetch rent payments (server-side pagination + status filter)
+  useEffect(() => {
+    if (!id) return;
+    const controller = new AbortController();
+
+    const fetchPayments = async () => {
+      setRentPaymentsLoading(true);
+      setRentPaymentsError(null);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", String(rentPaymentsPage));
+        params.append("limit", String(rentPaymentsLimit));
+        if (rentPaymentsStatus && rentPaymentsStatus !== "ALL") {
+          params.append("status", rentPaymentsStatus);
+        }
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/rent-payments/landlord/property/${id}?${params.toString()}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(res.statusText || "Failed to fetch payments");
+        const json = await res.json();
+        const items = Array.isArray(json.data) ? json.data : [];
+        setFetchedRentPayments(items);
+
+        const pagination = json.meta?.pagination || {};
+        setRentPaymentsTotal(pagination.totalItems || items.length);
+        setRentPaymentsTotalPages(pagination.totalPages || (items.length ? 1 : 0));
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching rent payments:", err);
+          setRentPaymentsError(err.message || String(err));
+          setFetchedRentPayments([]);
+        }
+      } finally {
+        setRentPaymentsLoading(false);
+      }
+    };
+
+    fetchPayments();
+    return () => controller.abort();
+  }, [id, rentPaymentsPage, rentPaymentsLimit, rentPaymentsStatus]);
+
+  // Fetch documents (server-side pagination + property filter)
+  useEffect(() => {
+    if (!id) return;
+
+    const controller = new AbortController();
+
+    const fetchDocuments = async () => {
+      setDocumentsLoading(true);
+      setDocumentsError(null);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", String(documentsPage));
+        params.append("limit", String(documentsLimit));
+        params.append("propertyId", id);
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/documents?${params.toString()}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          throw new Error(res.statusText || "Failed to fetch documents");
+        }
+
+        const json = await res.json();
+        const rows = Array.isArray(json.data) ? json.data : [];
+        // Keep a client-side guard in case backend returns mixed properties.
+        const propertyRows = rows.filter((d) => d.propertyId === id || d.property?.id === id);
+        setFetchedDocuments(propertyRows);
+
+        const pagination = json.meta?.pagination || {};
+        setDocumentsTotal(pagination.totalItems || propertyRows.length);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching documents:", err);
+          setDocumentsError(err.message || String(err));
+          setFetchedDocuments([]);
+          setDocumentsTotal(0);
+        }
+      } finally {
+        setDocumentsLoading(false);
+      }
+    };
+
+    fetchDocuments();
+    return () => controller.abort();
+  }, [id, documentsPage, documentsLimit]);
+
+  // Fetch maintenance requests (server-side pagination + property filter)
+  useEffect(() => {
+    if (!id) return;
+
+    const controller = new AbortController();
+
+    const fetchMaintenance = async () => {
+      setMaintenanceLoading(true);
+      setMaintenanceError(null);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", String(maintenancePage));
+        params.append("limit", String(maintenanceLimit));
+        params.append("propertyId", id);
+
+        const url = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/maintenance/landlord?${params.toString()}`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          throw new Error(res.statusText || "Failed to fetch maintenance requests");
+        }
+
+        const json = await res.json();
+        const payload = json.data;
+        const rows = Array.isArray(payload?.requests)
+          ? payload.requests
+          : Array.isArray(payload)
+          ? payload
+          : [];
+
+        // Keep a guard in case backend returns mixed properties.
+        const propertyRows = rows.filter((m) => m.propertyId === id || m.property?.id === id);
+        setFetchedMaintenance(propertyRows);
+
+        const pagination = payload?.pagination || json.meta?.pagination || {};
+        setMaintenanceTotal(pagination.totalItems || propertyRows.length);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching maintenance requests:", err);
+          setMaintenanceError(err.message || String(err));
+          setFetchedMaintenance([]);
+          setMaintenanceTotal(0);
+        }
+      } finally {
+        setMaintenanceLoading(false);
+      }
+    };
+
+    fetchMaintenance();
+    return () => controller.abort();
+  }, [id, maintenancePage, maintenanceLimit]);
+
   // Get the first active tenant for this property
   const activeTenant = fetchedTenants && fetchedTenants.length > 0 
     ? fetchedTenants.find(t => t.tenancyStatus === "ACTIVE") || fetchedTenants[0]
     : null;
+  const activeTenancyId = activeTenant?.tenancyId || activeTenant?.id || null;
+
+  // Fetch RTB details by tenancy id
+  useEffect(() => {
+    if (!activeTenancyId) {
+      setFetchedRtb(null);
+      setRtbError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchRtbDetails = async () => {
+      setRtbLoading(true);
+      setRtbError(null);
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/tenancies/${activeTenancyId}/rtb`;
+        const res = await authenticatedFetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          throw new Error(res.statusText || "Failed to fetch RTB details");
+        }
+
+        const json = await res.json();
+        if (json.success && json.data) {
+          setFetchedRtb(json.data);
+        } else {
+          setFetchedRtb(null);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching RTB details:", err);
+          setRtbError(err.message || String(err));
+          setFetchedRtb(null);
+        }
+      } finally {
+        setRtbLoading(false);
+      }
+    };
+
+    fetchRtbDetails();
+    return () => controller.abort();
+  }, [activeTenancyId]);
 
   // Map API response to component property format
   const displayProperty = fetchedProperty ? {
@@ -291,6 +466,9 @@ export default function PropertyProfilePage() {
       noticePeriod: "90 days",
     } : EMPTY_PROPERTY.tenancy,
   } : EMPTY_PROPERTY;
+
+  const documentRows = Array.isArray(fetchedDocuments) ? fetchedDocuments : [];
+  const maintenanceRows = Array.isArray(fetchedMaintenance) ? fetchedMaintenance : [];
 
   return (
     <PortalShell>
@@ -422,9 +600,9 @@ export default function PropertyProfilePage() {
           <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
             <BadgeCheck size={16} className="text-teal-600" /> Tenancy Details
           </h2>
-          <InfoRow label="RTB Number" value={displayProperty.tenancy.rtbNumber} mono />
-          <InfoRow label="RTB Registration Date" value={displayProperty.tenancy.registrationDate} />
-          <InfoRow label="Lease Start" value={displayProperty.tenancy.leaseStart} />
+          <InfoRow label="RTB Number" value={fetchedRtb?.rtbNumber || displayProperty.tenancy.rtbNumber} mono />
+          <InfoRow label="RTB Registration Date" value={fetchedRtb?.rtbRegistrationDate ? formatDisplayDate(fetchedRtb.rtbRegistrationDate) : displayProperty.tenancy.registrationDate} />
+          <InfoRow label="Lease Start" value={fetchedRtb?.startDate ? formatDisplayDate(fetchedRtb.startDate) : displayProperty.tenancy.leaseStart} />
           <InfoRow label="Lease End" value={displayProperty.tenancy.leaseEnd} />
           <InfoRow label="Rent Review Date" value={displayProperty.tenancy.rentReviewDate} />
           <InfoRow label="Review Frequency" value={displayProperty.tenancy.rentReviewFrequency} />
@@ -447,16 +625,20 @@ export default function PropertyProfilePage() {
           year: new Date().getFullYear(),
         };
         
-        const displayRentCalendar = fetchedRentCalendar && fetchedRentCalendar.length > 0
-          ? fetchedRentCalendar.map(item => ({
-              month: item.month,
-              monthKey: item.monthKey,
-              amount: item.amount ? `€${item.amount}` : null,
-              status: item.status || "PENDING",
-              dueDate: item.dueDate,
-              paidDate: item.paidDate,
-              reference: item.reference,
-            }))
+        // Map backend calendar and only include entries where an `id` exists
+        const displayRentCalendar = (fetchedRentCalendar && fetchedRentCalendar.length > 0)
+          ? fetchedRentCalendar
+              .map((item) => ({
+                id: item.id,
+                month: item.month,
+                monthKey: item.monthKey,
+                amount: item.amount ? `€${item.amount}` : null,
+                status: item.status || "PENDING",
+                dueDate: item.dueDate,
+                paidDate: item.paidDate,
+                reference: item.reference,
+              }))
+              .filter((it) => it.id != null)
           : rentTracker;
         
         const totalCollected = parseInt(displayRentSummary.totalCollected) || (rentTracker.filter(r => r.status === "Paid").length * 1750);
@@ -497,7 +679,7 @@ export default function PropertyProfilePage() {
               <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
                 <CalendarDays size={16} className="text-teal-600" /> Monthly Rent Calendar — {displayRentSummary.year || new Date().getFullYear()}
               </h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
                 {displayRentCalendar.map((r) => {
                   const status = r.status === "PAID" ? "Paid" : r.status === "OVERDUE" ? "Overdue" : "Pending";
                   const s = rentStatusStyle[status];
@@ -518,12 +700,66 @@ export default function PropertyProfilePage() {
 
             {/* Detailed table */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-100">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
                 <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
                   <Euro size={16} className="text-teal-600" /> Payment History
                 </h2>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="payments-filter" className="text-sm text-slate-500 hidden sm:block">Filter:</label>
+                  <select
+                    id="payments-filter"
+                    value={rentPaymentsStatus}
+                    onChange={(e) => { setRentPaymentsStatus(e.target.value); setRentPaymentsPage(1); }}
+                    className="text-sm px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  >
+                    <option value="ALL">All</option>
+                    <option value="PAID">Paid</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="OVERDUE">Overdue</option>
+                  </select>
+                </div>
               </div>
-              <div className="overflow-x-auto">
+              {/* Mobile: cards */}
+              <div className="lg:hidden divide-y divide-slate-100">
+                {rentPaymentsLoading ? (
+                  <div className="px-5 py-8 text-center">
+                    <div className="inline-flex items-center gap-3">
+                      <div className="w-6 h-6 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+                      <p className="text-sm text-slate-500">Loading payments...</p>
+                    </div>
+                  </div>
+                ) : Array.isArray(fetchedRentPayments) && fetchedRentPayments.length > 0 ? (
+                  fetchedRentPayments.map((r, i) => {
+                    const status = r.status === "PAID" ? "Paid" : r.status === "OVERDUE" ? "Overdue" : "Pending";
+                    const s = rentStatusStyle[status];
+                    const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                    const monthYear = r.month || "—";
+                    const amount = r.amount ? `€${r.amount}` : "—";
+                    return (
+                      <div key={r.id || i} className="px-5 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-700">{monthYear}</p>
+                            <p className="text-xs text-slate-400 mt-1">{dueDate}</p>
+                            <p className="text-xs font-mono text-slate-400 mt-1">{r.reference || "—"}</p>
+                          </div>
+                          <div className="text-right flex flex-col items-end gap-2">
+                            <span className="text-sm font-bold text-slate-800">{amount}</span>
+                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${s.badge}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                              {status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="px-5 py-8 text-center text-slate-500">No payments found.</div>
+                )}
+              </div>
+
+              <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
@@ -535,26 +771,52 @@ export default function PropertyProfilePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {(fetchedRentPayments && fetchedRentPayments.length > 0 ? fetchedRentPayments : rentTracker).map((r, i) => {
-                      const status = r.status === "PAID" ? "Paid" : r.status === "OVERDUE" ? "Overdue" : "Pending";
-                      const s = rentStatusStyle[status];
-                      const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-                      const monthYear = r.month || "—";
-                      const amount = r.amount ? `€${r.amount}` : "—";
-                      return (
-                        <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-3 text-sm font-semibold text-slate-700">{monthYear}</td>
-                          <td className="px-5 py-3 text-sm text-slate-500">{dueDate}</td>
-                          <td className="px-5 py-3 font-mono text-xs text-slate-400">{r.reference || "—"}</td>
-                          <td className="px-5 py-3">
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.badge}`}>{status}</span>
-                          </td>
-                          <td className="px-5 py-3 text-right font-bold text-slate-800">{amount}</td>
-                        </tr>
-                      );
-                    })}
+                    {rentPaymentsLoading ? (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-8 text-center">
+                          <div className="inline-flex items-center gap-3">
+                            <div className="w-6 h-6 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+                            <p className="text-sm text-slate-500">Loading payments...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : Array.isArray(fetchedRentPayments) && fetchedRentPayments.length > 0 ? (
+                      fetchedRentPayments.map((r, i) => {
+                        const status = r.status === "PAID" ? "Paid" : r.status === "OVERDUE" ? "Overdue" : "Pending";
+                        const s = rentStatusStyle[status];
+                        const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                        const monthYear = r.month || "—";
+                        const amount = r.amount ? `€${r.amount}` : "—";
+                        return (
+                          <tr key={r.id || i} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="px-5 py-3 text-sm font-semibold text-slate-700">{monthYear}</td>
+                            <td className="px-5 py-3 text-sm text-slate-500">{dueDate}</td>
+                            <td className="px-5 py-3 font-mono text-xs text-slate-400">{r.reference || "—"}</td>
+                            <td className="px-5 py-3">
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.badge}`}>{status}</span>
+                            </td>
+                            <td className="px-5 py-3 text-right font-bold text-slate-800">{amount}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-8 text-center text-slate-500">No payments found.</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Pagination */}
+              <div>
+                <Pagination
+                  total={rentPaymentsTotal}
+                  itemsPerPage={rentPaymentsLimit}
+                  currentPage={rentPaymentsPage}
+                  onPageChange={(p) => setRentPaymentsPage(p)}
+                  showItemsPerPage={false}
+                />
               </div>
             </div>
           </div>
@@ -562,88 +824,78 @@ export default function PropertyProfilePage() {
       })()}
 
       {/* Tab: RTB Registration */}
-      {activeTab === "rtb" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* RTB Status Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
-              <CheckCircle size={16} className="text-teal-600" /> RTB Registration Status
-            </h2>
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
-                <p className="text-xs text-teal-600 font-semibold uppercase mb-1">Status</p>
-                <p className="text-lg font-bold text-teal-700 flex items-center gap-2">
-                  <CheckCircle size={18} /> Registered
-                </p>
-              </div>
-              <InfoRow label="RTB Number" value={displayProperty.tenancy.rtbNumber} mono />
-              <InfoRow label="Registration Date" value={displayProperty.tenancy.registrationDate} />
-              <InfoRow label="Expiry Date" value={displayProperty.tenancy.expiryDate} />
-            </div>
-          </div>
+      {activeTab === "rtb" && (() => {
+        const rtbRegistrationCode = (fetchedRtb?.rtbRegistration || displayProperty.rtbRegistration || "").toUpperCase();
+        const registrationDate = fetchedRtb?.rtbRegistrationDate
+          ? formatDisplayDate(fetchedRtb.rtbRegistrationDate)
+          : (displayProperty.tenancy.registrationDate || "—");
+        const expiryDate = fetchedRtb?.rtbExpiryDate
+          ? formatDisplayDate(fetchedRtb.rtbExpiryDate)
+          : (displayProperty.tenancy.expiryDate || "—");
+        const rtbNumber = fetchedRtb?.rtbNumber || displayProperty.tenancy.rtbNumber || "—";
+        const statusLabel = fetchedRtb?.rtbStatus || (rtbRegistrationCode === "REGISTERED" ? "Registered" : (rtbRegistrationCode || "Unknown"));
 
-          {/* Expiry Alert & Renewal */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
-              <CalendarDays size={16} className="text-teal-600" /> Renewal & Alerts
-            </h2>
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
-                <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-900">Renewal Due Soon</p>
-                  <p className="text-xs text-amber-700 mt-1">RTB registration expires in ~8 months. Renew at least 30 days before expiry.</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button className="w-full px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm transition">
-                  Renew RTB Registration
-                </button>
-                <a href="https://www.rtb.ie" target="_blank" rel="noopener noreferrer" className="w-full px-4 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm transition text-center block">
-                  Visit RTB Website
-                </a>
-              </div>
-            </div>
-          </div>
+        const statusStyles =
+          rtbRegistrationCode === "REGISTERED"
+            ? {
+                card: "bg-teal-50 border-teal-200",
+                label: "text-teal-600",
+                value: "text-teal-700",
+                icon: <CheckCircle size={18} />,
+              }
+            : rtbRegistrationCode === "PENDING"
+            ? {
+                card: "bg-amber-50 border-amber-200",
+                label: "text-amber-600",
+                value: "text-amber-700",
+                icon: <AlertCircle size={18} />,
+              }
+            : {
+                card: "bg-slate-50 border-slate-200",
+                label: "text-slate-600",
+                value: "text-slate-700",
+                icon: <AlertCircle size={18} />,
+              };
 
-          {/* Documentation */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
-              <FileText size={16} className="text-teal-600" /> RTB Documents
-            </h2>
-            <div className="space-y-2">
-              {(fetchedDocuments && fetchedDocuments.length > 0 
-                ? fetchedDocuments.filter((d) => d.type === "RTB_REGISTRATION" || d.type === "RTB Registration")
-                : documents.filter((d) => d.type === "RTB Registration")
-              ).map((d, i) => {
-                const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : d.date || "—";
-                const docSize = d.fileSize || d.size || "—";
-                const docUrl = d.fileUrl;
-                return (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-700">{d.name}</p>
-                      <p className="text-xs text-slate-400 mt-1">{docDate} • {docSize}</p>
-                    </div>
-                    {docUrl ? (
-                      <a href={docUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition flex items-center gap-1.5">
-                        <Download size={14} /> Download
-                      </a>
-                    ) : (
-                      <button disabled className="px-3 py-1.5 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed flex items-center gap-1.5">
-                        <Download size={14} /> No Link
-                      </button>
-                    )}
+        
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* RTB Status Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <CheckCircle size={16} className="text-teal-600" /> RTB Registration Status
+              </h2>
+              <div className="space-y-4">
+                {rtbLoading ? (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <p className="text-sm text-slate-500">Loading RTB details...</p>
                   </div>
-                );
-              })}
-              {fetchedDocuments && fetchedDocuments.filter((d) => d.type === "RTB_REGISTRATION" || d.type === "RTB Registration").length === 0 && (
-                <p className="text-sm text-slate-500 px-4 py-6 text-center">No RTB documents uploaded yet.</p>
-              )}
+                ) : rtbError ? (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+                    <p className="text-sm font-semibold text-red-700">Unable to load RTB details.</p>
+                    <p className="text-xs text-red-600 mt-1">{rtbError}</p>
+                  </div>
+                ) : (
+                  <div className={`p-4 rounded-xl border ${statusStyles.card}`}>
+                    <p className={`text-xs font-semibold uppercase mb-1 ${statusStyles.label}`}>Status</p>
+                    <p className={`text-lg font-bold flex items-center gap-2 ${statusStyles.value}`}>
+                      {statusStyles.icon} {statusLabel}
+                    </p>
+                  </div>
+                )}
+
+                <InfoRow label="RTB Number" value={rtbNumber} mono />
+                <InfoRow label="Registration Date" value={registrationDate} />
+                <InfoRow label="Expiry Date" value={expiryDate} />
+                <InfoRow label="Tenancy ID" value={fetchedRtb?.tenancyId || activeTenancyId || "—"} mono />
+              </div>
             </div>
+
+            {/* Renewal & Documents removed per request */}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tab: Documents */}
       {activeTab === "documents" && (
@@ -655,33 +907,46 @@ export default function PropertyProfilePage() {
           </div>
           {/* Mobile */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {(fetchedDocuments && fetchedDocuments.length > 0 ? fetchedDocuments : documents).map((d, i) => {
-              const displayType = d.type ? (d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : d.type) : d.type;
-              const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : d.date || "—";
-              const docSize = d.fileSize || d.size || "—";
-              const docUrl = d.fileUrl;
-              return (
-                <div key={i} className="px-5 py-4 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-700">{d.name}</p>
-                    <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${docTypeColors[displayType] || "bg-slate-100 text-slate-600"}`}>{displayType}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>{docDate}</span><span>{docSize}</span>
-                  </div>
-                  {docUrl ? (
-                    <a href={docUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
-                      <Download size={13} /> Download
-                    </a>
-                  ) : (
-                    <button disabled className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
-                      <Download size={13} /> No Link
-                    </button>
-                  )}
+            {documentsLoading ? (
+              <div className="px-5 py-8 text-center">
+                <div className="inline-flex items-center gap-3">
+                  <div className="w-6 h-6 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+                  <p className="text-sm text-slate-500">Loading documents...</p>
                 </div>
-              );
-            })}
-            {fetchedDocuments && fetchedDocuments.length === 0 && (
+              </div>
+            ) : documentsError ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm font-semibold text-red-700">Unable to load documents.</p>
+                <p className="text-xs text-red-600 mt-1">{documentsError}</p>
+              </div>
+            ) : documentRows.length > 0 ? (
+              documentRows.map((d, i) => {
+                const displayType = d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : (d.type || "—");
+                const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                const docSize = d.fileSize || "—";
+                const docUrl = d.fileUrl;
+                return (
+                  <div key={d.id || i} className="px-5 py-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-700">{d.name}</p>
+                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${docTypeColors[d.type] || docTypeColors[displayType] || "bg-slate-100 text-slate-600"}`}>{displayType}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>{docDate}</span><span>{docSize}</span>
+                    </div>
+                    {docUrl ? (
+                      <a href={docUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition">
+                        <Download size={13} /> Download
+                      </a>
+                    ) : (
+                      <button disabled className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                        <Download size={13} /> No Link
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
               <div className="px-5 py-8 text-center">
                 <p className="text-sm text-slate-500">No documents uploaded for this property.</p>
               </div>
@@ -700,41 +965,71 @@ export default function PropertyProfilePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(fetchedDocuments && fetchedDocuments.length > 0 ? fetchedDocuments : documents).map((d, i) => {
-                  const displayType = d.type ? (d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : d.type) : d.type;
-                  const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : d.date || "—";
-                  const docSize = d.fileSize || d.size || "—";
-                  const docUrl = d.fileUrl;
-                  return (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-4 text-base font-semibold text-slate-700">{d.name}</td>
-                      <td className="px-5 py-4">
-                        <span className={`text-sm font-medium px-3 py-1 rounded-full ${docTypeColors[displayType] || "bg-slate-100 text-slate-600"}`}>{displayType}</span>
-                      </td>
-                      <td className="px-5 py-4 text-base text-slate-500">{docDate}</td>
-                      <td className="px-5 py-4 text-base text-slate-400">{docSize}</td>
-                      <td className="px-6 py-4 text-right">
-                        {docUrl ? (
-                          <a href={docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition">
-                            <Download size={15} /> Download
-                          </a>
-                        ) : (
-                          <button disabled className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
-                            <Download size={15} /> No Link
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {documentsLoading ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center">
+                      <div className="inline-flex items-center gap-3">
+                        <div className="w-6 h-6 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+                        <p className="text-sm text-slate-500">Loading documents...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : documentsError ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center">
+                      <p className="text-sm font-semibold text-red-700">Unable to load documents.</p>
+                      <p className="text-xs text-red-600 mt-1">{documentsError}</p>
+                    </td>
+                  </tr>
+                ) : documentRows.length > 0 ? (
+                  documentRows.map((d, i) => {
+                    const displayType = d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : (d.type || "—");
+                    const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                    const docSize = d.fileSize || "—";
+                    const docUrl = d.fileUrl;
+                    return (
+                      <tr key={d.id || i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-5 py-4 text-base font-semibold text-slate-700">{d.name}</td>
+                        <td className="px-5 py-4">
+                          <span className={`text-sm font-medium px-3 py-1 rounded-full ${docTypeColors[d.type] || docTypeColors[displayType] || "bg-slate-100 text-slate-600"}`}>{displayType}</span>
+                        </td>
+                        <td className="px-5 py-4 text-base text-slate-500">{docDate}</td>
+                        <td className="px-5 py-4 text-base text-slate-400">{docSize}</td>
+                        <td className="px-6 py-4 text-right">
+                          {docUrl ? (
+                            <a href={docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg transition">
+                              <Download size={15} /> Download
+                            </a>
+                          ) : (
+                            <button disabled className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                              <Download size={15} /> No Link
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-slate-500">No documents uploaded for this property.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
-            {fetchedDocuments && fetchedDocuments.length === 0 && (
-              <div className="px-5 py-8 text-center">
-                <p className="text-sm text-slate-500">No documents uploaded for this property.</p>
-              </div>
-            )}
           </div>
+
+          {/* Pagination */}
+          {documentsTotal > 0 && (
+            <div>
+              <Pagination
+                total={documentsTotal}
+                itemsPerPage={documentsLimit}
+                currentPage={documentsPage}
+                onPageChange={(p) => setDocumentsPage(p)}
+                showItemsPerPage={false}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -755,22 +1050,38 @@ export default function PropertyProfilePage() {
 
           {/* Mobile */}
           <div className="lg:hidden divide-y divide-slate-100 mt-4">
-            {(fetchedMaintenance && fetchedMaintenance.length > 0 ? fetchedMaintenance : maintenance).map((m, i) => {
-              const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : "Pending";
-              const lastUpdated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-              return (
-                <div key={i} className="px-5 py-4 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-700">{m.title || m.issue}</p>
-                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${priorityColors[m.priority]}`}>{m.priority}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>{status}</span><span>{lastUpdated}</span>
-                  </div>
+            {maintenanceLoading ? (
+              <div className="px-5 py-8 text-center">
+                <div className="inline-flex items-center gap-3">
+                  <div className="w-6 h-6 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+                  <p className="text-sm text-slate-500">Loading maintenance requests...</p>
                 </div>
-              );
-            })}
-            {fetchedMaintenance && fetchedMaintenance.length === 0 && (
+              </div>
+            ) : maintenanceError ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm font-semibold text-red-700">Unable to load maintenance requests.</p>
+                <p className="text-xs text-red-600 mt-1">{maintenanceError}</p>
+              </div>
+            ) : maintenanceRows.length > 0 ? (
+              maintenanceRows.map((m, i) => {
+                const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : "Pending";
+                const lastUpdated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                const assignedTo = m.assignedTo || "Unassigned";
+                return (
+                  <div key={m.id || i} className="px-5 py-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-700">{m.title || m.issue}</p>
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${priorityColors[m.priority] || "bg-slate-100 text-slate-600"}`}>{m.priority || "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>{status}</span>
+                      <span>{lastUpdated}</span>
+                    </div>
+                    <div className="text-xs text-slate-400">Assigned: {assignedTo}</div>
+                  </div>
+                );
+              })
+            ) : (
               <div className="px-5 py-8 text-center">
                 <p className="text-sm text-slate-500">No maintenance requests for this property.</p>
               </div>
@@ -785,32 +1096,64 @@ export default function PropertyProfilePage() {
                   <th className="text-left px-5 py-3">Issue</th>
                   <th className="text-left px-5 py-4">Priority</th>
                   <th className="text-left px-5 py-4">Status</th>
+                  <th className="text-left px-5 py-4">Assigned To</th>
                   <th className="text-left px-5 py-4">Last Updated</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(fetchedMaintenance && fetchedMaintenance.length > 0 ? fetchedMaintenance : maintenance).map((m, i) => {
-                  const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : "Pending";
-                  const lastUpdated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-                  return (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-4 text-base font-semibold text-slate-700">{m.title || m.issue}</td>
-                      <td className="px-5 py-4">
-                        <span className={`text-sm font-semibold px-3 py-1 rounded-full ${priorityColors[m.priority]}`}>{m.priority}</span>
-                      </td>
-                      <td className="px-5 py-4 text-base text-slate-600">{status}</td>
-                      <td className="px-5 py-4 text-sm text-slate-400">{lastUpdated}</td>
-                    </tr>
-                  );
-                })}
+                {maintenanceLoading ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center">
+                      <div className="inline-flex items-center gap-3">
+                        <div className="w-6 h-6 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+                        <p className="text-sm text-slate-500">Loading maintenance requests...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : maintenanceError ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center">
+                      <p className="text-sm font-semibold text-red-700">Unable to load maintenance requests.</p>
+                      <p className="text-xs text-red-600 mt-1">{maintenanceError}</p>
+                    </td>
+                  </tr>
+                ) : maintenanceRows.length > 0 ? (
+                  maintenanceRows.map((m, i) => {
+                    const status = m.status === "IN_PROGRESS" ? "In Progress" : m.status === "CLOSED" ? "Closed" : "Pending";
+                    const lastUpdated = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+                    return (
+                      <tr key={m.id || i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-5 py-4 text-base font-semibold text-slate-700">{m.title || m.issue}</td>
+                        <td className="px-5 py-4">
+                          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${priorityColors[m.priority] || "bg-slate-100 text-slate-600"}`}>{m.priority || "—"}</span>
+                        </td>
+                        <td className="px-5 py-4 text-base text-slate-600">{status}</td>
+                        <td className="px-5 py-4 text-sm text-slate-500">{m.assignedTo || "Unassigned"}</td>
+                        <td className="px-5 py-4 text-sm text-slate-400">{lastUpdated}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-slate-500">No maintenance requests for this property.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
-            {fetchedMaintenance && fetchedMaintenance.length === 0 && (
-              <div className="px-5 py-8 text-center">
-                <p className="text-sm text-slate-500">No maintenance requests for this property.</p>
-              </div>
-            )}
           </div>
+
+          {/* Pagination */}
+          {maintenanceTotal > 0 && (
+            <div>
+              <Pagination
+                total={maintenanceTotal}
+                itemsPerPage={maintenanceLimit}
+                currentPage={maintenancePage}
+                onPageChange={(p) => setMaintenancePage(p)}
+                showItemsPerPage={false}
+              />
+            </div>
+          )}
         </div>
       )}
 

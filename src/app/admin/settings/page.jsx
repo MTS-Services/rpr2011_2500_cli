@@ -6,8 +6,8 @@ import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
 const DEFAULTS = {
-  companyName: "McCann Reality",
-  contactEmail: "admin@example.com",
+  companyName: "",
+  contactEmail: "",
   currentPassword: "",
   newPassword: "",
   confirmPassword: "",
@@ -18,11 +18,13 @@ export default function AdminSettingsPage() {
   const [initialState, setInitialState] = useState(DEFAULTS);
   const [dirty, setDirty] = useState(false);
   const [passwordDirty, setPasswordDirty] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
 
   useEffect(() => {
     let active = true;
 
     async function loadSettings() {
+      setIsFetching(true);
       try {
         const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`);
         if (!response.ok) return;
@@ -32,8 +34,8 @@ export default function AdminSettingsPage() {
         if (!apiData || !active) return;
 
         const next = {
-          companyName: apiData.companyName ?? DEFAULTS.companyName,
-          contactEmail: apiData.contactEmail ?? DEFAULTS.contactEmail,
+          companyName: apiData.companyName ?? "",
+          contactEmail: apiData.contactEmail ?? "",
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
@@ -43,7 +45,9 @@ export default function AdminSettingsPage() {
         setInitialState(next);
         setDirty(false);
       } catch (e) {
-        // ignore and keep defaults
+        // ignore and keep empty defaults
+      } finally {
+        if (active) setIsFetching(false);
       }
     }
 
@@ -187,20 +191,28 @@ export default function AdminSettingsPage() {
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2.5">Company Name</label>
-                <input 
-                  value={state.companyName} 
-                  onChange={(e) => update('companyName', e.target.value)} 
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white focus:border-transparent transition" 
-                />
+                {isFetching ? (
+                  <div className="h-10 w-full rounded-lg bg-slate-100 animate-pulse" />
+                ) : (
+                  <input
+                    value={state.companyName}
+                    onChange={(e) => update("companyName", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white focus:border-transparent transition"
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2.5">Contact Email</label>
-                <input 
-                  value={state.contactEmail} 
-                  onChange={(e) => update('contactEmail', e.target.value)} 
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white focus:border-transparent transition" 
-                />
+                {isFetching ? (
+                  <div className="h-10 w-full rounded-lg bg-slate-100 animate-pulse" />
+                ) : (
+                  <input
+                    value={state.contactEmail}
+                    onChange={(e) => update("contactEmail", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white focus:border-transparent transition"
+                  />
+                )}
               </div>
             </div>
           </div>

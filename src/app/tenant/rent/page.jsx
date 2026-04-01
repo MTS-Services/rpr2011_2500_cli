@@ -1,15 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import TenantShell from "@/components/tenant/TenantShell";
 import Pagination from "@/components/portal/Pagination";
 import { authenticatedFetch } from "@/utils/authFetch";
-import Link from "next/link";
 import { AlertTriangle, CreditCard, Calendar, AlertCircle } from "lucide-react";
 
-// Helper function to map payment status to display color
+const ITEMS_PER_PAGE = 10;
+const STATUS_FILTERS = [
+  { label: "All", value: "ALL" },
+  { label: "Paid", value: "PAID" },
+  { label: "Pending", value: "PENDING" },
+];
+
 const getPaymentStatusColor = (status) => {
-  switch (status) {
+  switch ((status || "").toUpperCase()) {
     case "PAID":
       return "bg-teal-100 text-teal-700";
     case "PENDING":
@@ -21,9 +27,8 @@ const getPaymentStatusColor = (status) => {
   }
 };
 
-// Helper function to map payment status to display text
 const mapPaymentStatus = (status) => {
-  switch (status) {
+  switch ((status || "").toUpperCase()) {
     case "PAID":
       return "Paid";
     case "PENDING":
@@ -31,88 +36,157 @@ const mapPaymentStatus = (status) => {
     case "OVERDUE":
       return "Overdue";
     default:
-      return status;
+      return status || "-";
   }
 };
 
+const formatCurrency = (value) => {
+  const amount = Number(value || 0);
+  return `€${amount.toLocaleString("en-IE")}`;
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("en-IE", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatMonth = (monthValue) => {
+  if (!monthValue) return "-";
+  return new Date(`${monthValue}-01`).toLocaleDateString("en-IE", {
+    year: "numeric",
+    month: "long",
+  });
+};
+
 export default function TenantRentPage() {
+  const [summary, setSummary] = useState(null);
   const [rentPayments, setRentPayments] = useState([]);
-  const [tenancy, setTenancy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: ITEMS_PER_PAGE,
+    totalItems: 0,
+    totalPages: 1,
+  });
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Fetch rent payments
-        const paymentsRes = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/tenant`);
-        if (!paymentsRes.ok) throw new Error(`Failed to load rent payments: ${paymentsRes.statusText}`);
-        const paymentsBody = await paymentsRes.json();
-        
-        if (paymentsBody.success && Array.isArray(paymentsBody.data)) {
-          setRentPayments(paymentsBody.data);
-          // Extract tenancy info from first payment
-          if (paymentsBody.data.length > 0) {
-            setTenancy(paymentsBody.data[0].tenancy);
-          }
-        } else {
-          setRentPayments([]);
+
+        const params = new URLSearchParams();
+        params.append("page", String(currentPage));
+        params.append("limit", String(ITEMS_PER_PAGE));
+        if (statusFilter !== "ALL") {
+          params.append("status", statusFilter);
         }
+
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/tenant?${params.toString()}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err?.message || `Failed to load rent payments (${response.status})`);
+        }
+
+        const result = await response.json();
+        if (!result?.success || !result?.data) {
+          throw new Error(result?.message || "Failed to load rent payments");
+        }
+
+        const data = result.data;
+        const payments = Array.isArray(data.payments) ? data.payments : [];
+        const paging = data.pagination || {};
+
+        setSummary(data.summary || null);
+        setRentPayments(payments);
+        setPagination({
+          currentPage: paging.currentPage ?? currentPage,
+          itemsPerPage: paging.itemsPerPage ?? ITEMS_PER_PAGE,
+          totalItems: paging.totalItems ?? payments.length,
+          totalPages:
+            paging.totalPages ?? Math.max(1, Math.ceil((paging.totalItems ?? payments.length) / ITEMS_PER_PAGE)),
+        });
       } catch (err) {
+        if (err.name === "AbortError") return;
         console.error("Error fetching rent payments:", err);
         setError(err.message || "Failed to load rent payments");
+        setSummary(null);
         setRentPayments([]);
+        setPagination({
+          currentPage: 1,
+          itemsPerPage: ITEMS_PER_PAGE,
+          totalItems: 0,
+          totalPages: 1,
+        });
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+    return () => controller.abort();
+  }, [currentPage, statusFilter]);
 
-  // Find first overdue payment for banner
-  const firstOverdue = rentPayments.find(p => p.status === "OVERDUE");
-  const monthlyRent = tenancy?.property?.rent || "—";
-  const nextPaymentDate = rentPayments.length > 0 
-    ? new Date(rentPayments[0].dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    : "—";
-  const currentBalance = firstOverdue ? "Overdue" : rentPayments.some(p => p.status === "PENDING") ? "Pending" : "Current";
-  const balanceDate = firstOverdue 
-    ? new Date(firstOverdue.month + "-01").toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
-    : "—";
-
-  // Pagination logic
-  const totalPages = Math.ceil(rentPayments.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedPayments = rentPayments.slice(startIndex, endIndex);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
+  const firstOverdue = rentPayments.find((p) => (p?.status || "").toUpperCase() === "OVERDUE");
+  const dueBalance = Number(summary?.dueBalance ?? 0);
+  const duePaymentsCount = Number(summary?.duePaymentsCount?.id ?? 0);
+  const monthlyRent = summary?.monthlyRent;
+  const rentDueDay = summary?.rentDueDay;
+  const nextPayment = summary?.nextPayment;
+  const propertyName = summary?.property?.name || "your property";
+  const showOverdueBanner = !loading && (dueBalance > 0 || Boolean(firstOverdue) || Number(nextPayment?.daysUntilDue) < 0);
 
   return (
     <TenantShell>
       <div className="mb-3 xl:mb-5">
         <h1 className="text-3xl font-bold text-slate-800">Rent Payments</h1>
-        <p className="text-slate-500 mt-1 text-sm">Full payment history for your tenancy at {tenancy?.property?.name || 'your property'}</p>
+        <p className="text-slate-500 mt-1 text-sm">Full payment history for your tenancy at {propertyName}</p>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 lg:gap-3 mb-3 xl:mb-5">
         {[
-          { label: "Monthly Rent",    value: `€${monthlyRent}`,  sub: "Due 1st of month",   Icon: CreditCard,  color: "bg-teal-50 text-teal-600",   border: "border-teal-100" },
-          { label: "Next Payment",    value: nextPaymentDate,   sub: "Next due date",        Icon: Calendar,    color: "bg-blue-50 text-blue-600",    border: "border-blue-100" },
-          { label: "Current Balance", value: currentBalance,    sub: balanceDate,           Icon: AlertCircle, color: currentBalance === "Overdue" ? "bg-red-50 text-red-600" : currentBalance === "Pending" ? "bg-orange-50 text-orange-600" : "bg-teal-50 text-teal-600", border: currentBalance === "Overdue" ? "border-red-100" : currentBalance === "Pending" ? "border-orange-100" : "border-teal-100" },
+          {
+            label: "Monthly Rent",
+            value: loading ? "€0" : formatCurrency(monthlyRent),
+            sub: rentDueDay ? `Due day ${rentDueDay} of each month` : "Due day unavailable",
+            Icon: CreditCard,
+            color: "bg-teal-50 text-teal-600",
+            border: "border-teal-100",
+          },
+          {
+            label: "Next Payment",
+            value: loading ? "€0" : formatCurrency(nextPayment?.amount),
+            sub: nextPayment?.dueDate ? `Due ${formatDate(nextPayment.dueDate)}` : "No upcoming due date",
+            Icon: Calendar,
+            color: "bg-blue-50 text-blue-600",
+            border: "border-blue-100",
+          },
+          {
+            label: "Due Balance",
+            value: loading ? "€0" : formatCurrency(dueBalance),
+            sub: `${duePaymentsCount} due payment${duePaymentsCount === 1 ? "" : "s"}`,
+            Icon: AlertCircle,
+            color: dueBalance > 0 ? "bg-red-50 text-red-600" : "bg-teal-50 text-teal-600",
+            border: dueBalance > 0 ? "border-red-100" : "border-teal-100",
+          },
         ].map(({ label, value, sub, Icon, color, border }) => (
           <div key={label} className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm ${border}`}>
             <div className="flex items-start justify-between">
@@ -127,13 +201,14 @@ export default function TenantRentPage() {
         ))}
       </div>
 
-      {/* Overdue banner */}
-      {firstOverdue && (
+      {false && showOverdueBanner && (
         <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-4">
           <AlertTriangle size={20} className="text-red-500 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-red-700">
-              {new Date(firstOverdue.month + "-01").toLocaleDateString('en-US', { year: 'numeric', month: 'long' })} rent is overdue
+              {(firstOverdue?.month && `${formatMonth(firstOverdue.month)} rent is overdue`) ||
+                (nextPayment?.month && `${formatMonth(nextPayment.month)} rent is overdue`) ||
+                "There are overdue rent payments on your account"}
             </p>
             <p className="text-xs text-red-400 mt-0.5">Please contact your letting agent if you have any issues.</p>
           </div>
@@ -146,7 +221,33 @@ export default function TenantRentPage() {
         </div>
       )}
 
-      {/* Table (lg+) */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {STATUS_FILTERS.map((option) => {
+          const active = statusFilter === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleStatusFilterChange(option.value)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition ${
+                active
+                  ? "bg-teal-600 text-white border-teal-600"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
+          <p className="text-sm font-semibold text-red-800">Failed to load rent payments</p>
+          <p className="text-sm text-red-700 mt-1">{error}</p>
+        </div>
+      )}
+
       <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -160,31 +261,30 @@ export default function TenantRentPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedPayments.length > 0 ? (
-                paginatedPayments.map((p, i) => {
-                  const monthDate = new Date(p.month + "-01");
-                  const monthLabel = monthDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-                  const dateDisplay = p.paidDate 
-                    ? new Date(p.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                    : new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              {rentPayments.length > 0 ? (
+                rentPayments.map((payment) => {
+                  const monthLabel = formatMonth(payment?.month);
+                  const dateDisplay = payment?.paidDate ? formatDate(payment.paidDate) : formatDate(payment?.dueDate);
                   return (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={payment.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-5 py-4 text-base font-semibold text-slate-700">{monthLabel}</td>
                       <td className="px-4 py-4 text-sm text-slate-500">{dateDisplay}</td>
-                      <td className="px-4 py-4 font-mono text-sm text-slate-400">#{p.reference}</td>
+                      <td className="px-4 py-4 font-mono text-sm text-slate-400">{payment?.reference || "-"}</td>
                       <td className="px-4 py-4">
-                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getPaymentStatusColor(p.status)}`}>
-                          {mapPaymentStatus(p.status)}
+                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getPaymentStatusColor(payment.status)}`}>
+                          {mapPaymentStatus(payment.status)}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right text-base font-bold text-slate-800">€{p.amount}</td>
+                      <td className="px-4 py-4 text-right text-base font-bold text-slate-800">
+                        {formatCurrency(payment?.amount)}
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
                   <td colSpan="5" className="px-5 py-4 text-center text-slate-500">
-                    {loading ? 'Loading payments...' : 'No payments found'}
+                    {loading ? "Loading payments..." : "No payments found"}
                   </td>
                 </tr>
               )}
@@ -193,27 +293,27 @@ export default function TenantRentPage() {
         </div>
       </div>
 
-      {/* Mobile cards (smaller than lg) */}
       <div className="lg:hidden space-y-2">
-        {paginatedPayments.length > 0 ? (
-          paginatedPayments.map((p, i) => {
-            const monthDate = new Date(p.month + "-01");
-            const monthLabel = monthDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-            const dateDisplay = p.paidDate 
-              ? new Date(p.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              : new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        {rentPayments.length > 0 ? (
+          rentPayments.map((payment) => {
+            const monthLabel = formatMonth(payment?.month);
+            const dateDisplay = payment?.paidDate ? formatDate(payment.paidDate) : formatDate(payment?.dueDate);
             return (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <div key={payment.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-slate-700">{monthLabel}</div>
-                    <div className="text-xs text-slate-400 mt-1">{dateDisplay} · <span className="font-mono">#{p.reference}</span></div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      {dateDisplay} · <span className="font-mono">{payment?.reference || "-"}</span>
+                    </div>
                     <div className="mt-2">
-                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getPaymentStatusColor(p.status)}`}>{mapPaymentStatus(p.status)}</span>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getPaymentStatusColor(payment.status)}`}>
+                        {mapPaymentStatus(payment.status)}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-base font-bold text-slate-800">€{p.amount}</div>
+                    <div className="text-base font-bold text-slate-800">{formatCurrency(payment?.amount)}</div>
                   </div>
                 </div>
               </div>
@@ -221,20 +321,20 @@ export default function TenantRentPage() {
           })
         ) : (
           <div className="text-center py-4 text-slate-500">
-            {loading ? 'Loading payments...' : 'No payments found'}
+            {loading ? "Loading payments..." : "No payments found"}
           </div>
         )}
       </div>
 
-      {/* Pagination */}
-      {rentPayments.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mt-3">
+      {pagination.totalItems > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mt-3 xl:mt-4">
           <Pagination
-            total={rentPayments.length}
-            itemsPerPage={itemsPerPage}
+            total={pagination.totalItems}
+            itemsPerPage={ITEMS_PER_PAGE}
             currentPage={currentPage}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={() => {}}
+            showItemsPerPage={false}
           />
         </div>
       )}
