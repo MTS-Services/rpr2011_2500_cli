@@ -648,32 +648,6 @@ export default function PropertyProfilePage() {
         
         return (
           <div className="space-y-4">
-            {/* Summary cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Monthly Rent</p>
-                <p className="text-2xl font-bold text-slate-800">€{monthlyRent.toLocaleString()}</p>
-                <p className="text-xs text-slate-400 mt-1">Due {rentDueDay}{rentDueDay === 1 ? "st" : rentDueDay === 2 ? "nd" : rentDueDay === 3 ? "rd" : "th"} of each month</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-teal-100 shadow-sm p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Total Collected</p>
-                <p className="text-2xl font-bold text-teal-700">€{totalCollected.toLocaleString()}</p>
-                <p className="text-xs text-slate-400 mt-1">{displayRentSummary.monthsPaid} of {displayRentSummary.totalMonths} months paid</p>
-              </div>
-              <div className={`bg-white rounded-2xl border shadow-sm p-4 ${overdueCount > 0 ? "border-red-100" : "border-slate-200"}`}>
-                <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Overdue</p>
-                <p className={`text-2xl font-bold ${overdueCount > 0 ? "text-red-600" : "text-slate-800"}`}>{overdueCount}</p>
-                <p className="text-xs text-slate-400 mt-1">{overdueCount > 0 ? "Payment(s) outstanding" : "All payments on time"}</p>
-              </div>
-            </div>
-
-            {overdueCount > 0 && (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-                <AlertCircle size={18} className="text-red-500 shrink-0" />
-                <p className="text-sm font-semibold text-red-700">{overdueCount} rent payment{overdueCount > 1 ? "s" : ""} overdue for this property.</p>
-              </div>
-            )}
-
             {/* Monthly calendar grid */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
