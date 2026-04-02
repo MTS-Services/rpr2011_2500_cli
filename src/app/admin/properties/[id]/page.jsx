@@ -103,6 +103,87 @@ function InfoRow({ label, value, mono = false, children }) {
   );
 }
 
+function extractRentPaymentRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.payments)) return payload.payments;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  return [];
+}
+
+function formatPaymentMonth(rawMonth, fallbackDate) {
+  if (rawMonth) {
+    const monthValue = String(rawMonth);
+    if (/^\d{4}-\d{2}$/.test(monthValue)) {
+      const [year, month] = monthValue.split("-").map(Number);
+      const monthDate = new Date(year, month - 1, 1);
+      if (!Number.isNaN(monthDate.getTime())) {
+        return monthDate.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      }
+    }
+    return monthValue;
+  }
+
+  if (fallbackDate) {
+    const dateValue = new Date(fallbackDate);
+    if (!Number.isNaN(dateValue.getTime())) {
+      return dateValue.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }
+  }
+
+  return "—";
+}
+
+function normalizeRentPayment(payment) {
+  const tenantRecord = payment.tenant || payment.tenancy?.tenant || payment.tenancy?.user || null;
+  const tenantId = String(
+    payment.tenantId || tenantRecord?.id || tenantRecord?.userId || payment.tenancy?.tenantId || ""
+  );
+  const tenantName =
+    tenantRecord?.name ||
+    tenantRecord?.user?.name ||
+    [tenantRecord?.firstName, tenantRecord?.lastName].filter(Boolean).join(" ").trim() ||
+    payment.tenantName ||
+    "—";
+
+  const dueDate = payment.dueDate || payment.due_date || payment.expectedDate || null;
+  const paidDate = payment.paidDate || payment.paymentDate || payment.paidAt || null;
+  const monthRaw = payment.month || payment.monthKey || payment.billingMonth || payment.period || null;
+  const status = String(payment.status || payment.paymentStatus || payment.rentStatus || "PENDING").toUpperCase();
+  const amount = Number(payment.amount ?? payment.totalAmount ?? payment.rentAmount ?? payment.value ?? 0);
+  const reference = payment.reference || payment.paymentReference || payment.transactionReference || payment.transactionId || "—";
+  const fallbackId = [tenantId, monthRaw, dueDate, paidDate, String(amount), status].filter(Boolean).join("-");
+
+  return {
+    id: payment.id || payment.paymentId || fallbackId || "unknown-payment",
+    propertyId: String(payment.propertyId || payment.property?.id || payment.tenancy?.propertyId || payment.tenancy?.property?.id || ""),
+    tenancyId: String(payment.tenancyId || payment.tenancy?.id || ""),
+    tenant: tenantId || tenantName !== "—" ? { id: tenantId, name: tenantName } : null,
+    amount,
+    status,
+    dueDate,
+    paidDate,
+    createdAt: payment.createdAt || payment.updatedAt || null,
+    monthRaw,
+    month: formatPaymentMonth(monthRaw, dueDate || paidDate || payment.createdAt),
+    reference,
+  };
+}
+
+function getPaymentYear(payment) {
+  const dateCandidates = [payment.dueDate, payment.paidDate, payment.createdAt].filter(Boolean);
+  for (const value of dateCandidates) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.getFullYear();
+    }
+  }
+
+  const monthValue = String(payment.monthRaw || payment.month || "");
+  const yearMatch = monthValue.match(/\b(19|20)\d{2}\b/);
+  return yearMatch ? Number(yearMatch[0]) : null;
+}
+
 export default function AdminPropertyProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
@@ -113,6 +194,7 @@ export default function AdminPropertyProfilePage() {
   
   // Fetched data states
   const [fetchedProperty, setFetchedProperty] = useState(null);
+  const [allRentPayments, setAllRentPayments] = useState([]);
   const [fetchedRentPayments, setFetchedRentPayments] = useState([]);
   const [fetchedTenancies, setFetchedTenancies] = useState(null);
   const [fetchedDocuments, setFetchedDocuments] = useState(null);
@@ -122,36 +204,43 @@ export default function AdminPropertyProfilePage() {
   const [financeFilters, setFinanceFilters] = useState({
     status: "ALL",
     year: "",
-    tenancyId: "",
-    tenantId: "",
   });
 
-  const fetchRentPayments = async (filters) => {
-    if (!id) return;
+  const activeTenancy = Array.isArray(fetchedTenancies)
+    ? fetchedTenancies.find((tenancy) => tenancy.status === "ACTIVE") || fetchedTenancies[0]
+    : null;
+  const activeTenantId = String(activeTenancy?.tenantId || "");
+
+  const fetchRentPayments = async (tenantId, statusFilter = "ALL") => {
+    if (!id || !tenantId) return;
 
     setIsLoadingRentPayments(true);
     try {
       const query = new URLSearchParams();
-      if (filters.status && filters.status !== "ALL") query.set("status", filters.status);
-      if (filters.year) query.set("year", filters.year);
-      if (filters.tenancyId) query.set("tenancyId", filters.tenancyId);
-      if (filters.tenantId) query.set("tenantId", filters.tenantId);
+      query.set("tenantId", String(tenantId));
+      query.set("page", "1");
+      query.set("limit", "200");
+      if (statusFilter && statusFilter !== "ALL") {
+        query.set("status", statusFilter);
+      }
 
       const queryString = query.toString();
-      const rentUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments${queryString ? `?${queryString}` : ""}`;
+      const rentUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments?${queryString}`;
       const rentRes = await authenticatedFetch(rentUrl);
 
       if (rentRes.ok) {
         const data = await rentRes.json();
-        const propertyPayments = (data.data || []).filter(
-          (p) => p.tenancy?.property?.id === id
-        );
-        setFetchedRentPayments(propertyPayments);
+        const paymentRows = extractRentPaymentRows(data.data).map(normalizeRentPayment);
+        const propertyPayments = paymentRows.filter((payment) => String(payment.propertyId || "") === String(id));
+
+        setAllRentPayments(propertyPayments);
       } else {
+        setAllRentPayments([]);
         setFetchedRentPayments([]);
       }
     } catch (err) {
       console.warn("Failed to fetch rent payments:", err);
+      setAllRentPayments([]);
       setFetchedRentPayments([]);
     } finally {
       setIsLoadingRentPayments(false);
@@ -185,6 +274,7 @@ export default function AdminPropertyProfilePage() {
             .filter((t) => String(t.propertyId || t.property?.id || "") === String(id))
             .map((t) => ({
               id: t.id,
+              tenantId: t.tenantId || t.tenant?.id || t.tenant?.userId || "",
               tenantName:
                 t.tenant?.name ||
                 t.tenant?.user?.name ||
@@ -251,8 +341,37 @@ export default function AdminPropertyProfilePage() {
   }, [id, refreshTenancies]);
 
   useEffect(() => {
-    fetchRentPayments(financeFilters);
-  }, [id, financeFilters.status, financeFilters.year, financeFilters.tenancyId, financeFilters.tenantId]);
+    if (!id || !activeTenantId) {
+      setAllRentPayments([]);
+      setFetchedRentPayments([]);
+      return;
+    }
+
+    fetchRentPayments(activeTenantId, financeFilters.status);
+  }, [id, activeTenantId, financeFilters.status]);
+
+  useEffect(() => {
+    const filteredPayments = allRentPayments.filter((payment) => {
+      if (financeFilters.status !== "ALL" && payment.status !== financeFilters.status) {
+        return false;
+      }
+
+      if (financeFilters.year) {
+        const year = Number(financeFilters.year);
+        if (!Number.isFinite(year)) {
+          return false;
+        }
+        const paymentYear = getPaymentYear(payment);
+        if (!paymentYear || paymentYear !== year) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    setFetchedRentPayments(filteredPayments);
+  }, [allRentPayments, financeFilters.status, financeFilters.year]);
 
   // Fetch tenancy details when a tenancy is selected
   const fetchTenancyDetails = async (tenancyId) => {
@@ -357,7 +476,7 @@ export default function AdminPropertyProfilePage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
               <select
                 value={financeFilters.status}
                 onChange={(e) => setFinanceFilters((prev) => ({ ...prev, status: e.target.value }))}
@@ -384,39 +503,9 @@ export default function AdminPropertyProfilePage() {
                 className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
               />
 
-              <select
-                value={financeFilters.tenancyId}
-                onChange={(e) => setFinanceFilters((prev) => ({ ...prev, tenancyId: e.target.value }))}
-                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
-              >
-                <option value="">All Tenancies</option>
-                {(fetchedTenancies || []).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.rtbNumber || t.id}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={financeFilters.tenantId}
-                onChange={(e) => setFinanceFilters((prev) => ({ ...prev, tenantId: e.target.value }))}
-                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
-              >
-                <option value="">All Tenants</option>
-                {[...new Map(
-                  fetchedRentPayments
-                    .filter((p) => p.tenant?.id)
-                    .map((p) => [p.tenant.id, p.tenant])
-                ).values()].map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>
-                    {tenant.name || tenant.email || tenant.id}
-                  </option>
-                ))}
-              </select>
-
               <button
                 onClick={() =>
-                  setFinanceFilters({ status: "ALL", year: "", tenancyId: "", tenantId: "" })
+                  setFinanceFilters({ status: "ALL", year: "" })
                 }
                 className="px-3 py-2 text-sm font-semibold border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
               >
