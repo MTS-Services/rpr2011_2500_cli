@@ -81,6 +81,8 @@ function AdminTenanciesInner() {
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
   const [tenancies, setTenancies] = useState([]);
   const [tenants, setTenants] = useState([]);
+  const [availableProperties, setAvailableProperties] = useState([]);
+  const [propertyIdMap, setPropertyIdMap] = useState({}); // Map property names to IDs
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -101,12 +103,15 @@ function AdminTenanciesInner() {
     const fetchTenanciesAndTenants = async () => {
       try {
         setLoading(true);
-        const [tenanciesResponse, usersResponse] = await Promise.all([
+        const [tenanciesResponse, usersResponse, propertiesResponse] = await Promise.all([
           authenticatedFetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`
           ),
           authenticatedFetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?role=TENANT`
+          ),
+          authenticatedFetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
           ),
         ]);
 
@@ -134,6 +139,24 @@ function AdminTenanciesInner() {
                 property: "", // No property directly from users endpoint
               }));
             setTenants(allTenants);
+          }
+        }
+
+        // Fetch all available properties
+        if (propertiesResponse.ok) {
+          const propertiesData = await propertiesResponse.json();
+          if (propertiesData.success && propertiesData.data) {
+            const propNames = propertiesData.data.map(prop => prop.name).filter(Boolean);
+            setAvailableProperties(propNames);
+            
+            // Build map of property name to ID
+            const idMap = {};
+            propertiesData.data.forEach(prop => {
+              if (prop.name && prop.id) {
+                idMap[prop.name] = prop.id;
+              }
+            });
+            setPropertyIdMap(idMap);
           }
         }
       } catch (err) {
@@ -561,10 +584,8 @@ function AdminTenanciesInner() {
         onSubmit={handleAddTenancy}
         tenants={tenants}
         tenancies={tenancies}
-        propertyMap={Object.fromEntries(
-          tenancies.map((t) => [t.property, t.propertyId]).filter(([name]) => name)
-        )}
-        properties={Array.from(new Set(tenancies.map((t) => t.property).filter(Boolean)))}
+        propertyMap={propertyIdMap}
+        properties={availableProperties}
       />
         </>
       )}
