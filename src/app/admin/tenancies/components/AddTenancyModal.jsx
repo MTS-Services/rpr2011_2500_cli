@@ -214,14 +214,12 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                             >
                                 <option value="">Select day</option>
-                                <option value="1">1st</option>
-                                <option value="5">5th</option>
-                                <option value="10">10th</option>
-                                <option value="15">15th</option>
-                                <option value="20">20th</option>
-                                <option value="25">25th</option>
-                                <option value="28">28th</option>
-                                <option value="30">30th</option>
+                                {[...Array(10)].map((_, i) => {
+                                    const day = i + 1;
+                                    return (
+                                        <option key={day} value={String(day)}>{day}</option>
+                                    );
+                                })}
                             </select>
                         </div>
                     </div>
@@ -246,7 +244,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                     {/* RTB Fields */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Number</label>
+                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Number <span className="text-xs text-slate-500">(optional)</span></label>
                             <input
                                 type="text"
                                 name="rtbNumber"
@@ -257,7 +255,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                             />
                         </div>
                         <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Status</label>
+                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Status <span className="text-xs text-slate-500">(optional)</span></label>
                             <select
                                 name="rtbStatus"
                                 value={formData.rtbStatus}
@@ -275,7 +273,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                     {/* RTB Registration & Rent Review Date */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Registration</label>
+                            <label className="block text-base font-medium text-slate-700 mb-1">RTB Registration <span className="text-xs text-slate-500">(optional)</span></label>
                             <select
                                 name="rtbRegistration"
                                 value={formData.rtbRegistration}
@@ -289,7 +287,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                             </select>
                         </div>
                         <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">Rent Review Date</label>
+                            <label className="block text-base font-medium text-slate-700 mb-1">Rent Review Date <span className="text-xs text-slate-500">(optional)</span></label>
                             <input
                                 type="date"
                                 name="rentReviewDate"

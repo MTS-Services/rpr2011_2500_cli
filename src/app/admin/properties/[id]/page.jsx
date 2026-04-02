@@ -109,6 +109,7 @@ export default function AdminPropertyProfilePage() {
   const [noteText, setNoteText] = useState("");
   const [selectedTenancyId, setSelectedTenancyId] = useState(null);
   const [fetchedTenancyDetails, setFetchedTenancyDetails] = useState(null);
+  const [refreshTenancies, setRefreshTenancies] = useState(0);
   
   // Fetched data states
   const [fetchedProperty, setFetchedProperty] = useState(null);
@@ -173,16 +174,35 @@ export default function AdminPropertyProfilePage() {
       }
 
       try {
-        // Fetch tenancies
-        const tenanciesUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/landlord/tenants`;
+        // Fetch tenancies for this property
+        const tenancyParams = new URLSearchParams({ propertyId: String(id) });
+        const tenanciesUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies?${tenancyParams.toString()}`;
         const tenanciesRes = await authenticatedFetch(tenanciesUrl);
         if (tenanciesRes.ok) {
           const data = await tenanciesRes.json();
-          const filtered = data.data?.filter(t => t.propertyId === id) || [];
-          setFetchedTenancies(filtered);
+          const rawTenancies = Array.isArray(data.data) ? data.data : [];
+          const normalizedTenancies = rawTenancies
+            .filter((t) => String(t.propertyId || t.property?.id || "") === String(id))
+            .map((t) => ({
+              id: t.id,
+              tenantName:
+                t.tenant?.name ||
+                t.tenant?.user?.name ||
+                `${t.tenantFirstName || ""} ${t.tenantLastName || ""}`.trim() ||
+                "—",
+              startDate: t.startDate || null,
+              endDate: t.endDate || null,
+              rent: t.rent ?? null,
+              rtbNumber: t.rtbNumber || null,
+              status: t.status || null,
+            }));
+          setFetchedTenancies(normalizedTenancies);
+        } else {
+          setFetchedTenancies([]);
         }
       } catch (err) {
         console.warn("Failed to fetch tenancies:", err);
+        setFetchedTenancies([]);
       }
 
       try {
@@ -228,7 +248,7 @@ export default function AdminPropertyProfilePage() {
     if (id) {
       fetchData();
     }
-  }, [id]);
+  }, [id, refreshTenancies]);
 
   useEffect(() => {
     fetchRentPayments(financeFilters);
@@ -534,12 +554,12 @@ export default function AdminPropertyProfilePage() {
                   {fetchedTenancies && fetchedTenancies.length > 0 ? (
                     fetchedTenancies.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50/60 transition-colors cursor-pointer">
-                        <td className="px-5 py-4 font-semibold text-slate-700">{t.tenant?.user?.name || t.tenantFirstName ? `${t.tenantFirstName || ""} ${t.tenantLastName || ""}` : "—"}</td>
+                        <td className="px-5 py-4 font-semibold text-slate-700">{t.tenantName || "—"}</td>
                         <td className="px-5 py-4 text-slate-600 text-sm">{t.startDate ? new Date(t.startDate).toLocaleDateString() : "—"}</td>
                         <td className="px-5 py-4 text-slate-600 text-sm">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "—"}</td>
                         <td className="px-5 py-4 font-bold text-slate-700">€{t.rent || "—"}</td>
                         <td className="px-5 py-4 font-mono text-sm text-slate-500">{t.rtbNumber || "—"}</td>
-                        <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${t.status === "ACTIVE" ? "bg-green-100 text-green-600" : t.status === "ENDED" ? "bg-slate-100 text-slate-500" : "bg-orange-100 text-orange-600"}`}>{t.status || "—"}</span></td>
+                        <td className="px-5 py-4"><span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${t.status === "ACTIVE" ? "bg-green-100 text-green-600" : t.status === "EXPIRED" || t.status === "TERMINATED" ? "bg-slate-100 text-slate-500" : "bg-orange-100 text-orange-600"}`}>{t.status || "—"}</span></td>
                         <td className="px-5 py-4 text-right">
                           <button 
                             onClick={() => fetchTenancyDetails(t.id)}
