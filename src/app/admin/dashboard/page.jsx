@@ -262,9 +262,9 @@ export default function AdminDashboardPage() {
                       <h3 className="text-base font-bold text-slate-800">{entry?.period || "Monthly Revenue"}</h3>
                       <p className="text-xs text-slate-500 mt-0.5">{entry?.month || "-"}</p>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
+                    {/* <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
                       Collection: {entry?.collectionRate ?? 0}%
-                    </span>
+                    </span> */}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
@@ -313,7 +313,7 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
 
-              {monthlyRevenue.length > 2 && (
+              {/* {monthlyRevenue.length > 2 && (
                 <div className="mt-4 flex justify-center">
                   <button
                     type="button"
@@ -323,7 +323,7 @@ export default function AdminDashboardPage() {
                     {showAllMonths ? "Show less" : "Show all months"}
                   </button>
                 </div>
-              )}
+              )} */}
             </>
           )}
         </div>

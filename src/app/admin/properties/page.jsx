@@ -2,9 +2,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Plus, ChevronDown, Eye, X,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, Edit2, Trash2
+  Plus,
+  ChevronDown,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ArrowUpDown,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import Pagination from "@/components/portal/Pagination";
 import AddPropertyModal from "./components/AddPropertyModal";
@@ -26,7 +34,7 @@ function transformProperty(apiProp) {
   const rtbNumber = apiProp.rtbNumber;
   let rtb = "Unknown";
   let rtbStyle = "text-slate-500";
-  
+
   if (apiProp.rtbRegistration === "REGISTERED") {
     rtb = "Registered";
     rtbStyle = "text-teal-600";
@@ -40,7 +48,9 @@ function transformProperty(apiProp) {
 
   return {
     id: apiProp.id,
-    img: apiProp.image || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60",
+    img:
+      apiProp.image ||
+      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60",
     name: apiProp.name,
     area: `${apiProp.county || "Dublin"} · ${apiProp.bedrooms || "0"}+${apiProp.bathrooms || "0"}`,
     statusProp,
@@ -88,7 +98,7 @@ export default function AdminPropertiesPage() {
 
       const response = await authenticatedFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
-        { signal }
+        { signal },
       );
 
       if (!response.ok) {
@@ -100,8 +110,8 @@ export default function AdminPropertiesPage() {
         const rows = Array.isArray(data.data)
           ? data.data
           : Array.isArray(data.data?.properties)
-          ? data.data.properties
-          : [];
+            ? data.data.properties
+            : [];
         const transformed = rows.map((prop) => transformProperty(prop));
         setProperties(transformed);
       } else {
@@ -133,7 +143,7 @@ export default function AdminPropertiesPage() {
 
         const response = await authenticatedFetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/role/LANDLORD?${params.toString()}`,
-          { signal }
+          { signal },
         );
 
         if (!response.ok) {
@@ -148,12 +158,13 @@ export default function AdminPropertiesPage() {
         const users = Array.isArray(result.data)
           ? result.data
           : Array.isArray(result.data?.users)
-          ? result.data.users
-          : [];
+            ? result.data.users
+            : [];
 
         allLandlords.push(...users);
 
-        const pagination = result.meta?.pagination || result.data?.pagination || {};
+        const pagination =
+          result.meta?.pagination || result.data?.pagination || {};
         if (typeof pagination.hasNextPage === "boolean") {
           hasNextPage = pagination.hasNextPage;
         } else if (pagination.currentPage && pagination.totalPages) {
@@ -176,8 +187,8 @@ export default function AdminPropertiesPage() {
                 id: user.id,
                 name: user.name || user.email || "Unknown Landlord",
               },
-            ])
-        ).values()
+            ]),
+        ).values(),
       ).sort((a, b) => a.name.localeCompare(b.name));
 
       setLandlords(uniqueLandlords);
@@ -199,9 +210,13 @@ export default function AdminPropertiesPage() {
   const filtered = properties;
 
   const toggleAll = () =>
-    setSelected(selected.length === filtered.length ? [] : filtered.map((p) => p.id));
+    setSelected(
+      selected.length === filtered.length ? [] : filtered.map((p) => p.id),
+    );
   const toggleRow = (id) =>
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+    setSelected((s) =>
+      s.includes(id) ? s.filter((x) => x !== id) : [...s, id],
+    );
 
   const handleAddProperty = async (formData) => {
     try {
@@ -219,17 +234,24 @@ export default function AdminPropertiesPage() {
       payload.append("status", formData.status || "VACANT");
       payload.append("rent", String(Number(formData.rent) || 0));
 
+      // Append image if provided
+      if (formData.image) {
+        payload.append("image", formData.image);
+      }
+
       const response = await authenticatedFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
         {
           method: "POST",
           body: payload,
-        }
+        },
       );
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || `Failed to create property (${response.status})`);
+        throw new Error(
+          errData.message || `Failed to create property (${response.status})`,
+        );
       }
 
       const data = await response.json();
@@ -249,7 +271,11 @@ export default function AdminPropertiesPage() {
       return true;
     } catch (err) {
       console.error("Error creating property:", err);
-      await Swal.fire("Error", err.message || "Failed to create property", "error");
+      await Swal.fire(
+        "Error",
+        err.message || "Failed to create property",
+        "error",
+      );
       return false;
     } finally {
       setCreatingProperty(false);
@@ -305,7 +331,7 @@ export default function AdminPropertiesPage() {
             rent: parseFloat(editFormData.rent) || 0,
             rtbNumber: editFormData.rtbNumber || null,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -350,7 +376,7 @@ export default function AdminPropertiesPage() {
       setDeleteLoading(propId);
       const response = await authenticatedFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/${propId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       if (!response.ok) {
@@ -379,9 +405,15 @@ export default function AdminPropertiesPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Properties</h1>
-        <button onClick={() => setAddPropertyModalOpen(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-          <Plus size={15} /> <span className="hidden sm:inline">Add Property</span>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
+          Properties
+        </h1>
+        <button
+          onClick={() => setAddPropertyModalOpen(true)}
+          className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition"
+        >
+          <Plus size={15} />{" "}
+          <span className="hidden sm:inline">Add Property</span>
         </button>
       </div>
 
@@ -405,29 +437,42 @@ export default function AdminPropertiesPage() {
       {/* No Properties State */}
       {!loading && !error && filtered.length === 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-          <p className="text-slate-600">No properties found. Add your first property to get started.</p>
+          <p className="text-slate-600">
+            No properties found. Add your first property to get started.
+          </p>
         </div>
       )}
 
       {/* Mobile cards — visible below lg */}
       <div className="lg:hidden space-y-3">
         {filtered.map((p) => (
-          <div key={p.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+          <div
+            key={p.id}
+            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3"
+          >
             <div className="flex items-center gap-3">
               {/* <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} /> */}
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-800 text-sm truncate">{p.name}</p>
+                <p className="font-semibold text-slate-800 text-sm truncate">
+                  {p.name}
+                </p>
                 <p className="text-xs text-slate-400">{p.area}</p>
               </div>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${PROP_STATUS[p.statusProp]}`}>
-                {p.statusProp !== "Vacant" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />}
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${PROP_STATUS[p.statusProp]}`}
+              >
+                {p.statusProp !== "Vacant" && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                )}
                 {p.statusProp}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-xs text-slate-400 mb-0.5">Landlord</p>
-                <p className="font-medium text-slate-700 truncate">{p.landlord}</p>
+                <p className="font-medium text-slate-700 truncate">
+                  {p.landlord}
+                </p>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-xs text-slate-400 mb-0.5">Rent</p>
@@ -435,8 +480,11 @@ export default function AdminPropertiesPage() {
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-xs text-slate-400 mb-0.5">RTB #</p>
-                <p className={`font-medium flex items-center gap-1 ${p.rtbStyle}`}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" />{p.rtb}
+                <p
+                  className={`font-medium flex items-center gap-1 ${p.rtbStyle}`}
+                >
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" />
+                  {p.rtb}
                 </p>
               </div>
             </div>
@@ -474,53 +522,92 @@ export default function AdminPropertiesPage() {
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
               <th className="w-10 px-4 py-3">
-                <input type="checkbox" checked={selected.length === filtered.length && filtered.length > 0} onChange={toggleAll} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                <input
+                  type="checkbox"
+                  checked={
+                    selected.length === filtered.length && filtered.length > 0
+                  }
+                  onChange={toggleAll}
+                  className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                />
+              </th>
+              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
+                <span className="flex items-center gap-1">Images </span>
               </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
                 <span className="flex items-center gap-1">Name </span>
               </th>
               <th className="w-48 px-3 py-3 text-center font-semibold text-slate-600 text-sm">
-                <span className="flex items-center justify-center gap-1">Status</span>
+                <span className="flex items-center justify-center gap-1">
+                  Status
+                </span>
               </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
                 <span className="flex items-center gap-1">Landlord </span>
               </th>
-              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">Rent</th>
+              <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
+                Rent
+              </th>
               <th className="w-48 px-3 py-3 text-left font-semibold text-slate-600 text-base">
                 <span className="flex items-center gap-1">RTB # </span>
               </th>
-              <th className="w-48 px-3 py-3 text-right font-semibold text-slate-600">Actions</th>
+              <th className="w-48 px-3 py-3 text-right font-semibold text-slate-600">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.map((p) => (
-              <tr key={p.id} className={`hover:bg-slate-50/60 transition ${selected.includes(p.id) ? "bg-teal-50/40" : ""}`}>
+              <tr
+                key={p.id}
+                className={`hover:bg-slate-50/60 transition ${selected.includes(p.id) ? "bg-teal-50/40" : ""}`}
+              >
                 <td className="px-4 py-3">
-                  <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleRow(p.id)} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(p.id)}
+                    onChange={() => toggleRow(p.id)}
+                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                  />
+                </td>
+                <td className="w-48 px-3 py-3">
+                  <img src={p.img} alt={p.name} className="w-32 h-20 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
                 </td>
                 <td className="w-48 px-3 py-3">
                   <div className="flex items-center gap-4">
                     {/* <img src={p.img} alt={p.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} /> */}
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 text-base leading-tight truncate">{p.name}</p>
+                      <p className="font-semibold text-slate-800 text-base leading-tight truncate">
+                        {p.name}
+                      </p>
                       <p className="text-sm text-slate-400">{p.area}</p>
                     </div>
                   </div>
                 </td>
                 <td className="w-48 px-3 py-3 text-center">
                   <div>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold w-fit ${PROP_STATUS[p.statusProp]}`}>
-                      {p.statusProp !== "Vacant" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />}
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold w-fit ${PROP_STATUS[p.statusProp]}`}
+                    >
+                      {p.statusProp !== "Vacant" && (
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                      )}
                       {p.statusProp}
                     </span>
                   </div>
                 </td>
                 <td className="w-48 px-3 py-3">
-                  <p className="text-slate-800 font-medium text-base truncate">{p.landlord}</p>
+                  <p className="text-slate-800 font-medium text-base truncate">
+                    {p.landlord}
+                  </p>
                 </td>
-                <td className="w-48 px-3 py-3 font-semibold text-slate-800 text-base">{p.rent}</td>
+                <td className="w-48 px-3 py-3 font-semibold text-slate-800 text-base">
+                  {p.rent}
+                </td>
                 <td className="w-48 px-3 py-3">
-                  <span className={`flex items-center gap-1 text-base font-medium ${p.rtbStyle}`}>
+                  <span
+                    className={`flex items-center gap-1 text-base font-medium ${p.rtbStyle}`}
+                  >
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" />
                     {p.rtb}
                   </span>
@@ -561,28 +648,64 @@ export default function AdminPropertiesPage() {
       {/* Modal: Property details */}
       {modalOpen && activeProp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={() => { setModalOpen(false); setActiveProp(null); }} />
+          <div
+            className="fixed inset-0 bg-black/40"
+            onClick={() => {
+              setModalOpen(false);
+              setActiveProp(null);
+            }}
+          />
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 p-6">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-slate-800">{activeProp.name}</h3>
+                <h3 className="text-xl font-semibold text-slate-800">
+                  {activeProp.name}
+                </h3>
                 <p className="text-sm text-slate-500 mt-1">{activeProp.area}</p>
               </div>
-              <button aria-label="Close" onClick={() => { setModalOpen(false); setActiveProp(null); }} className="text-slate-500 hover:text-slate-700">
+              <button
+                aria-label="Close"
+                onClick={() => {
+                  setModalOpen(false);
+                  setActiveProp(null);
+                }}
+                className="text-slate-500 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <img src={activeProp.img} alt={activeProp.name} className="w-full h-40 object-cover rounded-md sm:col-span-1" />
+              <img
+                src={activeProp.img}
+                alt={activeProp.name}
+                className="w-full h-40 object-cover rounded-md sm:col-span-1"
+              />
               <div className="sm:col-span-2 space-y-2">
-                <p className="text-sm"><strong>Landlord:</strong> {activeProp.landlord}</p>
-                <p className="text-sm"><strong>Rent:</strong> {activeProp.rent}</p>
-                <p className="text-sm"><strong>RTB #:</strong> <span className={activeProp.rtbStyle}>{activeProp.rtb}</span></p>
-                <p className="text-sm"><strong>Status:</strong> {activeProp.statusProp}</p>
+                <p className="text-sm">
+                  <strong>Landlord:</strong> {activeProp.landlord}
+                </p>
+                <p className="text-sm">
+                  <strong>Rent:</strong> {activeProp.rent}
+                </p>
+                <p className="text-sm">
+                  <strong>RTB #:</strong>{" "}
+                  <span className={activeProp.rtbStyle}>{activeProp.rtb}</span>
+                </p>
+                <p className="text-sm">
+                  <strong>Status:</strong> {activeProp.statusProp}
+                </p>
               </div>
             </div>
             <div className="mt-6 text-right">
-              <button onClick={() => { setModalOpen(false); setActiveProp(null); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md">Close</button>
+              <button
+                onClick={() => {
+                  setModalOpen(false);
+                  setActiveProp(null);
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -602,15 +725,23 @@ export default function AdminPropertiesPage() {
           <div className="fixed inset-0 bg-black/40" onClick={closeEditModal} />
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 p-6">
             <div className="flex items-start justify-between mb-6">
-              <h3 className="text-xl font-semibold text-slate-800">Edit Property</h3>
-              <button aria-label="Close" onClick={closeEditModal} className="text-slate-500 hover:text-slate-700">
+              <h3 className="text-xl font-semibold text-slate-800">
+                Edit Property
+              </h3>
+              <button
+                aria-label="Close"
+                onClick={closeEditModal}
+                className="text-slate-500 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Property Name</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Property Name
+                  </label>
                   <input
                     type="text"
                     name="name"
@@ -620,7 +751,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Property Type</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Property Type
+                  </label>
                   <input
                     type="text"
                     name="propertyType"
@@ -630,7 +763,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Bedrooms</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Bedrooms
+                  </label>
                   <input
                     type="number"
                     name="bedrooms"
@@ -640,7 +775,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Bathrooms</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Bathrooms
+                  </label>
                   <input
                     type="number"
                     name="bathrooms"
@@ -650,7 +787,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Address
+                  </label>
                   <input
                     type="text"
                     name="address"
@@ -660,7 +799,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">County</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    County
+                  </label>
                   <input
                     type="text"
                     name="county"
@@ -670,7 +811,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Eircode</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Eircode
+                  </label>
                   <input
                     type="text"
                     name="eircode"
@@ -680,7 +823,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Rent (€)</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Rent (€)
+                  </label>
                   <input
                     type="number"
                     name="rent"
@@ -690,7 +835,9 @@ export default function AdminPropertiesPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">RTB Number</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    RTB Number
+                  </label>
                   <input
                     type="text"
                     name="rtbNumber"
@@ -720,8 +867,6 @@ export default function AdminPropertiesPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
-
