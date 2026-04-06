@@ -188,6 +188,23 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                         </div>
                     </div>
 
+                    {/* Monthly Rent */}
+                    {/* <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">
+                            Monthly Rent <span className="text-xs text-slate-500">(optional)</span>
+                        </label>
+                        <input
+                            type="number"
+                            name="rent"
+                            value={formData.rent}
+                            onChange={handleFormChange}
+                            placeholder="e.g., 1500"
+                            min="0"
+                            step="0.01"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
+                    </div> */}
+
                     {/* Rent Due Day */}
                     <div>
                         <label className="block text-base font-medium text-slate-700 mb-1">
