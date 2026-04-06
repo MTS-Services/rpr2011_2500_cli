@@ -215,7 +215,14 @@ function AdminTenanciesInner() {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error("Full API Error Response:", errorData);
+        } catch (parseErr) {
+          console.error("Error parsing response:", parseErr);
+          errorData = { message: response.statusText };
+        }
         throw new Error(errorData.message || `Failed to create tenancy: ${response.statusText}`);
       }
 
@@ -240,6 +247,11 @@ function AdminTenanciesInner() {
       return true;
     } catch (err) {
       console.error("Error adding tenancy:", err);
+      console.error("Full error details:", {
+        message: err.message,
+        stack: err.stack,
+        formData: formData
+      });
       await Swal.fire({
         icon: "error",
         title: "Error",
