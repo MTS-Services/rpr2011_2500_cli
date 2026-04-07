@@ -36,8 +36,10 @@ export default function MaintenancePage() {
   const [summary, setSummary] = useState({ totalCostCharged: 0, chargedRequestsCount: 0 });
   const [editOpen, setEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [editCost, setEditCost] = useState(0);
+  const [editCost, setEditCost] = useState("");
   const [editChargeNote, setEditChargeNote] = useState("");
+  const [editChargedMonth, setEditChargedMonth] = useState("");
+  const [chargedMonths, setChargedMonths] = useState([]);
   const [editSaving, setEditSaving] = useState(false);
 
   // CSS to hide scrollbars
@@ -120,6 +122,7 @@ export default function MaintenancePage() {
             const c = item.cost != null ? Number(item.cost) : 0;
             return ({
               id: item.id,
+              propertyId: item.propertyId,
               property: item.property?.address || item.property?.name || "Unknown Property",
               issue: item.title,
               description: item.description,
@@ -133,6 +136,7 @@ export default function MaintenancePage() {
               costDisplay: `€${c.toLocaleString()}`,
               isCharged: !!item.isCharged,
               chargeNote: item.chargeNote || null,
+              chargedMonth: item.chargedMonth || null,
             });
           });
           setItems(mapped);
@@ -248,6 +252,7 @@ export default function MaintenancePage() {
         setEditSaving(true);
         const payload = { cost: Number(editCost) };
         if (editChargeNote !== undefined && editChargeNote !== null) payload.chargeNote = editChargeNote;
+        if (editChargedMonth !== undefined && editChargedMonth !== null && editChargedMonth !== "") payload.chargedMonth = editChargedMonth;
         const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/${itemId}/charge`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -259,8 +264,8 @@ export default function MaintenancePage() {
         }
         await res.json();
         // Update list and details locally
-        setItems((prev) => prev.map((it) => it.id === itemId ? { ...it, cost: Number(editCost), costDisplay: `€${Number(editCost).toLocaleString()}`, isCharged: true, chargeNote: editChargeNote } : it));
-        setSelectedDetails((prev) => prev && prev.id === itemId ? { ...prev, cost: Number(editCost), isCharged: true, chargeNote: editChargeNote } : prev);
+        setItems((prev) => prev.map((it) => it.id === itemId ? { ...it, cost: Number(editCost), costDisplay: `€${Number(editCost).toLocaleString()}`, isCharged: true, chargeNote: editChargeNote, chargedMonth: editChargedMonth } : it));
+        setSelectedDetails((prev) => prev && prev.id === itemId ? { ...prev, cost: Number(editCost), isCharged: true, chargeNote: editChargeNote, chargedMonth: editChargedMonth } : prev);
         setEditOpen(false);
         setEditingItem(null);
         Swal.fire({ title: "Updated", text: "Charge updated", icon: "success", timer: 1500, showConfirmButton: false });
@@ -272,13 +277,36 @@ export default function MaintenancePage() {
       }
     };
 
+  // Fetch available charged months for a property
+  const fetchChargedMonths = async (propertyId) => {
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/landlord/property/${propertyId}/summary`
+      );
+      if (!response.ok) throw new Error("Failed to fetch months");
+      const result = await response.json();
+      if (result.success && result.data?.payments) {
+        const months = result.data.payments.map((p) => p.month).filter(Boolean);
+        setChargedMonths(months);
+      }
+    } catch (error) {
+      console.error("Error fetching charged months:", error);
+      setChargedMonths([]);
+    }
+  };
+
   // Quick edit flow: open custom edit modal (landlord only)
   const handleQuickEdit = (item) => {
     setEditingItem(item);
-    // show placeholder when no cost set by leaving value empty string
-    setEditCost(item.cost != null ? item.cost : "");
-    setEditChargeNote(item.chargeNote ?? "");
+    // Start with empty fields
+    setEditCost("");
+    setEditChargeNote("");
+    setEditChargedMonth("");
     setEditOpen(true);
+    // Fetch available months for this property
+    if (item.propertyId) {
+      fetchChargedMonths(item.propertyId);
+    }
   };
 
   const filtered = items.filter((item) => {
@@ -486,7 +514,7 @@ export default function MaintenancePage() {
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="e.g. 50.00"
+                  placeholder="0"
                   value={editCost}
                   onChange={(e) => setEditCost(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
@@ -502,6 +530,22 @@ export default function MaintenancePage() {
                   rows={4}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Charged Month</label>
+                <select
+                  value={editChargedMonth}
+                  onChange={(e) => setEditChargedMonth(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none"
+                >
+                  <option value="">Select a month</option>
+                  {chargedMonths.map((month) => (
+                    <option key={month} value={month}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

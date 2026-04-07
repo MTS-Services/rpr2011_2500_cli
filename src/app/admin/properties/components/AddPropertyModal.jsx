@@ -6,14 +6,15 @@ import Swal from "sweetalert2";
 const INITIAL_FORM_DATA = {
   name: "",
   propertyType: "",
-  bedrooms: "0",
-  bathrooms: "0",
+  bedrooms: "",
+  bathrooms: "",
   address: "",
   county: "",
   eircode: "",
   landlordId: "",
   status: "VACANT",
-  rent: "0",
+  rent: "",
+  image: null,
 };
 
 const PROPERTY_TYPES = ["House", "Townhouse", "Other"];
@@ -33,16 +34,35 @@ export default function AddPropertyModal({
   const [formData, setFormData] = useState({
     ...INITIAL_FORM_DATA,
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     if (!isOpen) {
       setFormData({ ...INITIAL_FORM_DATA });
+      setImagePreview(null);
     }
   }, [isOpen]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setFormData((prev) => ({ ...prev, image: file }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setFormData((prev) => ({ ...prev, image: null }));
   };
 
   const handleSubmit = async (e) => {
@@ -250,7 +270,36 @@ export default function AddPropertyModal({
             </div>
           </div>
 
-          {/* Image removed per request */}
+          {/* Optional Image */}
+          <div>
+            <label className="block text-base font-medium text-slate-700 mb-1">
+              Property Image <span className="text-slate-500 text-sm font-normal">(Optional)</span>
+            </label>
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer"
+              />
+              {imagePreview && (
+                <div className="relative w-full">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-54 object-cover rounded-lg border border-slate-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </form>
 
         {/* Sticky Footer */}

@@ -11,7 +11,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
         status: "",
         startDate: "",
         endDate: "",
-        rent: "",
+        // rent: "",
         rentDueDay: "",
         rentStatus: "PAID",
         rtbNumber: "",
@@ -48,7 +48,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.tenantId || !formData.property || !formData.status || !formData.rent || !formData.rentDueDay) {
+        if (!formData.tenantId || !formData.property || !formData.status || !formData.rentDueDay) {
             Swal.fire({
               title: 'Incomplete Form',
               text: 'Please fill in all required fields',
@@ -76,7 +76,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
             status: "",
             startDate: "",
             endDate: "",
-            rent: "",
+            // rent: "",
             rentDueDay: "",
             rentStatus: "PAID",
             rtbNumber: "",
@@ -188,40 +188,42 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                         </div>
                     </div>
 
-                    {/* Rent & Rent Due Day */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">
-                                Rent <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="rent"
-                                value={formData.rent}
-                                onChange={handleFormChange}
-                                placeholder="e.g., €2,200"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-base font-medium text-slate-700 mb-1">
-                                Rent Due Day <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="rentDueDay"
-                                value={formData.rentDueDay}
-                                onChange={handleFormChange}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            >
-                                <option value="">Select day</option>
-                                {[...Array(10)].map((_, i) => {
-                                    const day = i + 1;
-                                    return (
-                                        <option key={day} value={String(day)}>{day}</option>
-                                    );
-                                })}
-                            </select>
-                        </div>
+                    {/* Monthly Rent */}
+                    {/* <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">
+                            Monthly Rent <span className="text-xs text-slate-500">(optional)</span>
+                        </label>
+                        <input
+                            type="number"
+                            name="rent"
+                            value={formData.rent}
+                            onChange={handleFormChange}
+                            placeholder="e.g., 1500"
+                            min="0"
+                            step="0.01"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
+                    </div> */}
+
+                    {/* Rent Due Day */}
+                    <div>
+                        <label className="block text-base font-medium text-slate-700 mb-1">
+                            Rent Due Day <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            name="rentDueDay"
+                            value={formData.rentDueDay}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        >
+                            <option value="">Select day</option>
+                            {[...Array(10)].map((_, i) => {
+                                const day = i + 1;
+                                return (
+                                    <option key={day} value={String(day)}>{day}</option>
+                                );
+                            })}
+                        </select>
                     </div>
 
                     {/* Rent Status */}
@@ -242,7 +244,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                     </div>
 
                     {/* RTB Fields */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-base font-medium text-slate-700 mb-1">RTB Number <span className="text-xs text-slate-500">(optional)</span></label>
                             <input
@@ -268,7 +270,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                                 <option value="Inactive">Inactive</option>
                             </select>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* RTB Registration & Rent Review Date */}
                     <div className="grid grid-cols-2 gap-4">

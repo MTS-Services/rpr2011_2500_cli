@@ -309,12 +309,11 @@ export default function AdminPropertyProfilePage() {
 
       try {
         // Fetch maintenance
-        const maintUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/landlord`;
+        const maintUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance?propertyId=${id}`;
         const maintRes = await authenticatedFetch(maintUrl);
         if (maintRes.ok) {
           const data = await maintRes.json();
-          const filtered = data.data?.filter(m => m.propertyId === id) || [];
-          setFetchedMaintenance(filtered);
+          setFetchedMaintenance(data.data || []);
         }
       } catch (err) {
         console.warn("Failed to fetch maintenance:", err);
@@ -387,7 +386,7 @@ export default function AdminPropertyProfilePage() {
       console.warn("Failed to fetch tenancy details:", err);
     }
   };
-
+console.log(fetchedMaintenance)
   return (
     <div className="space-y-4">
       {/* Back */}
