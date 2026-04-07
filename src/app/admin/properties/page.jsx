@@ -19,19 +19,35 @@ import AddPropertyModal from "./components/AddPropertyModal";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
+const ITEMS_PER_PAGE = 10;
+
+const PROPERTY_STATUS_OPTIONS = [
+  { value: "LET", label: "Let" },
+  { value: "NOTICE", label: "Notice" },
+  { value: "VACANT", label: "Vacant" },
+];
+
+function normalizePropertyStatus(statusStr) {
+  const statusUpper = String(statusStr || "").toUpperCase();
+  if (statusUpper === "NOTICE" || statusUpper === "NOTICE_SERVED") return "NOTICE";
+  if (statusUpper === "LET") return "LET";
+  if (statusUpper === "VACANT" || statusUpper === "AVAILABLE") return "VACANT";
+  return "VACANT";
+}
+
 // Status mapping helper
 function getStatusFromString(statusStr) {
-  const statusLower = (statusStr || "").toLowerCase();
-  if (statusLower === "let") return "Let";
-  if (statusLower === "vacant") return "Vacant";
-  if (statusLower.includes("notice")) return "Notice Served";
+  const status = normalizePropertyStatus(statusStr);
+  if (status === "LET") return "Let";
+  if (status === "VACANT") return "Vacant";
+  if (status === "NOTICE") return "Notice Served";
   return "Unknown";
 }
 
 // Transform API response to UI format
 function transformProperty(apiProp) {
-  const statusProp = getStatusFromString(apiProp.status);
-  const rtbNumber = apiProp.rtbNumber;
+  const status = normalizePropertyStatus(apiProp.status);
+  const statusProp = getStatusFromString(status);
   let rtb = "Unknown";
   let rtbStyle = "text-slate-500";
 
@@ -62,8 +78,11 @@ function transformProperty(apiProp) {
     bedrooms: apiProp.bedrooms,
     bathrooms: apiProp.bathrooms,
     address: apiProp.address,
+    county: apiProp.county || "",
     eircode: apiProp.eircode,
     propertyType: apiProp.propertyType,
+    status,
+    rtbNumberRaw: apiProp.rtbNumber || "",
   };
 }
 
@@ -88,16 +107,28 @@ export default function AdminPropertiesPage() {
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [landlords, setLandlords] = useState([]);
   const [creatingProperty, setCreatingProperty] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: ITEMS_PER_PAGE,
+    totalItems: 0,
+    totalPages: 1,
+  });
 
-  const loadProperties = async ({ showLoader = false, signal } = {}) => {
+  const loadProperties = async ({ page = currentPage, showLoader = false, signal } = {}) => {
     try {
       if (showLoader) {
         setLoading(true);
         setError(null);
       }
 
+      const params = new URLSearchParams();
+      params.append("page", String(page));
+      params.append("limit", String(ITEMS_PER_PAGE));
+
       const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties?${params.toString()}`,
         { signal },
       );
 
@@ -114,13 +145,40 @@ export default function AdminPropertiesPage() {
             : [];
         const transformed = rows.map((prop) => transformProperty(prop));
         setProperties(transformed);
+
+        const paginationMeta = data.meta?.pagination || data.data?.pagination || {};
+        const totalItems = Number(paginationMeta.totalItems ?? rows.length);
+        const itemsPerPage = Number(paginationMeta.itemsPerPage ?? ITEMS_PER_PAGE);
+        const totalPages = Number(
+          paginationMeta.totalPages ?? Math.max(1, Math.ceil(totalItems / itemsPerPage)),
+        );
+
+        setPagination({
+          currentPage: Number(paginationMeta.currentPage ?? page),
+          itemsPerPage,
+          totalItems,
+          totalPages,
+        });
       } else {
         setProperties([]);
+        setPagination({
+          currentPage: page,
+          itemsPerPage: ITEMS_PER_PAGE,
+          totalItems: 0,
+          totalPages: 1,
+        });
       }
     } catch (err) {
       if (err.name !== "AbortError") {
         console.error("Error fetching properties:", err);
         setError(err.message || "Failed to load properties");
+        setProperties([]);
+        setPagination({
+          currentPage: page,
+          itemsPerPage: ITEMS_PER_PAGE,
+          totalItems: 0,
+          totalPages: 1,
+        });
       }
     } finally {
       if (showLoader) {
@@ -202,7 +260,12 @@ export default function AdminPropertiesPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    loadProperties({ showLoader: true, signal: controller.signal });
+    loadProperties({ page: currentPage, showLoader: true, signal: controller.signal });
+    return () => controller.abort();
+  }, [currentPage, reloadKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
     loadLandlords({ signal: controller.signal });
     return () => controller.abort();
   }, []);
@@ -259,7 +322,8 @@ export default function AdminPropertiesPage() {
         throw new Error(data.message || "Failed to create property");
       }
 
-      await loadProperties({ showLoader: false });
+      setCurrentPage(1);
+      setReloadKey((prev) => prev + 1);
       await Swal.fire({
         icon: "success",
         title: "Property Added!",
@@ -289,11 +353,12 @@ export default function AdminPropertiesPage() {
       bedrooms: prop.bedrooms,
       bathrooms: prop.bathrooms,
       address: prop.address,
-      county: prop.area.split(" · ")[0],
+      county: prop.county,
       eircode: prop.eircode,
       propertyType: prop.propertyType,
       rent: prop.rent.replace("€", "").trim(),
-      rtbNumber: prop.rtb === "Registered" ? "RTB789012" : "",
+      rtbNumber: prop.rtbNumberRaw || "",
+      status: prop.status || "VACANT",
     });
     setEditModalOpen(true);
   };
@@ -329,6 +394,7 @@ export default function AdminPropertiesPage() {
             eircode: editFormData.eircode,
             propertyType: editFormData.propertyType,
             rent: parseFloat(editFormData.rent) || 0,
+            status: normalizePropertyStatus(editFormData.status),
             rtbNumber: editFormData.rtbNumber || null,
           }),
         },
@@ -347,7 +413,7 @@ export default function AdminPropertiesPage() {
           timer: 2000,
           showConfirmButton: false,
         });
-        await loadProperties({ showLoader: false });
+        setReloadKey((prev) => prev + 1);
         closeEditModal();
       }
     } catch (err) {
@@ -391,8 +457,11 @@ export default function AdminPropertiesPage() {
         showConfirmButton: false,
       });
 
-      // Remove from list
-      setProperties((prev) => prev.filter((p) => p.id !== propId));
+      if (properties.length === 1 && currentPage > 1) {
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+      } else {
+        setReloadKey((prev) => prev + 1);
+      }
     } catch (err) {
       console.error("Error deleting property:", err);
       Swal.fire("Error", err.message || "Failed to delete property", "error");
@@ -512,7 +581,14 @@ export default function AdminPropertiesPage() {
           </div>
         ))}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <Pagination total={filtered.length} />
+          <Pagination
+            total={pagination.totalItems}
+            itemsPerPage={pagination.itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={() => {}}
+            showItemsPerPage={false}
+          />
         </div>
       </div>
 
@@ -642,7 +718,14 @@ export default function AdminPropertiesPage() {
             ))}
           </tbody>
         </table>
-        <Pagination total={filtered.length} />
+        <Pagination
+          total={pagination.totalItems}
+          itemsPerPage={pagination.itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={() => {}}
+          showItemsPerPage={false}
+        />
       </div>
 
       {/* Modal: Property details */}
@@ -761,6 +844,23 @@ export default function AdminPropertiesPage() {
                     onChange={handleEditChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={editFormData.status || "VACANT"}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    {PROPERTY_STATUS_OPTIONS.map((statusOption) => (
+                      <option key={statusOption.value} value={statusOption.value}>
+                        {statusOption.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
