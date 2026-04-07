@@ -332,7 +332,7 @@ function LandlordRTBInner() {
         {/* Edit Modal */}
         {isEditModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" onClick={() => setIsEditModalOpen(false)}></div>
+            <div className="absolute inset-0 -top-8 bg-slate-900/60 backdrop-blur-[2px]" onClick={() => setIsEditModalOpen(false)}></div>
             <div className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
                 <h3 className="text-xl font-bold text-slate-900">Update RTB Registration</h3>
