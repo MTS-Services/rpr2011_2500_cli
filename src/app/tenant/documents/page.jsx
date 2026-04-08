@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import TenantShell from "@/components/tenant/TenantShell";
 import Pagination from "@/components/portal/Pagination";
-import { FileText, Download, Trash2 } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 import Swal from "sweetalert2";
 import { authenticatedFetch } from "@/utils/authFetch";
 
@@ -132,37 +132,6 @@ export default function TenantDocumentsPage() {
     }
   };
 
-  const handleDeleteDocument = async (doc) => {
-    const result = await Swal.fire({
-      title: "Delete Document?",
-      text: `Are you sure you want to delete "${doc.name}"? This action cannot be undone.`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Delete",
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/documents/${doc.id}`,
-        { method: "DELETE" }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete: ${response.statusText}`);
-      }
-
-      setDocs((prevDocs) => prevDocs.filter((d) => d.id !== doc.id));
-      Swal.fire({icon: "success", title: "Deleted!", timer: 2000, showConfirmButton: false});
-    } catch (err) {
-      console.error("Error deleting document:", err);
-      Swal.fire("Error", err.message || "Failed to delete document", "error");
-    }
-  };
-
   return (
     <TenantShell>
       <div className="mb-3 xl:mb-5">
@@ -224,14 +193,9 @@ export default function TenantDocumentsPage() {
                   </td>
                   <td className="px-5 py-4 text-sm text-slate-500">{d.uploadedAt}</td>
                   <td className="px-5 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleDownload(d)} title="Download" className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition">
-                        <Download size={16} />
-                      </button>
-                      <button onClick={() => handleDeleteDocument(d)} title="Delete" className="inline-flex items-center justify-center p-2.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <button onClick={() => handleDownload(d)} title="Download" className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition">
+                      <Download size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -261,14 +225,9 @@ export default function TenantDocumentsPage() {
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${d.typeStyle}`}>{d.type}</span>
                 </div>
               </div>
-              <div className="flex-shrink-0 flex items-center gap-2">
-                <button onClick={() => handleDownload(d)} title="Download" className="inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition">
-                  <Download size={16} />
-                </button>
-                <button onClick={() => handleDeleteDocument(d)} title="Delete" className="inline-flex items-center justify-center p-2.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition">
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              <button onClick={() => handleDownload(d)} title="Download" className="flex-shrink-0 inline-flex items-center justify-center p-2.5 text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition">
+                <Download size={16} />
+              </button>
             </div>
           </div>
         ))}

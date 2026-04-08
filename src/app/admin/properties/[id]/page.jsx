@@ -94,6 +94,18 @@ const visColors = {
   Landlord: "bg-amber-100 text-amber-700",
 };
 
+const EMPTY_FINANCE_SUMMARY = {
+  monthlyRent: 0,
+  rentDueDay: 0,
+  year: 0,
+  totalCollected: 0,
+  monthsPaid: 0,
+  totalMonths: 0,
+  overdueCount: 0,
+  pendingCount: 0,
+  payments: [],
+};
+
 function InfoRow({ label, value, mono = false, children }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 py-3 border-b border-slate-100 last:border-0">
@@ -103,12 +115,9 @@ function InfoRow({ label, value, mono = false, children }) {
   );
 }
 
-function extractRentPaymentRows(payload) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.payments)) return payload.payments;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.rows)) return payload.rows;
-  return [];
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function formatPaymentMonth(rawMonth, fallbackDate) {
@@ -184,6 +193,49 @@ function getPaymentYear(payment) {
   return yearMatch ? Number(yearMatch[0]) : null;
 }
 
+function normalizeFinanceSummary(payload) {
+  const rows = Array.isArray(payload?.payments) ? payload.payments : [];
+  return {
+    monthlyRent: toNumber(payload?.monthlyRent),
+    rentDueDay: toNumber(payload?.rentDueDay),
+    year: toNumber(payload?.year),
+    totalCollected: toNumber(payload?.totalCollected),
+    monthsPaid: toNumber(payload?.monthsPaid),
+    totalMonths: toNumber(payload?.totalMonths),
+    overdueCount: toNumber(payload?.overdueCount),
+    pendingCount: toNumber(payload?.pendingCount),
+    payments: rows,
+  };
+}
+
+function formatCurrency(amount) {
+  return `€${toNumber(amount).toLocaleString("en-IE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatDisplayDate(value) {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString();
+}
+
+function getPaymentStatusBadgeClass(status) {
+  const normalized = String(status || "PENDING").toUpperCase();
+  if (normalized === "PAID") return "bg-green-100 text-green-700";
+  if (normalized === "OVERDUE") return "bg-red-100 text-red-700";
+  if (normalized === "LATE") return "bg-orange-100 text-orange-700";
+  return "bg-amber-100 text-amber-700";
+}
+
+function getSortableTimestamp(value) {
+  if (!value) return 0;
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
 export default function AdminPropertyProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
@@ -196,6 +248,7 @@ export default function AdminPropertyProfilePage() {
   const [fetchedProperty, setFetchedProperty] = useState(null);
   const [allRentPayments, setAllRentPayments] = useState([]);
   const [fetchedRentPayments, setFetchedRentPayments] = useState([]);
+  const [financeSummary, setFinanceSummary] = useState(EMPTY_FINANCE_SUMMARY);
   const [fetchedTenancies, setFetchedTenancies] = useState(null);
   const [fetchedDocuments, setFetchedDocuments] = useState(null);
   const [fetchedMaintenance, setFetchedMaintenance] = useState(null);
@@ -209,37 +262,30 @@ export default function AdminPropertyProfilePage() {
   const activeTenancy = Array.isArray(fetchedTenancies)
     ? fetchedTenancies.find((tenancy) => tenancy.status === "ACTIVE") || fetchedTenancies[0]
     : null;
-  const activeTenantId = String(activeTenancy?.tenantId || "");
 
-  const fetchRentPayments = async (tenantId, statusFilter = "ALL") => {
-    if (!id || !tenantId) return;
+  const fetchRentPaymentsSummary = async () => {
+    if (!id) return;
 
     setIsLoadingRentPayments(true);
     try {
-      const query = new URLSearchParams();
-      query.set("tenantId", String(tenantId));
-      query.set("page", "1");
-      query.set("limit", "200");
-      if (statusFilter && statusFilter !== "ALL") {
-        query.set("status", statusFilter);
-      }
-
-      const queryString = query.toString();
-      const rentUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments?${queryString}`;
+      const rentUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/landlord/property/${id}/summary`;
       const rentRes = await authenticatedFetch(rentUrl);
 
       if (rentRes.ok) {
         const data = await rentRes.json();
-        const paymentRows = extractRentPaymentRows(data.data).map(normalizeRentPayment);
-        const propertyPayments = paymentRows.filter((payment) => String(payment.propertyId || "") === String(id));
+        const summary = normalizeFinanceSummary(data.data || {});
+        const payments = summary.payments.map(normalizeRentPayment);
 
-        setAllRentPayments(propertyPayments);
+        setFinanceSummary(summary);
+        setAllRentPayments(payments);
       } else {
+        setFinanceSummary(EMPTY_FINANCE_SUMMARY);
         setAllRentPayments([]);
         setFetchedRentPayments([]);
       }
     } catch (err) {
       console.warn("Failed to fetch rent payments:", err);
+      setFinanceSummary(EMPTY_FINANCE_SUMMARY);
       setAllRentPayments([]);
       setFetchedRentPayments([]);
     } finally {
@@ -340,14 +386,15 @@ export default function AdminPropertyProfilePage() {
   }, [id, refreshTenancies]);
 
   useEffect(() => {
-    if (!id || !activeTenantId) {
+    if (!id) {
+      setFinanceSummary(EMPTY_FINANCE_SUMMARY);
       setAllRentPayments([]);
       setFetchedRentPayments([]);
       return;
     }
 
-    fetchRentPayments(activeTenantId, financeFilters.status);
-  }, [id, activeTenantId, financeFilters.status]);
+    fetchRentPaymentsSummary();
+  }, [id]);
 
   useEffect(() => {
     const filteredPayments = allRentPayments.filter((payment) => {
@@ -372,6 +419,12 @@ export default function AdminPropertyProfilePage() {
     setFetchedRentPayments(filteredPayments);
   }, [allRentPayments, financeFilters.status, financeFilters.year]);
 
+  const sortedRentPayments = [...fetchedRentPayments].sort((a, b) => {
+    const aTs = getSortableTimestamp(a.dueDate || a.createdAt);
+    const bTs = getSortableTimestamp(b.dueDate || b.createdAt);
+    return bTs - aTs;
+  });
+
   // Fetch tenancy details when a tenancy is selected
   const fetchTenancyDetails = async (tenancyId) => {
     try {
@@ -386,7 +439,7 @@ export default function AdminPropertyProfilePage() {
       console.warn("Failed to fetch tenancy details:", err);
     }
   };
-console.log(fetchedMaintenance)
+
   return (
     <div className="space-y-4">
       {/* Back */}
@@ -513,32 +566,32 @@ console.log(fetchedMaintenance)
             </div>
 
             {(() => {
-              const totalCollected = fetchedRentPayments
-                .filter((p) => p.status === "PAID")
-                .reduce((sum, p) => sum + Number(p.amount || 0), 0);
-              const totalPending = fetchedRentPayments
+              const totalPending = allRentPayments
                 .filter((p) => p.status === "PENDING")
                 .reduce((sum, p) => sum + Number(p.amount || 0), 0);
-              const overdueCount = fetchedRentPayments.filter((p) => p.status === "OVERDUE").length;
-              const pendingCount = fetchedRentPayments.filter((p) => p.status === "PENDING").length;
+              const paidRatio = `${financeSummary.monthsPaid}/${financeSummary.totalMonths}`;
+              const dueDayLabel = financeSummary.rentDueDay > 0 ? `Due day: ${financeSummary.rentDueDay}` : "Due day: 0";
 
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <p className="text-2xl font-bold text-teal-600">€{fetchedProperty?.rent || "—"}</p>
+                    <p className="text-2xl font-bold text-teal-600">{formatCurrency(financeSummary.monthlyRent)}</p>
                     <p className="text-sm text-slate-600 mt-1">Monthly Rent</p>
+                    <p className="text-xs text-slate-500 mt-1">{dueDayLabel}</p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <p className="text-2xl font-bold text-blue-600">€{totalCollected.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-blue-600">{formatCurrency(financeSummary.totalCollected)}</p>
                     <p className="text-sm text-slate-600 mt-1">Total Collected</p>
+                    <p className="text-xs text-slate-500 mt-1">Year: {financeSummary.year || 0}</p>
                   </div>
                   <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                    <p className="text-2xl font-bold text-amber-700">€{totalPending.toFixed(2)}</p>
-                    <p className="text-sm text-amber-700 mt-1">Pending Amount ({pendingCount})</p>
+                    <p className="text-2xl font-bold text-amber-700">{formatCurrency(totalPending)}</p>
+                    <p className="text-sm text-amber-700 mt-1">Pending Amount ({financeSummary.pendingCount})</p>
                   </div>
-                  <div className={`p-4 rounded-lg border ${overdueCount > 0 ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"}`}>
-                    <p className={`text-2xl font-bold ${overdueCount > 0 ? "text-red-600" : "text-slate-800"}`}>{overdueCount}</p>
+                  <div className={`p-4 rounded-lg border ${financeSummary.overdueCount > 0 ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"}`}>
+                    <p className={`text-2xl font-bold ${financeSummary.overdueCount > 0 ? "text-red-600" : "text-slate-800"}`}>{financeSummary.overdueCount}</p>
                     <p className="text-sm text-slate-600 mt-1">Overdue Payments</p>
+                    <p className="text-xs text-slate-500 mt-1">Paid Months: {paidRatio}</p>
                   </div>
                 </div>
               );
@@ -555,46 +608,76 @@ console.log(fetchedMaintenance)
             <div className="px-5 py-4 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-700">Rent Payment History</h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                    <th className="text-left px-5 py-3">Month</th>
-                    <th className="text-left px-5 py-3">Amount</th>
-                    <th className="text-left px-5 py-3">Due Date</th>
-                    <th className="text-left px-5 py-3">Paid Date</th>
-                    <th className="text-left px-5 py-3">Tenant</th>
-                    <th className="text-left px-5 py-3">Reference</th>
-                    <th className="text-left px-5 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {isLoadingRentPayments ? (
-                    <tr>
-                      <td colSpan="7" className="px-5 py-8 text-center text-slate-500">
-                        <p className="text-sm">Loading rent payments...</p>
-                      </td>
-                    </tr>
-                  ) : fetchedRentPayments.length > 0 ? (
-                    [...fetchedRentPayments]
-                      .sort((a, b) => new Date(b.dueDate || b.createdAt) - new Date(a.dueDate || a.createdAt))
-                      .map((p) => {
-                        const statusBadge =
-                          p.status === "PAID"
-                            ? "bg-green-100 text-green-700"
-                            : p.status === "OVERDUE"
-                            ? "bg-red-100 text-red-700"
-                            : p.status === "LATE"
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-amber-100 text-amber-700";
+            {isLoadingRentPayments ? (
+              <div className="px-5 py-8 text-center text-slate-500">
+                <p className="text-sm">Loading rent payments...</p>
+              </div>
+            ) : sortedRentPayments.length > 0 ? (
+              <>
+                <div className="sm:hidden p-4 space-y-3">
+                  {sortedRentPayments.map((p) => {
+                    const statusBadge = getPaymentStatusBadgeClass(p.status);
+                    return (
+                      <article key={p.id} className="rounded-xl border border-slate-200 bg-slate-50/30 p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-700">{p.month || "—"}</p>
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge}`}>
+                            {p.status || "—"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-slate-400">Amount</p>
+                            <p className="text-sm font-bold text-slate-700">{formatCurrency(p.amount)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-400">Tenant</p>
+                            <p className="text-sm text-slate-700">{p.tenant?.name || activeTenancy?.tenantName || "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-400">Due Date</p>
+                            <p className="text-sm text-slate-700">{formatDisplayDate(p.dueDate)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-400">Paid Date</p>
+                            <p className="text-sm text-slate-700">{formatDisplayDate(p.paidDate)}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-400">Reference</p>
+                          <p className="text-xs font-mono text-slate-600 break-all">{p.reference || "—"}</p>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
+                        <th className="text-left px-5 py-3">Month</th>
+                        <th className="text-left px-5 py-3">Amount</th>
+                        <th className="text-left px-5 py-3">Due Date</th>
+                        <th className="text-left px-5 py-3">Paid Date</th>
+                        <th className="text-left px-5 py-3">Tenant</th>
+                        <th className="text-left px-5 py-3">Reference</th>
+                        <th className="text-left px-5 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {sortedRentPayments.map((p) => {
+                        const statusBadge = getPaymentStatusBadgeClass(p.status);
 
                         return (
                           <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
                             <td className="px-5 py-4 text-sm font-semibold text-slate-700">{p.month || "—"}</td>
-                            <td className="px-5 py-4 text-sm font-bold text-slate-700">€{p.amount || "0"}</td>
-                            <td className="px-5 py-4 text-sm text-slate-600">{p.dueDate ? new Date(p.dueDate).toLocaleDateString() : "—"}</td>
-                            <td className="px-5 py-4 text-sm text-slate-600">{p.paidDate ? new Date(p.paidDate).toLocaleDateString() : "—"}</td>
-                            <td className="px-5 py-4 text-sm text-slate-600">{p.tenant?.name || "—"}</td>
+                            <td className="px-5 py-4 text-sm font-bold text-slate-700">{formatCurrency(p.amount)}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{formatDisplayDate(p.dueDate)}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{formatDisplayDate(p.paidDate)}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{p.tenant?.name || activeTenancy?.tenantName || "—"}</td>
                             <td className="px-5 py-4 text-xs font-mono text-slate-500">{p.reference || "—"}</td>
                             <td className="px-5 py-4">
                               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge}`}>
@@ -603,17 +686,16 @@ console.log(fetchedMaintenance)
                             </td>
                           </tr>
                         );
-                      })
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="px-5 py-8 text-center text-slate-500">
-                        <p className="text-sm">No rent payments found for this property.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <div className="px-5 py-8 text-center text-slate-500">
+                <p className="text-sm">No rent payments found for this property.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

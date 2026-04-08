@@ -1,20 +1,29 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import {
   Plus, Search,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, CheckCircle2, Clock, CreditCard, Trash2
+  ArrowUpDown, Trash2, Eye
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Pagination from "@/components/portal/Pagination";
 import AddTenancyModal from "./components/AddTenancyModal";
 import { authenticatedFetch } from "@/utils/authFetch";
 
+const ITEMS_PER_PAGE = 10;
+
+const TENANCY_STATUS_FILTER_OPTIONS = [
+  { label: "All Status", value: "ALL" },
+  { label: "Active", value: "ACTIVE" },
+  { label: "Notice", value: "NOTICE" },
+];
+
 const RENT_STYLE = {
-  Paid: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
-  Overdue: { badge: "bg-red-100 text-red-700", label: "Overdue" },
-  Pending: { badge: "bg-amber-100 text-amber-700", label: "Pending" },
+  PAID: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
+  OVERDUE: { badge: "bg-red-100 text-red-700", label: "Overdue" },
+  PENDING: { badge: "bg-amber-100 text-amber-700", label: "Pending" },
+  LATE: { badge: "bg-orange-100 text-orange-700", label: "Late" },
+  UNKNOWN: { badge: "bg-slate-100 text-slate-700", label: "Unknown" },
 };
 
 const STATUS_LET = {
@@ -72,11 +81,17 @@ function transformTenancy(apiTenancy, colorIndex) {
     rtbStatus: apiTenancy.rtbStatus || "Unknown",
     rtbReg: apiTenancy.rtbRegistration || null,
     rentReviewDate: apiTenancy.rentReviewDate?.split("T")[0] || null,
-    rentStatus: apiTenancy.rentStatus || "Pending",
+    rentStatus: (apiTenancy.rentStatus || "PENDING").toUpperCase(),
   };
 }
 
+function getRentBadgeMeta(status) {
+  const normalizedStatus = String(status || "UNKNOWN").toUpperCase();
+  return RENT_STYLE[normalizedStatus] || RENT_STYLE.UNKNOWN;
+}
+
 function AdminTenanciesInner() {
+  const router = useRouter();
   const [selected, setSelected] = useState([]);
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
   const [tenancies, setTenancies] = useState([]);
@@ -86,46 +101,32 @@ function AdminTenanciesInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [countyFilter, setCountyFilter] = useState("All County/City");
-  const [propertyFilter, setPropertyFilter] = useState("All Properties");
-  const [statusFilter, setStatusFilter] = useState("All Statuses");
-  // Local override map: { [tenancy.id]: "Paid" | "Overdue" | "Pending" }
-  const [rentOverrides, setRentOverrides] = useState({});
-  const getRentStatus = (t) => rentOverrides[t.id] ?? t.rentStatus;
-  const markPaid = (id) => setRentOverrides((prev) => ({ ...prev, [id]: "Paid" }));
-  // Local status override: { [tenancy.id]: string }
-  const [statusOverrides, setStatusOverrides] = useState({});
-  const getStatus = (t) => statusOverrides[t.id] ?? t.statusLet;
-  const setStatus = (id, value) => setStatusOverrides((prev) => ({ ...prev, [id]: value }));
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: ITEMS_PER_PAGE,
+    totalItems: 0,
+    totalPages: 1,
+  });
 
-  // Fetch tenancies from API
+  // Fetch static reference data used by the add-tenancy modal.
   useEffect(() => {
-    const fetchTenanciesAndTenants = async () => {
+    const controller = new AbortController();
+
+    const fetchReferenceData = async () => {
       try {
-        setLoading(true);
-        const [tenanciesResponse, usersResponse, propertiesResponse] = await Promise.all([
+        const [usersResponse, propertiesResponse] = await Promise.all([
           authenticatedFetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?role=TENANT`,
+            { signal: controller.signal }
           ),
           authenticatedFetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?role=TENANT`
-          ),
-          authenticatedFetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
+            { signal: controller.signal }
           ),
         ]);
-
-        if (!tenanciesResponse.ok) {
-          throw new Error(`Failed to fetch tenancies: ${tenanciesResponse.statusText}`);
-        }
-
-        const tenanciesData = await tenanciesResponse.json();
-        if (tenanciesData.success && tenanciesData.data) {
-          const transformed = tenanciesData.data.map((tenancy, idx) =>
-            transformTenancy(tenancy, idx)
-          );
-          setTenancies(transformed);
-        }
 
         // Fetch all tenants from users endpoint
         if (usersResponse.ok) {
@@ -160,21 +161,86 @@ function AdminTenanciesInner() {
           }
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(err.message || "Failed to load data");
+        if (err.name === "AbortError") return;
+        console.error("Error fetching reference data:", err);
+      }
+    };
+
+    fetchReferenceData();
+    return () => controller.abort();
+  }, []);
+
+  // Fetch paginated tenancies from API with server-side tenancy status filtering.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchTenancies = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = new URLSearchParams();
+        params.append("page", String(currentPage));
+        params.append("limit", String(ITEMS_PER_PAGE));
+
+        if (statusFilter !== "ALL") {
+          params.append("status", statusFilter);
+        }
+
+        if (search.trim()) {
+          params.append("search", search.trim());
+        }
+
+        const response = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies?${params.toString()}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tenancies: ${response.statusText}`);
+        }
+
+        const tenanciesData = await response.json();
+        if (!tenanciesData?.success || !Array.isArray(tenanciesData?.data)) {
+          throw new Error(tenanciesData?.message || "Failed to load tenancies");
+        }
+
+        const transformed = tenanciesData.data.map((tenancy, idx) =>
+          transformTenancy(tenancy, idx + (currentPage - 1) * ITEMS_PER_PAGE)
+        );
+        setTenancies(transformed);
+        setSelected([]);
+
+        const pageMeta = tenanciesData?.meta?.pagination || {};
+        const totalItems = Number(pageMeta.totalItems ?? tenanciesData.data.length);
+        const itemsPerPage = Number(pageMeta.itemsPerPage ?? ITEMS_PER_PAGE);
+        const totalPages = Number(pageMeta.totalPages ?? Math.max(1, Math.ceil(totalItems / itemsPerPage)));
+
+        setPagination({
+          currentPage: Number(pageMeta.currentPage ?? currentPage),
+          itemsPerPage,
+          totalItems,
+          totalPages,
+        });
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        console.error("Error fetching tenancies:", err);
+        setError(err.message || "Failed to load tenancies");
+        setTenancies([]);
+        setPagination({
+          currentPage: 1,
+          itemsPerPage: ITEMS_PER_PAGE,
+          totalItems: 0,
+          totalPages: 1,
+        });
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchTenanciesAndTenants();
-  }, []);
 
-  // Build status options from source data so we stay in sync
-  const STATUS_OPTIONS = Array.from(new Set(tenancies.map((x) => x.statusLet).filter(Boolean)));
-  const STATUS_VALUES = STATUS_OPTIONS.length > 0 ? STATUS_OPTIONS : ["Let", "Notice", "Active"];
-  const uniqueCounties = Array.from(new Set(tenancies.map((t) => t.county).filter(Boolean))).slice(0, 50);
-  const uniqueProperties = Array.from(new Set(tenancies.map((t) => t.property).filter(Boolean))).slice(0, 50);
+    fetchTenancies();
+    return () => controller.abort();
+  }, [currentPage, statusFilter, search, reloadKey]);
 
   const handleAddTenancy = async (formData) => {
     try {
@@ -226,15 +292,11 @@ function AdminTenanciesInner() {
         throw new Error(errorData.message || `Failed to create tenancy: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      
-      // Add the new tenancy to the list
-      if (data.success && data.data) {
-        const newTenancy = transformTenancy(data.data, tenancies.length);
-        setTenancies([newTenancy, ...tenancies]);
-      }
+      await response.json().catch(() => null);
 
       setAddTenancyModalOpen(false);
+      setCurrentPage(1);
+      setReloadKey((prev) => prev + 1);
 
       // Show success alert
       await Swal.fire({
@@ -293,8 +355,10 @@ function AdminTenanciesInner() {
         throw new Error(`Failed to delete tenancy: ${response.statusText}`);
       }
 
-      // Remove from local state after successful deletion
-      setTenancies((prev) => prev.filter((t) => t.id !== tenancyId));
+      if (tenancies.length === 1 && currentPage > 1) {
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+      }
+      setReloadKey((prev) => prev + 1);
 
       // Show success alert
       await Swal.fire({
@@ -314,76 +378,7 @@ function AdminTenanciesInner() {
     }
   };
 
-  const handleUpdateRentStatus = async (tenancyId, newStatus) => {
-    try {
-      const statusMap = {
-        "Paid": "PAID",
-        "Pending": "PENDING",
-        "Overdue": "OVERDUE",
-      };
-      
-      const apiStatus = statusMap[newStatus] || newStatus;
-      
-      const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/${tenancyId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ rentStatus: apiStatus }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to update rent status: ${response.statusText}`);
-      }
-
-      // Update local state
-      setRentOverrides((prev) => ({ ...prev, [tenancyId]: newStatus }));
-
-      // Show success alert
-      await Swal.fire({
-        icon: "success",
-        title: "Updated!",
-        text: `Rent status updated to ${newStatus}`,
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    } catch (err) {
-      console.error("Error updating rent status:", err);
-      await Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update rent status. Please try again.",
-      });
-    }
-  };
-
-  const searchParams = useSearchParams();
-  const filterParam = searchParams?.get("filter");
-
-  const today = new Date();
-  const in30 = new Date(); in30.setDate(today.getDate() + 30);
-
-  const filtered = tenancies.filter((t) => {
-    const matchSearch = 
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.landlord.toLowerCase().includes(search.toLowerCase()) ||
-      t.property.toLowerCase().includes(search.toLowerCase());
-    const matchCounty = countyFilter === "All County/City" || t.county === countyFilter;
-    const matchProperty = propertyFilter === "All Properties" || t.property === propertyFilter;
-    const matchStatus = statusFilter === "All Statuses" || t.statusLet === statusFilter;
-    
-    if (filterParam === "rtb-missing") return !t.rtb || t.rtb === "N/A";
-    if (filterParam === "rent-reviews") {
-      if (!t.rentReviewDate) return false;
-      const d = new Date(t.rentReviewDate);
-      return d >= today && d <= in30;
-    }
-    
-    return matchSearch && matchCounty && matchProperty && matchStatus;
-  });
+  const filtered = tenancies;
 
   const toggleAll = () =>
     setSelected(selected.length === filtered.length ? [] : filtered.map((t) => t.id));
@@ -428,11 +423,31 @@ function AdminTenanciesInner() {
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Search tenancies…"
                 className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
                 aria-label="Search tenancies by tenant, landlord, or property"
               />
+            </div>
+            <div className="w-full sm:w-auto">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-[190px] px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                aria-label="Filter by tenancy status"
+              >
+                {TENANCY_STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
       <div className="lg:hidden space-y-3">
@@ -448,13 +463,22 @@ function AdminTenanciesInner() {
                   <p className="text-xs text-slate-400 truncate">{t.sub}</p>
                 </div>
               </div>
-              <button
-                onClick={() => handleDeleteTenancy(t.id)}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition flex-shrink-0"
-                aria-label="Delete tenancy"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => router.push(`/admin/tenancies/${t.id}/rent-payments`)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                  aria-label="View tenancy rent payments"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => handleDeleteTenancy(t.id)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
+                  aria-label="Delete tenancy"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-slate-50 rounded-lg p-2">
@@ -470,37 +494,25 @@ function AdminTenanciesInner() {
                 <p className="font-medium text-slate-700">{t.county}</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">End Date</p>
+                <p className="font-medium text-slate-700">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "N/A"}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-xs text-slate-400 mb-0.5">RTB #</p>
                 <p className="font-medium text-slate-700">{t.rtb}</p>
               </div>
             </div>
-            {/* Rent status row */}
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-              <div className="flex items-center gap-2 w-full">
-                <select
-                  value={getRentStatus(t)}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v !== getRentStatus(t)) {
-                      handleUpdateRentStatus(t.id, v);
-                    }
-                  }}
-                  className="w-full max-w-xs rounded-md border border-slate-200 px-3 py-2 text-sm bg-white"
-                >
-                  <option value="Paid">Paid</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Overdue">Overdue</option>
-                </select>
-              </div>
-            </div>
-            <div className="pt-1 border-t border-slate-100">
-              <button className={`w-full py-1.5 text-white text-xs font-semibold rounded-md transition ${t.rtbStatus === "Notice" ? "bg-orange-400 hover:bg-orange-500" : "bg-teal-600 hover:bg-teal-700"
-                }`}>{t.rtbStatus}</button>
-            </div>
           </div>
         ))}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <Pagination total={filtered.length} />
+          <Pagination
+            total={pagination.totalItems}
+            itemsPerPage={pagination.itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={() => {}}
+            showItemsPerPage={false}
+          />
         </div>
       </div>
 
@@ -522,8 +534,7 @@ function AdminTenanciesInner() {
                 <span className="flex items-center gap-1">Landlord <ArrowUpDown size={12} className="text-slate-400" /></span>
               </th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent</th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent Status</th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">RTB Status</th>
+              <th className="px-3 py-3 text-left font-semibold text-slate-600">End Date</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Action</th>
             </tr>
           </thead>
@@ -550,46 +561,37 @@ function AdminTenanciesInner() {
                   <p className="text-sm text-slate-400">{t.landlordSub}</p>
                 </td>
                 <td className="px-3 py-3 font-semibold text-slate-800 text-sm">{t.rent}</td>
+                <td className="px-3 py-3 text-slate-600 text-sm">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "N/A"}</td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
-                    <select
-                      value={getRentStatus(t)}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v !== getRentStatus(t)) {
-                          handleUpdateRentStatus(t.id, v);
-                        }
-                      }}
-                      className="rounded-md border border-slate-200 px-2.5 py-1 text-sm bg-white"
+                    <button
+                      onClick={() => router.push(`/admin/tenancies/${t.id}/rent-payments`)}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                      aria-label="View tenancy rent payments"
                     >
-                      <option value="Paid">Paid</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Overdue">Overdue</option>
-                    </select>
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTenancy(t.id)}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
+                      aria-label="Delete tenancy"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                </td>
-                <td className="px-3 py-3">
-                  <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-md transition ${t.rtbStatus === "Notice"
-                      ? "bg-orange-400 hover:bg-orange-500"
-                      : "bg-teal-600 hover:bg-teal-700"
-                    }`}>
-                    {t.rtbStatus}
-                  </button>
-                </td>
-                <td className="px-3 py-3">
-                  <button
-                    onClick={() => handleDeleteTenancy(t.id)}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
-                    aria-label="Delete tenancy"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <Pagination total={filtered.length} />
+        <Pagination
+          total={pagination.totalItems}
+          itemsPerPage={pagination.itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={() => {}}
+          showItemsPerPage={false}
+        />
       </div>
 
       <AddTenancyModal

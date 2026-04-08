@@ -286,8 +286,55 @@ export default function MaintenancePage() {
       if (!response.ok) throw new Error("Failed to fetch months");
       const result = await response.json();
       if (result.success && result.data?.payments) {
-        const months = result.data.payments.map((p) => p.month).filter(Boolean);
+        // Normalize month values from API into canonical YYYY-MM keys
+        const rawMonths = result.data.payments.map((p) => p.month).filter(Boolean);
+
+        const normalized = rawMonths
+          .map((m) => {
+            // Accept formats like '2026-04', 'Apr 2026', '2026/04', 'April 2026'
+            if (typeof m !== "string") return null;
+            // Try YYYY-MM first
+            const ymMatch = m.match(/^(\d{4})[-\/](\d{2})$/);
+            if (ymMatch) return `${ymMatch[1]}-${ymMatch[2]}`;
+
+            // Try textual month like 'Apr 2026' or 'April 2026'
+            const txtMatch = m.match(/^(\w+)\s+(\d{4})$/);
+            if (txtMatch) {
+              const monthName = txtMatch[1].slice(0,3).toLowerCase();
+              const year = txtMatch[2];
+              const monthIndex = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"].indexOf(monthName);
+              if (monthIndex >= 0) {
+                const mm = String(monthIndex + 1).padStart(2, "0");
+                return `${year}-${mm}`;
+              }
+            }
+
+            // Last resort: try Date parse
+            const parsed = new Date(m);
+            if (!Number.isNaN(parsed.getTime())) {
+              const y = parsed.getFullYear();
+              const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+              return `${y}-${mm}`;
+            }
+
+            return null;
+          })
+          .filter(Boolean);
+
+        // Deduplicate and sort (newest first)
+        const unique = Array.from(new Set(normalized)).sort((a, b) => b.localeCompare(a));
+
+        // Map to objects with label+key for stable keys and friendly display
+        const months = unique.map((ym) => {
+          const [y, m] = ym.split("-");
+          const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+          const label = `${monthNames[Number(m) - 1]} ${y}`;
+          return { key: ym, label };
+        });
+
         setChargedMonths(months);
+      } else {
+        setChargedMonths([]);
       }
     } catch (error) {
       console.error("Error fetching charged months:", error);
@@ -540,9 +587,9 @@ export default function MaintenancePage() {
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none"
                 >
                   <option value="">Select a month</option>
-                  {chargedMonths.map((month) => (
-                    <option key={month} value={month}>
-                      {month}
+                  {chargedMonths.map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.label}
                     </option>
                   ))}
                 </select>

@@ -54,6 +54,38 @@ const getPriorityColor = (priority) => {
   return colors[priority] || "bg-slate-100 text-slate-600";
 };
 
+const mapMaintenanceRequest = (req) => ({
+  id: req.id,
+  title: req.title,
+  desc: req.description,
+  date: new Date(req.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+  status: mapStatus(req.status),
+  statusColor: getStatusColor(mapStatus(req.status)),
+  priority: mapPriority(req.priority),
+  priorityColor: getPriorityColor(mapPriority(req.priority)),
+  apiStatus: req.status,
+  propertyName: req.property?.name || "Unknown Property",
+  cost: req.cost,
+  isCharged: req.isCharged,
+  chargeNote: req.chargeNote,
+});
+
+const extractPropertyFromTenancyResponse = (tenancyData) => {
+  if (!tenancyData?.success || !tenancyData?.data) return null;
+
+  if (Array.isArray(tenancyData.data) && tenancyData.data.length > 0) {
+    return tenancyData.data[0]?.property || null;
+  }
+
+  if (typeof tenancyData.data === "object") {
+    return tenancyData.data.property || null;
+  }
+
+  return null;
+};
+
+const resolvePropertyId = (property) => property?.id || property?.propertyId || null;
+
 export default function TenantMaintenancePage() {
   const { user } = usePortalAuth();
   const [showForm, setShowForm] = useState(false);
@@ -77,21 +109,25 @@ export default function TenantMaintenancePage() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
-  // Fetch maintenance requests and properties from API
+  // Fetch maintenance requests and tenancy property from API.
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Fetch maintenance requests
-        const requestsResponse = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/tenant`
-        );
+
+        const [requestsResponse, tenancyResponse] = await Promise.all([
+          authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/tenant`),
+          authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/my`),
+        ]);
+
         if (!requestsResponse.ok) {
           throw new Error(`Failed to fetch requests: ${requestsResponse.statusText}`);
         }
+
         const requestsData = await requestsResponse.json();
+        const tenancyData = tenancyResponse.ok ? await tenancyResponse.json().catch(() => null) : null;
+        const tenancyProperty = extractPropertyFromTenancyResponse(tenancyData);
         
         if (requestsData.success && requestsData.data) {
           // capture summary if present
@@ -109,31 +145,15 @@ export default function TenantMaintenancePage() {
             : [];
 
           // Transform API response to match UI format
-          const transformed = raw.map((req) => ({
-            id: req.id,
-            title: req.title,
-            desc: req.description,
-            date: new Date(req.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
-            status: mapStatus(req.status),
-            statusColor: getStatusColor(mapStatus(req.status)),
-            priority: mapPriority(req.priority),
-            priorityColor: getPriorityColor(mapPriority(req.priority)),
-            apiStatus: req.status,
-            propertyName: req.property?.name || "Unknown Property",
-            // preserve raw fields used elsewhere
-            cost: req.cost,
-            isCharged: req.isCharged,
-            chargeNote: req.chargeNote,
-          }));
+          const transformed = raw.map(mapMaintenanceRequest);
 
           setRequests(transformed);
 
-          // Extract tenant's property (all requests should be for same property)
-          if (raw.length > 0 && raw[0].property) {
-            setTenantProperty(raw[0].property);
-          }
+          // Resolve property from tenancy first, then fallback to first request.
+          setTenantProperty(tenancyProperty || raw[0]?.property || null);
         } else {
           setRequests([]);
+          setTenantProperty(tenancyProperty || null);
         }
       } catch (err) {
         console.warn("Error fetching data:", err);
@@ -159,9 +179,19 @@ export default function TenantMaintenancePage() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.title.trim() || !formData.description.trim() || !tenantProperty) {
+
+    if (!formData.title.trim() || !formData.description.trim()) {
       Swal.fire("Validation Error", "Please fill all required fields", "warning");
+      return;
+    }
+
+    const propertyId = resolvePropertyId(tenantProperty);
+    if (!propertyId) {
+      Swal.fire(
+        "Property Missing",
+        "Unable to identify your tenancy property. Please refresh and try again.",
+        "warning"
+      );
       return;
     }
 
@@ -171,7 +201,7 @@ export default function TenantMaintenancePage() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         priority: formData.priority,
-        propertyId: tenantProperty.id
+        propertyId,
       };
 
       const response = await authenticatedFetch(
@@ -216,24 +246,10 @@ export default function TenantMaintenancePage() {
               ? refreshData.data
               : [];
 
-            const transformed = raw.map((req) => ({
-              id: req.id,
-              title: req.title,
-              desc: req.description,
-              date: new Date(req.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
-              status: mapStatus(req.status),
-              statusColor: getStatusColor(mapStatus(req.status)),
-              priority: mapPriority(req.priority),
-              priorityColor: getPriorityColor(mapPriority(req.priority)),
-              apiStatus: req.status,
-              propertyName: req.property?.name || "Unknown Property",
-              cost: req.cost,
-              isCharged: req.isCharged,
-              chargeNote: req.chargeNote,
-            }));
+              const transformed = raw.map(mapMaintenanceRequest);
             setRequests(transformed);
 
-            if (raw.length > 0 && raw[0].property) {
+              if (!resolvePropertyId(tenantProperty) && raw.length > 0 && raw[0].property) {
               setTenantProperty(raw[0].property);
             }
           }
@@ -328,7 +344,7 @@ export default function TenantMaintenancePage() {
               <label className="text-sm font-semibold text-slate-600 mb-1.5 block">Property</label>
               <div className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 bg-slate-50">
                 {tenantProperty ? (
-                  <p>{tenantProperty.name} - {tenantProperty.address}</p>
+                  <p>{tenantProperty.name || "Property"} - {tenantProperty.address || "Address unavailable"}</p>
                 ) : (
                   <p className="text-slate-400">Loading property...</p>
                 )}
