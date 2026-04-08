@@ -2,12 +2,13 @@
 import { useEffect, useState, Suspense } from "react";
 import {
   Plus, Search,
-  ArrowUpDown, Trash2, Eye
+  ArrowUpDown, Trash2, Eye, Edit2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Pagination from "@/components/portal/Pagination";
 import AddTenancyModal from "./components/AddTenancyModal";
+import EditTenancyModal from "./components/EditTenancyModal";
 import { authenticatedFetch } from "@/utils/authFetch";
 
 const ITEMS_PER_PAGE = 10;
@@ -16,7 +17,25 @@ const TENANCY_STATUS_FILTER_OPTIONS = [
   { label: "All Status", value: "ALL" },
   { label: "Active", value: "ACTIVE" },
   { label: "Notice", value: "NOTICE" },
+  { label: "Expired", value: "EXPIRED" },
+  { label: "Terminated", value: "TERMINATED" },
 ];
+
+const RENT_STATUS_FILTER_OPTIONS = [
+  { label: "All Rent Status", value: "ALL" },
+  { label: "Paid", value: "PAID" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Late", value: "LATE" },
+  { label: "Overdue", value: "OVERDUE" },
+];
+
+const TENANCY_STATUS_STYLE = {
+  ACTIVE: { badge: "bg-teal-100 text-teal-700", label: "Active" },
+  NOTICE: { badge: "bg-orange-100 text-orange-700", label: "Notice" },
+  EXPIRED: { badge: "bg-slate-200 text-slate-700", label: "Expired" },
+  TERMINATED: { badge: "bg-red-100 text-red-700", label: "Terminated" },
+  UNKNOWN: { badge: "bg-slate-100 text-slate-700", label: "Unknown" },
+};
 
 const RENT_STYLE = {
   PAID: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
@@ -71,6 +90,7 @@ function transformTenancy(apiTenancy, colorIndex) {
     statusLet: apiTenancy.status === "ACTIVE" ? "Let" : "Notice",
     statusBadge: null,
     county: property.county || null,
+    status: String(apiTenancy.status || "UNKNOWN").toUpperCase(),
     landlord: landlord.name || "Unknown",
     landlordSub: landlord.county || "",
     startDate: apiTenancy.startDate?.split("T")[0] || "",
@@ -80,6 +100,8 @@ function transformTenancy(apiTenancy, colorIndex) {
     rtbDate: apiTenancy.rtbRegistration?.split("T")[0] || null,
     rtbStatus: apiTenancy.rtbStatus || "Unknown",
     rtbReg: apiTenancy.rtbRegistration || null,
+    rtbRegistrationDate: apiTenancy.rtbRegistrationDate?.split("T")[0] || "",
+    rtbExpiryDate: apiTenancy.rtbExpiryDate?.split("T")[0] || "",
     rentReviewDate: apiTenancy.rentReviewDate?.split("T")[0] || null,
     rentStatus: (apiTenancy.rentStatus || "PENDING").toUpperCase(),
   };
@@ -90,10 +112,18 @@ function getRentBadgeMeta(status) {
   return RENT_STYLE[normalizedStatus] || RENT_STYLE.UNKNOWN;
 }
 
+function getTenancyStatusMeta(status) {
+  const normalizedStatus = String(status || "UNKNOWN").toUpperCase();
+  return TENANCY_STATUS_STYLE[normalizedStatus] || TENANCY_STATUS_STYLE.UNKNOWN;
+}
+
 function AdminTenanciesInner() {
   const router = useRouter();
   const [selected, setSelected] = useState([]);
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
+  const [editTenancyModalOpen, setEditTenancyModalOpen] = useState(false);
+  const [editingTenancy, setEditingTenancy] = useState(null);
+  const [updatingTenancy, setUpdatingTenancy] = useState(false);
   const [tenancies, setTenancies] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [availableProperties, setAvailableProperties] = useState([]);
@@ -102,6 +132,7 @@ function AdminTenanciesInner() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [rentStatusFilter, setRentStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
   const [pagination, setPagination] = useState({
@@ -187,6 +218,10 @@ function AdminTenanciesInner() {
           params.append("status", statusFilter);
         }
 
+        if (rentStatusFilter !== "ALL") {
+          params.append("rentStatus", rentStatusFilter);
+        }
+
         if (search.trim()) {
           params.append("search", search.trim());
         }
@@ -240,7 +275,7 @@ function AdminTenanciesInner() {
 
     fetchTenancies();
     return () => controller.abort();
-  }, [currentPage, statusFilter, search, reloadKey]);
+  }, [currentPage, statusFilter, rentStatusFilter, search, reloadKey]);
 
   const handleAddTenancy = async (formData) => {
     try {
@@ -378,6 +413,102 @@ function AdminTenanciesInner() {
     }
   };
 
+  const openEditTenancyModal = (tenancy) => {
+    setEditingTenancy(tenancy);
+    setEditTenancyModalOpen(true);
+  };
+
+  const closeEditTenancyModal = () => {
+    if (updatingTenancy) return;
+    setEditTenancyModalOpen(false);
+    setEditingTenancy(null);
+  };
+
+  const handleEditTenancy = async (formData) => {
+    if (!editingTenancy?.id) {
+      return false;
+    }
+
+    try {
+      setUpdatingTenancy(true);
+
+      const payload = {};
+
+      const setField = (key, value) => {
+        if (typeof value !== "string") return;
+        const trimmedValue = value.trim();
+        if (trimmedValue) {
+          payload[key] = trimmedValue;
+        }
+      };
+
+      setField("status", String(formData.status || editingTenancy.status || "").toUpperCase());
+      setField("startDate", formData.startDate);
+      setField("endDate", formData.endDate);
+      setField("rtbNumber", formData.rtbNumber);
+      setField("rtbRegistration", String(formData.rtbRegistration || "").toUpperCase());
+      setField("rtbStatus", formData.rtbStatus);
+      setField("rtbRegistrationDate", formData.rtbRegistrationDate);
+      setField("rtbExpiryDate", formData.rtbExpiryDate);
+
+      if (Object.keys(payload).length === 0) {
+        await Swal.fire({
+          icon: "warning",
+          title: "No Changes",
+          text: "Please update at least one field before saving.",
+        });
+        return false;
+      }
+
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/${editingTenancy.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: response.statusText };
+        }
+        throw new Error(errorData.message || `Failed to update tenancy: ${response.statusText}`);
+      }
+
+      await response.json().catch(() => null);
+
+      setEditTenancyModalOpen(false);
+      setEditingTenancy(null);
+      setReloadKey((prev) => prev + 1);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Tenancy has been updated successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      return true;
+    } catch (err) {
+      console.error("Error updating tenancy:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to update tenancy. Please try again.",
+      });
+      return false;
+    } finally {
+      setUpdatingTenancy(false);
+    }
+  };
+
   const filtered = tenancies;
 
   const toggleAll = () =>
@@ -401,13 +532,7 @@ function AdminTenanciesInner() {
         </div>
       )}
       
-      {!loading && !error && tenancies.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-          <p className="text-slate-600">No tenancies found.</p>
-        </div>
-      )}
-      
-      {!loading && !error && tenancies.length > 0 && (
+      {!loading && !error && (
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -449,10 +574,55 @@ function AdminTenanciesInner() {
                 ))}
               </select>
             </div>
+
+            <div className="w-full sm:w-auto">
+              <select
+                value={rentStatusFilter}
+                onChange={(e) => {
+                  setRentStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-[190px] px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                aria-label="Filter by rent status"
+              >
+                {RENT_STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          {filtered.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+              <p className="text-slate-600">
+                {search.trim() || statusFilter !== "ALL" || rentStatusFilter !== "ALL"
+                  ? "No tenancies match your current filters."
+                  : "No tenancies found."}
+              </p>
+            </div>
+          ) : (
+            <>
       <div className="lg:hidden space-y-3">
         {filtered.map((t) => (
           <div key={t.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+            {(() => {
+              const tenancyStatusMeta = getTenancyStatusMeta(t.status);
+              const rentMeta = getRentBadgeMeta(t.rentStatus);
+
+              return (
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${tenancyStatusMeta.badge}`}>
+                    {tenancyStatusMeta.label}
+                  </span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${rentMeta.badge}`}>
+                    {rentMeta.label}
+                  </span>
+                </div>
+              );
+            })()}
+
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
@@ -470,6 +640,13 @@ function AdminTenanciesInner() {
                   aria-label="View tenancy rent payments"
                 >
                   <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => openEditTenancyModal(t)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition"
+                  aria-label="Edit tenancy"
+                >
+                  <Edit2 size={16} />
                 </button>
                 <button
                   onClick={() => handleDeleteTenancy(t.id)}
@@ -535,6 +712,7 @@ function AdminTenanciesInner() {
               </th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">End Date</th>
+              <th className="px-3 py-3 text-left font-semibold text-slate-600">Status</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Action</th>
             </tr>
           </thead>
@@ -562,6 +740,16 @@ function AdminTenanciesInner() {
                 </td>
                 <td className="px-3 py-3 font-semibold text-slate-800 text-sm">{t.rent}</td>
                 <td className="px-3 py-3 text-slate-600 text-sm">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "N/A"}</td>
+                <td className="px-3 py-3 text-sm">
+                  {(() => {
+                    const tenancyStatusMeta = getTenancyStatusMeta(t.status);
+                    return (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${tenancyStatusMeta.badge}`}>
+                        {tenancyStatusMeta.label}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
                     <button
@@ -570,6 +758,13 @@ function AdminTenanciesInner() {
                       aria-label="View tenancy rent payments"
                     >
                       <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={() => openEditTenancyModal(t)}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition"
+                      aria-label="Edit tenancy"
+                    >
+                      <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteTenancy(t.id)}
@@ -594,6 +789,9 @@ function AdminTenanciesInner() {
         />
       </div>
 
+            </>
+          )}
+
       <AddTenancyModal
         isOpen={addTenancyModalOpen}
         onClose={() => setAddTenancyModalOpen(false)}
@@ -602,6 +800,14 @@ function AdminTenanciesInner() {
         tenancies={tenancies}
         propertyMap={propertyIdMap}
         properties={availableProperties}
+      />
+
+      <EditTenancyModal
+        isOpen={editTenancyModalOpen}
+        onClose={closeEditTenancyModal}
+        onSubmit={handleEditTenancy}
+        tenancy={editingTenancy}
+        submitting={updatingTenancy}
       />
         </>
       )}

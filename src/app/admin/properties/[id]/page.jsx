@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { authenticatedFetch } from "@/utils/authFetch";
+import Pagination from "@/components/portal/Pagination";
 import {
   ArrowLeft, Home, BadgeCheck, FileText, Wrench,
   StickyNote, ClipboardList, MapPin, Euro, Zap,
@@ -105,6 +106,8 @@ const EMPTY_FINANCE_SUMMARY = {
   pendingCount: 0,
   payments: [],
 };
+
+const FINANCE_HISTORY_ITEMS_PER_PAGE = 10;
 
 function InfoRow({ label, value, mono = false, children }) {
   return (
@@ -258,6 +261,7 @@ export default function AdminPropertyProfilePage() {
     status: "ALL",
     year: "",
   });
+  const [financeHistoryPage, setFinanceHistoryPage] = useState(1);
 
   const activeTenancy = Array.isArray(fetchedTenancies)
     ? fetchedTenancies.find((tenancy) => tenancy.status === "ACTIVE") || fetchedTenancies[0]
@@ -419,11 +423,30 @@ export default function AdminPropertyProfilePage() {
     setFetchedRentPayments(filteredPayments);
   }, [allRentPayments, financeFilters.status, financeFilters.year]);
 
+  useEffect(() => {
+    setFinanceHistoryPage(1);
+  }, [financeFilters.status, financeFilters.year, id]);
+
   const sortedRentPayments = [...fetchedRentPayments].sort((a, b) => {
     const aTs = getSortableTimestamp(a.dueDate || a.createdAt);
     const bTs = getSortableTimestamp(b.dueDate || b.createdAt);
     return bTs - aTs;
   });
+
+  const paginatedRentPayments = sortedRentPayments.slice(
+    (financeHistoryPage - 1) * FINANCE_HISTORY_ITEMS_PER_PAGE,
+    financeHistoryPage * FINANCE_HISTORY_ITEMS_PER_PAGE,
+  );
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(sortedRentPayments.length / FINANCE_HISTORY_ITEMS_PER_PAGE),
+    );
+    if (financeHistoryPage > totalPages) {
+      setFinanceHistoryPage(totalPages);
+    }
+  }, [financeHistoryPage, sortedRentPayments.length]);
 
   // Fetch tenancy details when a tenancy is selected
   const fetchTenancyDetails = async (tenancyId) => {
@@ -615,7 +638,7 @@ export default function AdminPropertyProfilePage() {
             ) : sortedRentPayments.length > 0 ? (
               <>
                 <div className="sm:hidden p-4 space-y-3">
-                  {sortedRentPayments.map((p) => {
+                  {paginatedRentPayments.map((p) => {
                     const statusBadge = getPaymentStatusBadgeClass(p.status);
                     return (
                       <article key={p.id} className="rounded-xl border border-slate-200 bg-slate-50/30 p-4 space-y-3">
@@ -668,7 +691,7 @@ export default function AdminPropertyProfilePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {sortedRentPayments.map((p) => {
+                      {paginatedRentPayments.map((p) => {
                         const statusBadge = getPaymentStatusBadgeClass(p.status);
 
                         return (
@@ -690,6 +713,14 @@ export default function AdminPropertyProfilePage() {
                     </tbody>
                   </table>
                 </div>
+
+                <Pagination
+                  total={sortedRentPayments.length}
+                  itemsPerPage={FINANCE_HISTORY_ITEMS_PER_PAGE}
+                  currentPage={financeHistoryPage}
+                  onPageChange={setFinanceHistoryPage}
+                  showItemsPerPage={false}
+                />
               </>
             ) : (
               <div className="px-5 py-8 text-center text-slate-500">

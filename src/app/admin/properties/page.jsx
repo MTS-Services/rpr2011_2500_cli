@@ -294,7 +294,7 @@ export default function AdminPropertiesPage() {
       payload.append("county", (formData.county || "").trim());
       payload.append("eircode", (formData.eircode || "").trim());
       payload.append("landlordId", formData.landlordId);
-      payload.append("status", formData.status || "VACANT");
+      payload.append("status", "VACANT");
       payload.append("rent", String(Number(formData.rent) || 0));
 
       // Append image if provided
