@@ -2,7 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import {
   Plus, Search,
-  ArrowUpDown, Trash2
+  ArrowUpDown, Trash2, Eye
 } from "lucide-react";
 import Swal from "sweetalert2";
 import Pagination from "@/components/portal/Pagination";
@@ -11,18 +11,18 @@ import { authenticatedFetch } from "@/utils/authFetch";
 
 const ITEMS_PER_PAGE = 10;
 
-const RENT_STATUS_FILTER_OPTIONS = [
-  { label: "All Rent Status", value: "ALL" },
-  { label: "Paid", value: "PAID" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Late", value: "LATE" },
-  { label: "Overdue", value: "OVERDUE" },
+const TENANCY_STATUS_FILTER_OPTIONS = [
+  { label: "All Status", value: "ALL" },
+  { label: "Active", value: "ACTIVE" },
+  { label: "Notice", value: "NOTICE" },
 ];
 
 const RENT_STYLE = {
-  Paid: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
-  Overdue: { badge: "bg-red-100 text-red-700", label: "Overdue" },
-  Pending: { badge: "bg-amber-100 text-amber-700", label: "Pending" },
+  PAID: { badge: "bg-teal-100 text-teal-700", label: "Paid" },
+  OVERDUE: { badge: "bg-red-100 text-red-700", label: "Overdue" },
+  PENDING: { badge: "bg-amber-100 text-amber-700", label: "Pending" },
+  LATE: { badge: "bg-orange-100 text-orange-700", label: "Late" },
+  UNKNOWN: { badge: "bg-slate-100 text-slate-700", label: "Unknown" },
 };
 
 const STATUS_LET = {
@@ -84,6 +84,11 @@ function transformTenancy(apiTenancy, colorIndex) {
   };
 }
 
+function getRentBadgeMeta(status) {
+  const normalizedStatus = String(status || "UNKNOWN").toUpperCase();
+  return RENT_STYLE[normalizedStatus] || RENT_STYLE.UNKNOWN;
+}
+
 function AdminTenanciesInner() {
   const [selected, setSelected] = useState([]);
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
@@ -94,7 +99,7 @@ function AdminTenanciesInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [rentStatusFilter, setRentStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
   const [pagination, setPagination] = useState({
@@ -103,10 +108,6 @@ function AdminTenanciesInner() {
     totalItems: 0,
     totalPages: 1,
   });
-
-  // Local override map: { [tenancy.id]: "PAID" | "PENDING" | "LATE" | "OVERDUE" }
-  const [rentOverrides, setRentOverrides] = useState({});
-  const getRentStatus = (t) => String(rentOverrides[t.id] ?? t.rentStatus ?? "PENDING").toUpperCase();
 
   // Fetch static reference data used by the add-tenancy modal.
   useEffect(() => {
@@ -167,7 +168,7 @@ function AdminTenanciesInner() {
     return () => controller.abort();
   }, []);
 
-  // Fetch paginated tenancies from API with server-side rentStatus filtering.
+  // Fetch paginated tenancies from API with server-side tenancy status filtering.
   useEffect(() => {
     const controller = new AbortController();
 
@@ -180,8 +181,8 @@ function AdminTenanciesInner() {
         params.append("page", String(currentPage));
         params.append("limit", String(ITEMS_PER_PAGE));
 
-        if (rentStatusFilter !== "ALL") {
-          params.append("rentStatus", rentStatusFilter);
+        if (statusFilter !== "ALL") {
+          params.append("status", statusFilter);
         }
 
         if (search.trim()) {
@@ -237,7 +238,7 @@ function AdminTenanciesInner() {
 
     fetchTenancies();
     return () => controller.abort();
-  }, [currentPage, rentStatusFilter, search, reloadKey]);
+  }, [currentPage, statusFilter, search, reloadKey]);
 
   const handleAddTenancy = async (formData) => {
     try {
@@ -375,58 +376,6 @@ function AdminTenanciesInner() {
     }
   };
 
-  const handleUpdateRentStatus = async (tenancyId, newStatus) => {
-    try {
-      const statusMap = {
-        "Paid": "PAID",
-        "Pending": "PENDING",
-        "Late": "LATE",
-        "Overdue": "OVERDUE",
-        "PAID": "PAID",
-        "PENDING": "PENDING",
-        "LATE": "LATE",
-        "OVERDUE": "OVERDUE",
-      };
-      
-      const apiStatus = statusMap[newStatus] || "PENDING";
-      
-      const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenancies/${tenancyId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ rentStatus: apiStatus }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to update rent status: ${response.statusText}`);
-      }
-
-      // Update local state
-      setRentOverrides((prev) => ({ ...prev, [tenancyId]: apiStatus }));
-      setReloadKey((prev) => prev + 1);
-
-      // Show success alert
-      await Swal.fire({
-        icon: "success",
-        title: "Updated!",
-        text: `Rent status updated to ${apiStatus}`,
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    } catch (err) {
-      console.error("Error updating rent status:", err);
-      await Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update rent status. Please try again.",
-      });
-    }
-  };
-
   const filtered = tenancies;
 
   const toggleAll = () =>
@@ -483,15 +432,15 @@ function AdminTenanciesInner() {
             </div>
             <div className="w-full sm:w-auto">
               <select
-                value={rentStatusFilter}
+                value={statusFilter}
                 onChange={(e) => {
-                  setRentStatusFilter(e.target.value);
+                  setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full sm:w-[190px] px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-                aria-label="Filter by rent status"
+                aria-label="Filter by tenancy status"
               >
-                {RENT_STATUS_FILTER_OPTIONS.map((option) => (
+                {TENANCY_STATUS_FILTER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -534,33 +483,13 @@ function AdminTenanciesInner() {
                 <p className="font-medium text-slate-700">{t.county}</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 mb-0.5">End Date</p>
+                <p className="font-medium text-slate-700">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "N/A"}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-xs text-slate-400 mb-0.5">RTB #</p>
                 <p className="font-medium text-slate-700">{t.rtb}</p>
               </div>
-            </div>
-            {/* Rent status row */}
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-              <div className="flex items-center gap-2 w-full">
-                <select
-                  value={getRentStatus(t)}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v !== getRentStatus(t)) {
-                      handleUpdateRentStatus(t.id, v);
-                    }
-                  }}
-                  className="w-full max-w-xs rounded-md border border-slate-200 px-3 py-2 text-sm bg-white"
-                >
-                  <option value="PAID">Paid</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="LATE">Late</option>
-                  <option value="OVERDUE">Overdue</option>
-                </select>
-              </div>
-            </div>
-            <div className="pt-1 border-t border-slate-100">
-              <button className={`w-full py-1.5 text-white text-xs font-semibold rounded-md transition ${t.rtbStatus === "Notice" ? "bg-orange-400 hover:bg-orange-500" : "bg-teal-600 hover:bg-teal-700"
-                }`}>{t.rtbStatus}</button>
             </div>
           </div>
         ))}
@@ -594,8 +523,7 @@ function AdminTenanciesInner() {
                 <span className="flex items-center gap-1">Landlord <ArrowUpDown size={12} className="text-slate-400" /></span>
               </th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent</th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">Rent Status</th>
-              <th className="px-3 py-3 text-left font-semibold text-slate-600">RTB Status</th>
+              <th className="px-3 py-3 text-left font-semibold text-slate-600">End Date</th>
               <th className="px-3 py-3 text-left font-semibold text-slate-600">Action</th>
             </tr>
           </thead>
@@ -622,41 +550,23 @@ function AdminTenanciesInner() {
                   <p className="text-sm text-slate-400">{t.landlordSub}</p>
                 </td>
                 <td className="px-3 py-3 font-semibold text-slate-800 text-sm">{t.rent}</td>
+                <td className="px-3 py-3 text-slate-600 text-sm">{t.endDate ? new Date(t.endDate).toLocaleDateString() : "N/A"}</td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
-                    <select
-                      value={getRentStatus(t)}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v !== getRentStatus(t)) {
-                          handleUpdateRentStatus(t.id, v);
-                        }
-                      }}
-                      className="rounded-md border border-slate-200 px-2.5 py-1 text-sm bg-white"
+                    <button
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                      aria-label="View tenancy details"
                     >
-                      <option value="PAID">Paid</option>
-                      <option value="PENDING">Pending</option>
-                      <option value="LATE">Late</option>
-                      <option value="OVERDUE">Overdue</option>
-                    </select>
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTenancy(t.id)}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
+                      aria-label="Delete tenancy"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                </td>
-                <td className="px-3 py-3">
-                  <button className={`px-3 py-1.5 text-white text-sm font-semibold rounded-md transition ${t.rtbStatus === "Notice"
-                      ? "bg-orange-400 hover:bg-orange-500"
-                      : "bg-teal-600 hover:bg-teal-700"
-                    }`}>
-                    {t.rtbStatus}
-                  </button>
-                </td>
-                <td className="px-3 py-3">
-                  <button
-                    onClick={() => handleDeleteTenancy(t.id)}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
-                    aria-label="Delete tenancy"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </td>
               </tr>
             ))}
