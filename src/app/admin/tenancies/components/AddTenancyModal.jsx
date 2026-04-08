@@ -13,7 +13,6 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
         endDate: "",
         // rent: "",
         rentDueDay: "",
-        rentStatus: "PAID",
         rtbNumber: "",
         rtbStatus: "",
         rtbRegistration: "",
@@ -78,7 +77,6 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
             endDate: "",
             // rent: "",
             rentDueDay: "",
-            rentStatus: "PAID",
             rtbNumber: "",
             rtbStatus: "",
             rtbRegistration: "",
@@ -223,23 +221,6 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                                     <option key={day} value={String(day)}>{day}</option>
                                 );
                             })}
-                        </select>
-                    </div>
-
-                    {/* Rent Status */}
-                    <div>
-                        <label className="block text-base font-medium text-slate-700 mb-1">
-                            Rent Status
-                        </label>
-                        <select
-                            name="rentStatus"
-                            value={formData.rentStatus}
-                            onChange={handleFormChange}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        >
-                            <option value="PAID">Paid</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="OVERDUE">Overdue</option>
                         </select>
                     </div>
 

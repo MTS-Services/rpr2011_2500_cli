@@ -4,6 +4,7 @@ import {
   Plus, Search,
   ArrowUpDown, Trash2, Eye
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Pagination from "@/components/portal/Pagination";
 import AddTenancyModal from "./components/AddTenancyModal";
@@ -90,6 +91,7 @@ function getRentBadgeMeta(status) {
 }
 
 function AdminTenanciesInner() {
+  const router = useRouter();
   const [selected, setSelected] = useState([]);
   const [addTenancyModalOpen, setAddTenancyModalOpen] = useState(false);
   const [tenancies, setTenancies] = useState([]);
@@ -461,13 +463,22 @@ function AdminTenanciesInner() {
                   <p className="text-xs text-slate-400 truncate">{t.sub}</p>
                 </div>
               </div>
-              <button
-                onClick={() => handleDeleteTenancy(t.id)}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition flex-shrink-0"
-                aria-label="Delete tenancy"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => router.push(`/admin/tenancies/${t.id}/rent-payments`)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                  aria-label="View tenancy rent payments"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => handleDeleteTenancy(t.id)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
+                  aria-label="Delete tenancy"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-slate-50 rounded-lg p-2">
@@ -554,8 +565,9 @@ function AdminTenanciesInner() {
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={() => router.push(`/admin/tenancies/${t.id}/rent-payments`)}
                       className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
-                      aria-label="View tenancy details"
+                      aria-label="View tenancy rent payments"
                     >
                       <Eye size={16} />
                     </button>
