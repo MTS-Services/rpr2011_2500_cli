@@ -18,11 +18,6 @@ const INITIAL_FORM_DATA = {
 };
 
 const PROPERTY_TYPES = ["House", "Townhouse", "Other"];
-const PROPERTY_STATUSES = [
-  { label: "Vacant", value: "VACANT" },
-  { label: "Let", value: "LET" },
-  { label: "Notice Served", value: "NOTICE_SERVED" },
-];
 
 export default function AddPropertyModal({
   isOpen,
@@ -78,6 +73,7 @@ export default function AddPropertyModal({
 
     const success = await onSubmit({
       ...formData,
+      status: "VACANT",
       bedrooms: Number(formData.bedrooms) || 0,
       bathrooms: Number(formData.bathrooms) || 0,
       rent: Number(formData.rent) || 0,
@@ -242,18 +238,13 @@ export default function AddPropertyModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-base font-medium text-slate-700 mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                {PROPERTY_STATUSES.map((statusOption) => (
-                  <option key={statusOption.value} value={statusOption.value}>
-                    {statusOption.label}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text"
+                value="Vacant"
+                readOnly
+                disabled
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed"
+              />
             </div>
             <div>
               <label className="block text-base font-medium text-slate-700 mb-1">Rent</label>
