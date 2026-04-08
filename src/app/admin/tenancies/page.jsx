@@ -532,13 +532,7 @@ function AdminTenanciesInner() {
         </div>
       )}
       
-      {!loading && !error && tenancies.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-          <p className="text-slate-600">No tenancies found.</p>
-        </div>
-      )}
-      
-      {!loading && !error && tenancies.length > 0 && (
+      {!loading && !error && (
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -599,6 +593,17 @@ function AdminTenanciesInner() {
               </select>
             </div>
           </div>
+
+          {filtered.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+              <p className="text-slate-600">
+                {search.trim() || statusFilter !== "ALL" || rentStatusFilter !== "ALL"
+                  ? "No tenancies match your current filters."
+                  : "No tenancies found."}
+              </p>
+            </div>
+          ) : (
+            <>
       <div className="lg:hidden space-y-3">
         {filtered.map((t) => (
           <div key={t.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
@@ -783,6 +788,9 @@ function AdminTenanciesInner() {
           showItemsPerPage={false}
         />
       </div>
+
+            </>
+          )}
 
       <AddTenancyModal
         isOpen={addTenancyModalOpen}
