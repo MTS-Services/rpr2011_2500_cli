@@ -304,9 +304,20 @@ export default function AdminLandlordsPage() {
 
     try {
       const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+
+      // Check if API returned success: false
+      if (!data.success) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Cannot Delete Landlord',
+          text: data.message || 'Failed to delete landlord',
+        });
+        return;
+      }
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `Failed to delete user (${res.status})`);
+        throw new Error(data.message || `Failed to delete user (${res.status})`);
       }
       setLandlords((p) => p.filter(x => x.id !== id));
       setSelected((s) => s.filter(x => x !== id));
@@ -359,7 +370,18 @@ export default function AdminLandlordsPage() {
       const promises = selected.map((id) => authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${id}`, { method: 'DELETE' }));
       const results = await Promise.allSettled(promises);
 
-      const successIds = results.map((r, idx) => (r.status === 'fulfilled' && r.value && r.value.ok ? selected[idx] : null)).filter(Boolean);
+      const successIds = [];
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].status === 'fulfilled') {
+          const response = results[i].value;
+          if (response && response.ok) {
+            const data = await response.json().catch(() => ({}));
+            if (data.success !== false) {
+              successIds.push(selected[i]);
+            }
+          }
+        }
+      }
       const failedCount = results.length - successIds.length;
 
       setLandlords((p) => p.filter((l) => !successIds.includes(l.id)));

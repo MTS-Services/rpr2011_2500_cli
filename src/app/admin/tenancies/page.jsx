@@ -386,6 +386,18 @@ function AdminTenanciesInner() {
         }
       );
 
+      const data = await response.json();
+
+      // Check if API returned success: false
+      if (!data.success) {
+        await Swal.fire({
+          icon: "error",
+          title: "Cannot Delete Tenancy",
+          text: data.message || "Failed to delete tenancy",
+        });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to delete tenancy: ${response.statusText}`);
       }
