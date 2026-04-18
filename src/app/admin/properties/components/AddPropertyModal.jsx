@@ -17,7 +17,14 @@ const INITIAL_FORM_DATA = {
   image: null,
 };
 
-const PROPERTY_TYPES = ["House", "Townhouse", "Other"];
+const PROPERTY_TYPES = [
+  "Apartment",
+  "House",
+  "Semi-D",
+  "Townhouse",
+  "Studio",
+  "Other",
+];
 
 export default function AddPropertyModal({
   isOpen,
@@ -89,13 +96,20 @@ export default function AddPropertyModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={() => !submitting && onClose()} />
+      <div
+        className="fixed inset-0 bg-black/40"
+        onClick={() => !submitting && onClose()}
+      />
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 z-50 flex flex-col max-h-[90vh]">
         {/* Sticky Header */}
         <div className="sticky top-0 flex items-start justify-between p-6 border-b border-slate-200 bg-white rounded-t-xl">
           <div>
-            <h3 className="text-xl font-semibold text-slate-800">Add New Property</h3>
-            <p className="text-base text-slate-500 mt-1">Fill in the property details below</p>
+            <h3 className="text-xl font-semibold text-slate-800">
+              Add New Property
+            </h3>
+            <p className="text-base text-slate-500 mt-1">
+              Fill in the property details below
+            </p>
           </div>
           <button
             aria-label="Close"
@@ -108,7 +122,11 @@ export default function AddPropertyModal({
         </div>
 
         {/* Scrollable Content */}
-        <form id="addPropertyForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <form
+          id="addPropertyForm"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+        >
           {/* Name */}
           <div>
             <label className="block text-base font-medium text-slate-700 mb-1">
@@ -147,7 +165,9 @@ export default function AddPropertyModal({
           {/* Bedrooms & Bathrooms */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1">Bedrooms</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">
+                Bedrooms
+              </label>
               <input
                 type="number"
                 name="bedrooms"
@@ -159,7 +179,9 @@ export default function AddPropertyModal({
               />
             </div>
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1">Bathrooms</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">
+                Bathrooms
+              </label>
               <input
                 type="number"
                 name="bathrooms"
@@ -174,7 +196,9 @@ export default function AddPropertyModal({
 
           {/* Address */}
           <div>
-            <label className="block text-base font-medium text-slate-700 mb-1">Address</label>
+            <label className="block text-base font-medium text-slate-700 mb-1">
+              Address
+            </label>
             <input
               type="text"
               name="address"
@@ -188,7 +212,9 @@ export default function AddPropertyModal({
           {/* County/City & Eircode */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1">County/City</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">
+                County/City
+              </label>
               <input
                 type="text"
                 name="county"
@@ -199,7 +225,9 @@ export default function AddPropertyModal({
               />
             </div>
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1">Eircode</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">
+                Eircode
+              </label>
               <input
                 type="text"
                 name="eircode"
@@ -224,7 +252,9 @@ export default function AddPropertyModal({
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             >
               <option value="">
-                {landlords.length === 0 ? "No landlords found" : "Select a landlord"}
+                {landlords.length === 0
+                  ? "No landlords found"
+                  : "Select a landlord"}
               </option>
               {landlords.map((landlord) => (
                 <option key={landlord.id} value={landlord.id}>
@@ -237,7 +267,9 @@ export default function AddPropertyModal({
           {/* Status & Rent */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">
+                Status
+              </label>
               <input
                 type="text"
                 value="Vacant"
@@ -247,7 +279,9 @@ export default function AddPropertyModal({
               />
             </div>
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1">Rent</label>
+              <label className="block text-base font-medium text-slate-700 mb-1">
+                Rent
+              </label>
               <input
                 type="number"
                 name="rent"
@@ -264,7 +298,10 @@ export default function AddPropertyModal({
           {/* Optional Image */}
           <div>
             <label className="block text-base font-medium text-slate-700 mb-1">
-              Property Image <span className="text-slate-500 text-sm font-normal">(Optional)</span>
+              Property Image{" "}
+              <span className="text-slate-500 text-sm font-normal">
+                (Optional)
+              </span>
             </label>
             <div className="space-y-3">
               <input

@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const base = "https://www.mccannandcorran.com";
+  const base = "https://www.mccannandCurran.com";
   const now = new Date().toISOString();
 
   const publicRoutes = [

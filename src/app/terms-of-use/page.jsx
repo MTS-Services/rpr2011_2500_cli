@@ -15,7 +15,7 @@ export default function TermsOfUsePage() {
           <section>
             <h2 className="text-2xl font-bold text-dark-900 mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the McCann &amp; Corran Reality Limited website and client portal (&ldquo;Services&rdquo;), you agree to be
+              By accessing or using the McCann &amp; Curran Reality Limited website and client portal (&ldquo;Services&rdquo;), you agree to be
               bound by these Terms of Use. If you do not agree, please do not use our Services. These terms are governed by the
               laws of Ireland.
             </p>
@@ -36,9 +36,9 @@ export default function TermsOfUsePage() {
           <section>
             <h2 className="text-2xl font-bold text-dark-900 mb-3">3. Client Portal Access</h2>
             <p>
-              Access to the client portal is granted only to authorised landlords, tenants, and staff members of McCann &amp; Corran
+              Access to the client portal is granted only to authorised landlords, tenants, and staff members of McCann &amp; Curran
               Reality Limited. You are responsible for maintaining the confidentiality of your login credentials. You must notify us
-              immediately at <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a> if you suspect any unauthorised use of your account.
+              immediately at <a href="mailto:info@mccannandCurran.com" className="text-primary-600 hover:underline">info@mccannandCurran.com</a> if you suspect any unauthorised use of your account.
             </p>
           </section>
 
@@ -46,7 +46,7 @@ export default function TermsOfUsePage() {
             <h2 className="text-2xl font-bold text-dark-900 mb-3">4. Intellectual Property</h2>
             <p>
               All content on this website and portal — including text, graphics, logos, and software — is the property of McCann
-              &amp; Corran Reality Limited or its content suppliers and is protected by Irish and international copyright law. You may
+              &amp; Curran Reality Limited or its content suppliers and is protected by Irish and international copyright law. You may
               not reproduce, distribute, or create derivative works without our express written permission.
             </p>
           </section>
@@ -63,7 +63,7 @@ export default function TermsOfUsePage() {
           <section>
             <h2 className="text-2xl font-bold text-dark-900 mb-3">6. Limitation of Liability</h2>
             <p>
-              To the fullest extent permitted by law, McCann &amp; Corran Reality Limited shall not be liable for any indirect,
+              To the fullest extent permitted by law, McCann &amp; Curran Reality Limited shall not be liable for any indirect,
               incidental, special, or consequential damages arising from your use of, or inability to use, the Services.
               Our total liability in any matter related to these Terms shall not exceed the fees paid by you to us in the
               preceding 12 months.
@@ -93,9 +93,9 @@ export default function TermsOfUsePage() {
               Questions about these Terms? Contact us at:
             </p>
             <p className="mt-2">
-              McCann &amp; Corran Reality Limited<br />
+              McCann &amp; Curran Reality Limited<br />
               Lower Camden St, Dublin, D02XE80<br />
-              <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a><br />
+              <a href="mailto:info@mccannandCurran.com" className="text-primary-600 hover:underline">info@mccannandCurran.com</a><br />
               <a href="tel:+0498991111" className="text-primary-600 hover:underline">049-899-1111</a>
             </p>
           </section>

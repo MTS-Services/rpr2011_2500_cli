@@ -1,44 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, User, Home, FileText, ClipboardList,
-  MapPin, Phone, Mail, CalendarDays, Shield, Plus,
-  Edit, Download
+  ArrowLeft,
+  User,
+  Home,
+  FileText,
+  ClipboardList,
+  MapPin,
+  Phone,
+  Mail,
+  CalendarDays,
+  Shield,
+  TrendingUp,
 } from "lucide-react";
-
-/* Mock tenant data */
-const tenantMock = {
-  id: "1",
-  name: "Sarah Kelly",
-  initials: "SK",
-  color: "bg-teal-500",
-  dob: "14 Mar 1990",
-  pps: "•••••••567A",
-  email: "sarah.kelly@email.com",
-  mobile: "087-965-6692",
-  address: "Apt 12 Grand Canal Dock",
-  property: "Apt 39 Grand Canal Dock",
-  moveIn: "01 Feb 2022",
-  status: "Active",
-};
-
-const documents = [
-  { name: "Lease Agreement.pdf", type: "Lease", date: "01 Feb 2022", size: "120 KB" },
-  { name: "ID Verified.pdf", type: "ID", date: "12 Jan 2020", size: "80 KB" },
-];
-
-const audit = [
-  { ts: "2024-03-01 09:14", user: "Admin", action: "Updated Tenant Email" },
-];
+import { authenticatedFetch } from "@/utils/authFetch";
 
 const TABS = [
-  { key: "overview", label: "Overview", Icon: User },
-  { key: "lease", label: "Lease", Icon: Home },
-  { key: "documents", label: "Documents", Icon: FileText },
-  { key: "audit", label: "Audit", Icon: ClipboardList },
+  { key: "Details", label: "Details", Icon: User },
+  { key: "tenancy", label: "Tenancy", Icon: Home },
+  { key: "activity", label: "Activity", Icon: TrendingUp },
 ];
 
 function InfoRow({ label, value, mono = false, children }) {
@@ -46,7 +29,11 @@ function InfoRow({ label, value, mono = false, children }) {
     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 py-3 border-b border-slate-100 last:border-0">
       <p className="text-sm font-medium text-slate-400 sm:w-44 shrink-0">{label}</p>
       {children ?? (
-        <p className={`text-base text-slate-700 font-semibold ${mono ? "font-mono" : ""}`}>
+        <p
+          className={`text-base text-slate-700 font-semibold ${
+            mono ? "font-mono" : ""
+          }`}
+        >
           {value}
         </p>
       )}
@@ -56,152 +43,330 @@ function InfoRow({ label, value, mono = false, children }) {
 
 export default function TenantDetailPage() {
   const { id } = useParams();
-  const [tab, setTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("Details");
   const [showPps, setShowPps] = useState(false);
+  const [tenant, setTenant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const tenant = { ...tenantMock, id };
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchTenant = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await authenticatedFetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/${id}`
+        );
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(
+            err.message || `Failed to load tenant (${res.status})`
+          );
+        }
+        const result = await res.json();
+        if (result.success && result.data) {
+          const user = result.data;
+          // Generate initials
+          const initials = (user.name && user.name.trim() ? user.name : "NA")
+            .split(" ")
+            .map((p) => p[0] || "")
+            .join("")
+            .toUpperCase()
+            .substring(0, 2);
+          // Get a color
+          const colors = [
+            "bg-teal-500",
+            "bg-indigo-500",
+            "bg-orange-500",
+            "bg-sky-600",
+            "bg-emerald-600",
+          ];
+          const colorIndex =
+            (user.id ? user.id.charCodeAt(0) : 0) % colors.length;
+
+          if (mounted) {
+            setTenant({
+              ...user,
+              initials,
+              color: colors[colorIndex],
+            });
+          }
+        } else {
+          throw new Error("Invalid response from server");
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err.message || "Failed to load tenant");
+          console.error("Tenant fetch error:", err);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchTenant();
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+          <span className="ml-3 text-slate-600">Loading tenant...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !tenant) {
+    return (
+      <div className="space-y-4">
+        <Link
+          href="/admin/tenants"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-teal-600 font-medium transition"
+        >
+          <ArrowLeft size={15} /> Back to Tenants
+        </Link>
+        <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-4">
+          <p className="text-red-800 font-medium">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <Link href="/admin/tenants" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-teal-600 font-medium transition">
+      {/* Back Button */}
+      <Link
+        href="/admin/tenants"
+        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-teal-600 font-medium transition"
+      >
         <ArrowLeft size={15} /> Back to Tenants
       </Link>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-2xl ${tenant.color} flex items-center justify-center text-white text-xl font-bold shrink-0`}>
-              {tenant.initials}
-            </div>
-            <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-slate-800">{tenant.name}</h1>
-              <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5"><MapPin size={13} />{tenant.address}</p>
-            </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div
+            className={`w-14 h-14 rounded-2xl ${tenant.color} flex items-center justify-center text-white text-xl font-bold shrink-0`}
+          >
+            {tenant.initials}
           </div>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition">
-            <Edit size={14} /> Edit Tenant
-          </button>
+          <div>
+            <h1 className="text-xl lg:text-2xl font-bold text-slate-800">
+              {tenant.name}
+            </h1>
+            <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5">
+              <MapPin size={13} />
+              {tenant.address || "N/A"}
+            </p>
+          </div>
         </div>
       </div>
 
+      {/* Tabs */}
       <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 overflow-x-auto shadow-sm">
         {TABS.map(({ key, label, Icon }) => (
-          <button key={key} onClick={() => setTab(key)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition ${tab === key ? "bg-teal-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"}`}>
-            <Icon size={15} />{label}
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition ${
+              activeTab === key
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            <Icon size={15} />
+            {label}
           </button>
         ))}
       </div>
 
-      {tab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><User size={16} className="text-teal-600" />Personal Details</h2>
-            <InfoRow label="Full Name" value={tenant.name} />
-            <InfoRow label="Date of Birth" value={tenant.dob} />
-            <InfoRow label="PPS Number">
-              <div className="flex items-center gap-2">
-                <p className="text-base font-mono font-semibold text-slate-700">{showPps ? tenant.pps : "••••••••"}</p>
-                <button onClick={() => setShowPps(!showPps)} className="text-xs text-teal-600 hover:text-teal-700 font-semibold border border-teal-200 px-2 py-0.5 rounded-md">{showPps ? "Hide" : "Reveal"}</button>
-              </div>
-            </InfoRow>
-            <InfoRow label="Address" value={tenant.address} />
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2"><Mail size={16} className="text-teal-600" />Contact</h2>
-            <InfoRow label="Email" value={tenant.email} />
-            <InfoRow label="Mobile" value={tenant.mobile} />
-            <div className="mt-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
-              <Shield size={15} className="text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">Personal data is masked in the UI. Reveal only for authorised staff.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tab === "lease" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><Home size={16} className="text-teal-600" />Lease</h2>
-          </div>
-          <div className="p-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs text-slate-400">Property</div>
-                <div className="font-semibold text-slate-700">{tenant.property}</div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-400">Move-in Date</div>
-                <div className="font-semibold text-slate-700">{tenant.moveIn}</div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-400">Status</div>
-                <div className="font-semibold text-slate-700">{tenant.status}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tab === "documents" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><FileText size={16} className="text-teal-600" />Documents</h2>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition"><Plus size={14} />Upload</button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Document</th>
-                  <th className="text-left px-5 py-3">Type</th>
-                  <th className="text-left px-5 py-3">Date</th>
-                  <th className="text-left px-5 py-3">Size</th>
-                  <th className="text-right px-5 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {documents.map((d, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-slate-700 text-sm">{d.name}</td>
-                    <td className="px-5 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600`}>{d.type}</span></td>
-                    <td className="px-5 py-4 text-sm text-slate-500">{d.date}</td>
-                    <td className="px-5 py-4 text-sm text-slate-400">{d.size}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"><Download size={13} />Download</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {tab === "audit" && (
+      {/* Details Tab */}
+      {activeTab === "Details" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2"><ClipboardList size={16} className="text-teal-600" />Audit Log</h2>
+            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <User size={16} className="text-teal-600" />
+              Tenant Details
+            </h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-sm text-slate-400 font-semibold bg-slate-50/80">
-                  <th className="text-left px-5 py-3">Timestamp</th>
-                  <th className="text-left px-5 py-3">User</th>
-                  <th className="text-left px-5 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {audit.map((a, i) => (
-                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-4 text-sm font-mono text-slate-600">{a.ts}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-700">{a.user}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{a.action}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="px-5 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InfoRow label="Full Name" value={tenant.name || "N/A"} />
+              <InfoRow label="Email" value={tenant.email || "N/A"} />
+              <InfoRow label="Phone" value={tenant.phone || "N/A"} />
+              <InfoRow label="Address" value={tenant.address || "N/A"} />
+              <InfoRow
+                label="PPS Number"
+                value={tenant.ppsNumber || "N/A"}
+                mono
+                masked={!showPps}
+              >
+                {tenant.ppsNumber && (
+                  <div className="flex items-center gap-3">
+                    <p className={`text-base font-semibold font-mono`}>
+                      {showPps ? tenant.ppsNumber : "••••••••"}
+                    </p>
+                    <button
+                      onClick={() => setShowPps(!showPps)}
+                      className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                    >
+                      {showPps ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                )}
+              </InfoRow>
+              <InfoRow
+                label="Status"
+                value={tenant.profile?.status || "N/A"}
+              />
+              <InfoRow
+                label="Member Since"
+                value={
+                  tenant.createdAt
+                    ? new Date(tenant.createdAt).toLocaleDateString()
+                    : "N/A"
+                }
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tenancy Tab */}
+      {activeTab === "tenancy" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <Home size={16} className="text-teal-600" />
+              Current Tenancy
+            </h2>
+          </div>
+          <div className="px-5 py-4">
+            {tenant.profile?.currentTenancy ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InfoRow
+                    label="Property"
+                    value={tenant.profile.currentTenancy.property?.name || "N/A"}
+                  />
+                  <InfoRow
+                    label="Address"
+                    value={
+                      tenant.profile.currentTenancy.property?.address || "N/A"
+                    }
+                  />
+                  <InfoRow
+                    label="Status"
+                    value={tenant.profile.currentTenancy.status || "N/A"}
+                  />
+                  <InfoRow
+                    label="Monthly Rent"
+                    value={`€${tenant.profile.currentTenancy.rent || "0"}`}
+                    mono
+                  />
+                  <InfoRow
+                    label="Start Date"
+                    value={
+                      tenant.profile.currentTenancy.startDate
+                        ? new Date(
+                            tenant.profile.currentTenancy.startDate
+                          ).toLocaleDateString()
+                        : "N/A"
+                    }
+                  />
+                  <InfoRow
+                    label="End Date"
+                    value={
+                      tenant.profile.currentTenancy.endDate
+                        ? new Date(
+                            tenant.profile.currentTenancy.endDate
+                          ).toLocaleDateString()
+                        : "N/A"
+                    }
+                  />
+                  <InfoRow
+                    label="Maintenance Requests"
+                    value={
+                      tenant.profile.maintenanceRequests?.toString() || "0"
+                    }
+                  />
+                  <InfoRow
+                    label="Rent Payments"
+                    value={tenant.profile.rentPayments?.toString() || "0"}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-center">
+                <p className="text-sm text-slate-500">
+                  No active tenancy found.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Activity Tab */}
+      {activeTab === "activity" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <TrendingUp size={16} className="text-teal-600" />
+              Activity Statistics
+            </h2>
+          </div>
+          <div className="p-5">
+            {tenant.statistics ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                    Documents
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {tenant.statistics.documentsUploaded || 0}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-teal-100 p-4 bg-teal-50/40">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                    Messages
+                  </p>
+                  <p className="text-2xl font-bold text-teal-700">
+                    {tenant.statistics.messagesSent || 0}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-indigo-100 p-4 bg-indigo-50/40">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                    Audit Logs
+                  </p>
+                  <p className="text-2xl font-bold text-indigo-700">
+                    {tenant.statistics.auditLogs || 0}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-orange-100 p-4 bg-orange-50/40">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                    Conversations
+                  </p>
+                  <p className="text-2xl font-bold text-orange-700">
+                    {tenant.statistics.conversations || 0}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-center">
+                <p className="text-sm text-slate-500">
+                  No activity statistics available.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -15,11 +15,11 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-dark-900 mb-3">1. Who We Are</h2>
             <p>
-              McCann &amp; Corran Reality Limited (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a property management company registered in Ireland.
+              McCann &amp; Curran Reality Limited (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a property management company registered in Ireland.
               Our registered office is at Lower Camden St, Dublin, D02XE80. We are committed to protecting and respecting your privacy in
               accordance with the General Data Protection Regulation (GDPR) and the Data Protection Acts 1988–2018.
             </p>
-            <p className="mt-2">Contact us at: <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a> &nbsp;|&nbsp; <a href="tel:+0498991111" className="text-primary-600 hover:underline">049-899-1111</a></p>
+            <p className="mt-2">Contact us at: <a href="mailto:info@mccannandCurran.com" className="text-primary-600 hover:underline">info@mccannandCurran.com</a> &nbsp;|&nbsp; <a href="tel:+0498991111" className="text-primary-600 hover:underline">049-899-1111</a></p>
           </section>
 
           <section>
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
               <li><strong>Objection</strong> — object to processing based on legitimate interests.</li>
               <li><strong>Withdraw consent</strong> — at any time, where processing is based on consent.</li>
             </ul>
-            <p className="mt-2">To exercise any of these rights, email <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a>. We will respond within 30 days. You also have the right to lodge a complaint with the Data Protection Commission (<a href="https://www.dataprotection.ie" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">www.dataprotection.ie</a>).</p>
+            <p className="mt-2">To exercise any of these rights, email <a href="mailto:info@mccannandCurran.com" className="text-primary-600 hover:underline">info@mccannandCurran.com</a>. We will respond within 30 days. You also have the right to lodge a complaint with the Data Protection Commission (<a href="https://www.dataprotection.ie" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">www.dataprotection.ie</a>).</p>
           </section>
 
           <section>
