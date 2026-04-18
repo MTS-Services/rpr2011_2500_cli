@@ -48,7 +48,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-2">
               <Mail size={14} className="text-primary-500" />
-              <span>info@mccannandCurran.com</span>
+              <span>info@mccannandcurran.com</span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin size={14} className="text-primary-500 mt-0.5" />
