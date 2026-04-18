@@ -445,6 +445,18 @@ export default function AdminPropertiesPage() {
         { method: "DELETE" },
       );
 
+      const data = await response.json();
+
+      // Check if API returned success: false
+      if (!data.success) {
+        Swal.fire({
+          icon: "error",
+          title: "Cannot Delete Property",
+          text: data.message || "Failed to delete property",
+        });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to delete property");
       }
