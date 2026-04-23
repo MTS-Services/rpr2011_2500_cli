@@ -1,0 +1,3 @@
+{
+  "/admin/tenancies/[tenancyId]/rent-payments/page": "app/admin/tenancies/[tenancyId]/rent-payments/page.js"
+}

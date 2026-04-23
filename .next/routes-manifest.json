@@ -1,0 +1,365 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/admin/landlords/[id]",
+      "regex": "^/admin/landlords/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/landlords/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/properties/[id]",
+      "regex": "^/admin/properties/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/properties/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/properties/[id]/finances",
+      "regex": "^/admin/properties/([^/]+?)/finances(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/properties/(?<nxtPid>[^/]+?)/finances(?:/)?$"
+    },
+    {
+      "page": "/admin/tenancies/[tenancyId]/rent-payments",
+      "regex": "^/admin/tenancies/([^/]+?)/rent\\-payments(?:/)?$",
+      "routeKeys": {
+        "nxtPtenancyId": "nxtPtenancyId"
+      },
+      "namedRegex": "^/admin/tenancies/(?<nxtPtenancyId>[^/]+?)/rent\\-payments(?:/)?$"
+    },
+    {
+      "page": "/admin/tenants/[id]",
+      "regex": "^/admin/tenants/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/tenants/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/portal/properties/[id]",
+      "regex": "^/portal/properties/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/portal/properties/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/portal/tenants/[id]",
+      "regex": "^/portal/tenants/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/portal/tenants/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/about",
+      "regex": "^/about(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/about(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/admin/audit",
+      "regex": "^/admin/audit(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/audit(?:/)?$"
+    },
+    {
+      "page": "/admin/contact-submissions",
+      "regex": "^/admin/contact\\-submissions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/contact\\-submissions(?:/)?$"
+    },
+    {
+      "page": "/admin/dashboard",
+      "regex": "^/admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/admin/documents",
+      "regex": "^/admin/documents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/documents(?:/)?$"
+    },
+    {
+      "page": "/admin/landlords",
+      "regex": "^/admin/landlords(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/landlords(?:/)?$"
+    },
+    {
+      "page": "/admin/maintenance",
+      "regex": "^/admin/maintenance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/maintenance(?:/)?$"
+    },
+    {
+      "page": "/admin/messages",
+      "regex": "^/admin/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/messages(?:/)?$"
+    },
+    {
+      "page": "/admin/properties",
+      "regex": "^/admin/properties(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/properties(?:/)?$"
+    },
+    {
+      "page": "/admin/reports",
+      "regex": "^/admin/reports(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/reports(?:/)?$"
+    },
+    {
+      "page": "/admin/rtb",
+      "regex": "^/admin/rtb(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/rtb(?:/)?$"
+    },
+    {
+      "page": "/admin/settings",
+      "regex": "^/admin/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/settings(?:/)?$"
+    },
+    {
+      "page": "/admin/tenancies",
+      "regex": "^/admin/tenancies(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/tenancies(?:/)?$"
+    },
+    {
+      "page": "/admin/tenants",
+      "regex": "^/admin/tenants(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/tenants(?:/)?$"
+    },
+    {
+      "page": "/contact",
+      "regex": "^/contact(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/contact(?:/)?$"
+    },
+    {
+      "page": "/cookie-policy",
+      "regex": "^/cookie\\-policy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cookie\\-policy(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/portal",
+      "regex": "^/portal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal(?:/)?$"
+    },
+    {
+      "page": "/portal/dashboard",
+      "regex": "^/portal/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/dashboard(?:/)?$"
+    },
+    {
+      "page": "/portal/documents",
+      "regex": "^/portal/documents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/documents(?:/)?$"
+    },
+    {
+      "page": "/portal/maintenance",
+      "regex": "^/portal/maintenance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/maintenance(?:/)?$"
+    },
+    {
+      "page": "/portal/messages",
+      "regex": "^/portal/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/messages(?:/)?$"
+    },
+    {
+      "page": "/portal/profile",
+      "regex": "^/portal/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/profile(?:/)?$"
+    },
+    {
+      "page": "/portal/properties",
+      "regex": "^/portal/properties(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/properties(?:/)?$"
+    },
+    {
+      "page": "/portal/rtb",
+      "regex": "^/portal/rtb(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/rtb(?:/)?$"
+    },
+    {
+      "page": "/portal/tenants",
+      "regex": "^/portal/tenants(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portal/tenants(?:/)?$"
+    },
+    {
+      "page": "/privacy-policy",
+      "regex": "^/privacy\\-policy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/privacy\\-policy(?:/)?$"
+    },
+    {
+      "page": "/register",
+      "regex": "^/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/register(?:/)?$"
+    },
+    {
+      "page": "/services",
+      "regex": "^/services(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services(?:/)?$"
+    },
+    {
+      "page": "/sitemap.xml",
+      "regex": "^/sitemap\\.xml(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sitemap\\.xml(?:/)?$"
+    },
+    {
+      "page": "/tenant",
+      "regex": "^/tenant(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant(?:/)?$"
+    },
+    {
+      "page": "/tenant/dashboard",
+      "regex": "^/tenant/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/dashboard(?:/)?$"
+    },
+    {
+      "page": "/tenant/documents",
+      "regex": "^/tenant/documents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/documents(?:/)?$"
+    },
+    {
+      "page": "/tenant/maintenance",
+      "regex": "^/tenant/maintenance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/maintenance(?:/)?$"
+    },
+    {
+      "page": "/tenant/messages",
+      "regex": "^/tenant/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/messages(?:/)?$"
+    },
+    {
+      "page": "/tenant/profile",
+      "regex": "^/tenant/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/profile(?:/)?$"
+    },
+    {
+      "page": "/tenant/property",
+      "regex": "^/tenant/property(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/property(?:/)?$"
+    },
+    {
+      "page": "/tenant/rent",
+      "regex": "^/tenant/rent(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/rent(?:/)?$"
+    },
+    {
+      "page": "/tenant/rtb",
+      "regex": "^/tenant/rtb(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tenant/rtb(?:/)?$"
+    },
+    {
+      "page": "/terms-of-use",
+      "regex": "^/terms\\-of\\-use(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/terms\\-of\\-use(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
