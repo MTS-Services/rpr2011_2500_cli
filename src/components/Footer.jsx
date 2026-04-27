@@ -48,7 +48,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-2">
               <Mail size={14} className="text-primary-500" />
-              <span>info@mccannandcorran.com</span>
+              <span>info@mccannandcurran.com</span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin size={14} className="text-primary-500 mt-0.5" />
@@ -64,7 +64,7 @@ export default function Footer() {
 
       <div className="border-t border-dark-200">
         <div className="container mx-auto px-6 lg:px-16 py-5 text-center text-xs text-dark-400">
-          © 2026 McCann &amp; Corran Reality. All rights reserved. &nbsp;·&nbsp; PSRA Lic. No. 004008
+          © 2026 McCann &amp; Curran Reality. All rights reserved. &nbsp;·&nbsp; PSRA Lic. No. 004008
         </div>
       </div>
     </footer>

@@ -95,7 +95,7 @@ export default function CookiePolicyPage() {
             <h2 className="text-2xl font-bold text-dark-900 mb-3">6. Contact Us</h2>
             <p>
               If you have questions about our use of cookies, please contact us at{" "}
-              <a href="mailto:info@mccannandcorran.com" className="text-primary-600 hover:underline">info@mccannandcorran.com</a>.
+              <a href="mailto:info@mccannandCurran.com" className="text-primary-600 hover:underline">info@mccannandCurran.com</a>.
             </p>
           </section>
 

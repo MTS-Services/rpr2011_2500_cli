@@ -83,7 +83,7 @@ export default function RegisterPage() {
                     <Image src="/logo.png" alt="McCann & Curran Reality" width={40} height={40} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-slate-800">McCann &amp; Corran</h2>
+                    <h2 className="text-xl font-bold text-slate-800">McCann &amp; Curran</h2>
                     <p className="text-xs uppercase text-slate-400 tracking-wide">Client portal</p>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="bg-slate-50 px-5 sm:px-6 py-4 text-center border-t border-slate-100">
-                <p className="text-xs text-slate-400">© 2026 McCann &amp; Corran. Confidential and Proprietary.</p>
+                <p className="text-xs text-slate-400">© 2026 McCann &amp; Curran. Confidential and Proprietary.</p>
               </div>
             </div>
       </div>

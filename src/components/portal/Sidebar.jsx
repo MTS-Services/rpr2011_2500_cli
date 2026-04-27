@@ -50,7 +50,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
           <Image src="/logo.png" alt="McCann & Curran Reality" width={36} height={36} />
           <div className="leading-tight">
             <span className="text-sm font-bold text-slate-800 tracking-tight block">
-              McCann &amp; Corran Reality
+              McCann &amp; Curran Reality
             </span>
             <span className="text-xs text-teal-600 font-semibold">Landlord</span>
           </div>
@@ -88,7 +88,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-slate-100 text-xs text-slate-400">
-          © 2026 McCann &amp; Corran Reality
+          © 2026 McCann &amp; Curran Reality
         </div>
       </aside>
     </>

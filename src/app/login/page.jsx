@@ -64,7 +64,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-800">
-                  McCann &amp; Corran
+                  McCann &amp; Curran
                 </h2>
                 <p className="text-xs uppercase text-slate-400 tracking-wide">
                   Landlord portal
@@ -133,12 +133,12 @@ export default function LoginPage() {
                   Remember me
                 </label>
 
-                <button
+                {/* <button
                   type="button"
                   className="text-xs lg:text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Forgot password?
-                </button>
+                </button> */}
               </div>
 
               <div>
@@ -169,7 +169,7 @@ export default function LoginPage() {
 
           <div className="bg-slate-50 px-5 sm:px-6 py-4 text-center border-t border-slate-100">
             <p className="text-xs text-slate-400">
-              © 2026 McCann &amp; Corran. Confidential and Proprietary.
+              © 2026 McCann &amp; Curran. Confidential and Proprietary.
             </p>
           </div>
         </div>

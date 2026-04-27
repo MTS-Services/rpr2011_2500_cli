@@ -26,7 +26,7 @@ export default function Why() {
               <span className="text-primary-600">your property.</span>
             </h2>
             <p className="section-desc text-dark-500 mb-10 leading-relaxed">
-              McCann &amp; Corran combines local expertise with modern technology to deliver property management that genuinely works for landlords.
+              McCann &amp; Curran combines local expertise with modern technology to deliver property management that genuinely works for landlords.
             </p>
 
             <ul className="space-y-5 mb-12">

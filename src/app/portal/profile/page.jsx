@@ -93,7 +93,7 @@ export default function ProfilePage() {
             <div>
               <p className="text-base font-semibold text-amber-800">Edit Only by Admin</p>
               <p className="text-sm text-amber-700 mt-1">
-                Contact McCann &amp; Corran for any changes to your profile.<br />
+                Contact McCann &amp; Curran for any changes to your profile.<br />
                 Editing is restricted to administrators.
               </p>
             </div>
@@ -127,13 +127,13 @@ export default function ProfilePage() {
           <div className="px-5 py-4 border-b border-amber-200 flex items-center gap-2.5">
             <Lock size={18} className="text-amber-600" />
             <p className="text-base font-semibold text-amber-800">
-              Only McCann &amp; Corran administrators can{" "}
+              Only McCann &amp; Curran administrators can{" "}
               <span className="font-bold">edit this information</span>
             </p>
           </div>
           <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <p className="text-base text-amber-700">
-              Need any changes made to your profile? Please contact McCann &amp; Corran for assistance.
+              Need any changes made to your profile? Please contact McCann &amp; Curran for assistance.
             </p>
             <button
               type="button"
