@@ -1,3 +1,0 @@
-:HL["/_next/static/chunks/d6244845ef695014.css","style"]
-:HL["https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap","style"]
-0:{"buildId":"ixYqgJkhi766xksiSkPWh","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"tenant","paramType":null,"paramKey":"tenant","hasRuntimePrefetch":false,"slots":{"children":{"name":"property","paramType":null,"paramKey":"property","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}

@@ -133,12 +133,12 @@ export default function LoginPage() {
                   Remember me
                 </label>
 
-                <button
+                {/* <button
                   type="button"
                   className="text-xs lg:text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Forgot password?
-                </button>
+                </button> */}
               </div>
 
               <div>

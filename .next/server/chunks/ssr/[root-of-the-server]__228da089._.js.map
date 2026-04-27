@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../../../../../RPr2/rpr2011_2500_cli/src/app/tenant/page.jsx"],"sourcesContent":["import { redirect } from \"next/navigation\";\r\n\r\nexport default function TenantRootPage() {\r\n  redirect(\"/tenant/dashboard\");\r\n}\r\n"],"names":[],"mappings":"sZAAA,EAAA,CAAA,CAAA,OAAA,IAAA,EAAA,EAAA,CAAA,CAAA,OAEe,SAAS,IACtB,CAAA,EAAA,EAAA,QAAA,AAAQ,EAAC,oBACX"}

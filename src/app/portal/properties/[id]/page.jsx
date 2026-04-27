@@ -85,87 +85,87 @@ const MONTHS = [
 const rentTracker = [
   {
     month: "Jan",
-    amount: "€1,750",
+    amount: "€0",
     status: "Paid",
     date: "Jan 1, 2025",
-    ref: "#TXN-2025-01",
+    ref: "#0",
   },
   {
     month: "Feb",
-    amount: "€1,750",
+    amount: "€0",
     status: "Overdue",
     date: "Feb 1, 2025",
-    ref: "#TXN-2025-02",
+    ref: "#0",
   },
   {
     month: "Mar",
-    amount: "€1,750",
+    amount: "€",
     status: "Pending",
     date: "Mar 1, 2025",
-    ref: "#TXN-2025-03",
+    ref: "#0",
   },
   {
     month: "Apr",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Apr 1, 2025",
-    ref: "#TXN-2025-04",
+    ref: "#0",
   },
   {
     month: "May",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "May 1, 2025",
-    ref: "#TXN-2025-05",
+    ref: "#0",
   },
   {
     month: "Jun",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Jun 1, 2025",
-    ref: "#TXN-2025-06",
+    ref: "#0",
   },
   {
     month: "Jul",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Jul 1, 2025",
-    ref: "#TXN-2025-07",
+    ref: "#0",
   },
   {
     month: "Aug",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Aug 1, 2025",
-    ref: "#TXN-2025-08",
+    ref: "#0",
   },
   {
     month: "Sep",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Sep 1, 2025",
-    ref: "#TXN-2025-09",
+    ref: "#0",
   },
   {
     month: "Oct",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Oct 1, 2025",
-    ref: "#TXN-2025-10",
+    ref: "#0",
   },
   {
     month: "Nov",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Nov 1, 2025",
-    ref: "#TXN-2025-11",
+    ref: "#0",
   },
   {
     month: "Dec",
-    amount: "€1,750",
+    amount: "€0",
     status: "Pending",
     date: "Dec 1, 2025",
-    ref: "#TXN-2025-12",
+    ref: "#0",
   },
 ];
 
@@ -205,6 +205,14 @@ function InfoRow({ label, value, mono = false }) {
       >
         {value}
       </p>
+    </div>
+  );
+}
+
+function EmptyTabState({ message = "Not found" }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+      <p className="text-sm text-slate-500">{message}</p>
     </div>
   );
 }
@@ -758,64 +766,69 @@ export default function PropertyProfilePage() {
           )}
 
           {/* Tab: Tenancy */}
-          {activeTab === "tenancy" && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 max-w-2xl">
-              <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <BadgeCheck size={16} className="text-teal-600" /> Tenancy
-                Details
-              </h2>
-              <InfoRow label="RTB Number" value={fetchedRtb?.rtbNumber} mono />
-              <InfoRow
-                label="RTB Registration Date"
-                value={formatDisplayDate(fetchedRtb.rtbRegistrationDate)}
-              />
-              <InfoRow
-                label="Lease Start"
-                value={
-                  fetchedRtb?.startDate
-                    ? formatDisplayDate(fetchedRtb.startDate)
-                    : displayProperty.tenancy.leaseStart
-                }
-              />
-              <InfoRow
-                label="Lease End"
-                value={displayProperty.tenancy.leaseEnd}
-              />
-              <InfoRow
-                label="Rent Review Date"
-                value={displayProperty.tenancy.rentReviewDate}
-              />
-              <InfoRow
-                label="Review Frequency"
-                value={displayProperty.tenancy.rentReviewFrequency}
-              />
-              <InfoRow
-                label="Notice Given"
-                value={displayProperty.tenancy.noticeGiven}
-              />
-              <InfoRow
-                label="Notice Period"
-                value={displayProperty.tenancy.noticePeriod}
-              />
-            </div>
-          )}
+          {activeTab === "tenancy" &&
+            (activeTenant || fetchedRtb ? (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 max-w-2xl">
+                <h2 className="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+                  <BadgeCheck size={16} className="text-teal-600" /> Tenancy
+                  Details
+                </h2>
+                <InfoRow
+                  label="RTB Number"
+                  value={fetchedRtb?.rtbNumber || "—"}
+                  mono
+                />
+                <InfoRow
+                  label="RTB Registration Date"
+                  value={formatDisplayDate(fetchedRtb?.rtbRegistrationDate)}
+                />
+                <InfoRow
+                  label="Lease Start"
+                  value={
+                    fetchedRtb?.startDate
+                      ? formatDisplayDate(fetchedRtb.startDate)
+                      : displayProperty.tenancy.leaseStart
+                  }
+                />
+                <InfoRow
+                  label="Lease End"
+                  value={displayProperty.tenancy.leaseEnd}
+                />
+                <InfoRow
+                  label="Rent Review Date"
+                  value={displayProperty.tenancy.rentReviewDate}
+                />
+                <InfoRow
+                  label="Review Frequency"
+                  value={displayProperty.tenancy.rentReviewFrequency}
+                />
+                <InfoRow
+                  label="Notice Given"
+                  value={displayProperty.tenancy.noticeGiven}
+                />
+                <InfoRow
+                  label="Notice Period"
+                  value={displayProperty.tenancy.noticePeriod}
+                />
+              </div>
+            ) : (
+              <EmptyTabState message="Not found" />
+            ))}
 
           {/* Tab: Rent Payments */}
           {activeTab === "rent" &&
             (() => {
-              // Use fetched rent data, fall back to mock if not available
               const displayRentSummary = fetchedRentSummary || {
-                monthlyRent: "1750",
-                totalCollected: "8400",
-                monthsPaid: 4,
-                totalMonths: 12,
+                monthlyRent: 0,
+                totalCollected: 0,
+                monthsPaid: 0,
+                totalMonths: 0,
                 overdueCount: 0,
-                pendingCount: 8,
-                rentDueDay: 1,
+                pendingCount: 0,
+                rentDueDay: 0,
                 year: new Date().getFullYear(),
               };
 
-              // Map backend calendar and only include entries where an `id` exists
               const displayRentCalendar =
                 fetchedRentCalendar && fetchedRentCalendar.length > 0
                   ? fetchedRentCalendar
@@ -830,17 +843,27 @@ export default function PropertyProfilePage() {
                         reference: item.reference,
                       }))
                       .filter((it) => it.id != null)
-                  : rentTracker;
+                  : [];
 
               const totalCollected =
-                parseInt(displayRentSummary.totalCollected) ||
-                rentTracker.filter((r) => r.status === "Paid").length * 1750;
+                parseInt(displayRentSummary.totalCollected) || 0;
               const overdueCount =
-                displayRentSummary.overdueCount ??
-                rentTracker.filter((r) => r.status === "Overdue").length;
+                Number(displayRentSummary.overdueCount) || 0;
               const monthlyRent =
-                parseInt(displayRentSummary.monthlyRent) || 1750;
-              const rentDueDay = displayRentSummary.rentDueDay || 1;
+                parseInt(displayRentSummary.monthlyRent) || 0;
+              const rentDueDay = Number(displayRentSummary.rentDueDay) || 0;
+
+              const hasRentData =
+                displayRentCalendar.length > 0 ||
+                (Array.isArray(fetchedRentPayments) && fetchedRentPayments.length > 0) ||
+                totalCollected > 0 ||
+                monthlyRent > 0 ||
+                overdueCount > 0 ||
+                (Number(displayRentSummary.pendingCount) || 0) > 0;
+
+              if (!rentPaymentsLoading && !hasRentData) {
+                return <EmptyTabState message="Not found" />;
+              }
 
               return (
                 <div className="space-y-4">
@@ -984,7 +1007,7 @@ export default function PropertyProfilePage() {
                         })
                       ) : (
                         <div className="px-5 py-8 text-center text-slate-500">
-                          No payments found.
+                          Not found
                         </div>
                       )}
                     </div>
@@ -1067,7 +1090,7 @@ export default function PropertyProfilePage() {
                                 colSpan={5}
                                 className="px-5 py-8 text-center text-slate-500"
                               >
-                                No payments found.
+                                Not found
                               </td>
                             </tr>
                           )}
@@ -1093,9 +1116,13 @@ export default function PropertyProfilePage() {
           {/* Tab: RTB Registration */}
           {activeTab === "rtb" &&
             (() => {
+              if (!rtbLoading && !rtbError && !fetchedRtb) {
+                return <EmptyTabState message="Not found" />;
+              }
+
               const rtbRegistrationCode = fetchedRtb?.rtbRegistration;
               const registrationDate = formatDisplayDate(
-                fetchedRtb.rtbRegistrationDate,
+                fetchedRtb?.rtbRegistrationDate,
               );
               const expiryDate = fetchedRtb?.rtbExpiryDate
                 ? formatDisplayDate(fetchedRtb.rtbExpiryDate)
@@ -1275,9 +1302,7 @@ export default function PropertyProfilePage() {
                   })
                 ) : (
                   <div className="px-5 py-8 text-center">
-                    <p className="text-sm text-slate-500">
-                      No documents uploaded for this property.
-                    </p>
+                    <p className="text-sm text-slate-500">Not found</p>
                   </div>
                 )}
               </div>
@@ -1382,7 +1407,7 @@ export default function PropertyProfilePage() {
                           colSpan={5}
                           className="px-5 py-8 text-center text-slate-500"
                         >
-                          No documents uploaded for this property.
+                          Not found
                         </td>
                       </tr>
                     )}
@@ -1486,9 +1511,7 @@ export default function PropertyProfilePage() {
                   })
                 ) : (
                   <div className="px-5 py-8 text-center">
-                    <p className="text-sm text-slate-500">
-                      No maintenance requests for this property.
-                    </p>
+                    <p className="text-sm text-slate-500">Not found</p>
                   </div>
                 )}
               </div>
@@ -1576,7 +1599,7 @@ export default function PropertyProfilePage() {
                           colSpan={5}
                           className="px-5 py-8 text-center text-slate-500"
                         >
-                          No maintenance requests for this property.
+                          Not found
                         </td>
                       </tr>
                     )}
