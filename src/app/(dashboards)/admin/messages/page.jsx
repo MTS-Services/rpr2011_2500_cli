@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MessageSquare, Send, Search, ArrowLeft, Plus, Copy, Check } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
@@ -30,7 +30,7 @@ const ALL_LANDLORDS = [
   { id: "landlord-8", name: "Zoe Finnegan", initials: "ZF", color: "bg-amber-100 text-amber-700", property: "Multiple properties" },
 ];
 
-export default function AdminMessagesPage() {
+function AdminMessagesContent() {
   const { user: currentUser } = usePortalAuth();
   const searchParams = useSearchParams();
   const [convos, setConvos]         = useState([]);
@@ -576,5 +576,13 @@ export default function AdminMessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminMessagesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Messages...</div>}>
+      <AdminMessagesContent />
+    </Suspense>
   );
 }

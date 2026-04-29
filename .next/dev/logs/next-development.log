@@ -6766,3 +6766,120 @@ https://nextjs.org/docs/messages/module-not-found
        please check the style of container, or the props width(100%) and height(100%),
        or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
        height and width.
+[00:04:31.506] Server  LOG     ✓ Compiled in 276ms
+[00:04:31.662] Browser ERROR   ./src/app/(dashboards)/admin/messages/page.jsx:582:25
+Ecmascript file had an error
+  580 | }
+  581 |
+> 582 | export default function AdminMessagesPage() {
+      |                         ^^^^^^^^^^^^^^^^^
+  583 |   return (
+  584 |     <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Messages...</div>}>
+  585 |       <AdminMessagesContent />
+
+the name `AdminMessagesPage` is defined multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component Browser]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component SSR]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+[00:04:31.662] Browser ERROR   ./src/app/(dashboards)/admin/messages/page.jsx:582:1
+Ecmascript file had an error
+  580 | }
+  581 |
+> 582 | export default function AdminMessagesPage() {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 583 |   return (
+      | ^^^^^^^^^^
+> 584 |     <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Messages...</div>}>
+      | ^^^^^^^^^^
+> 585 |       <AdminMessagesContent />
+      | ^^^^^^^^^^
+> 586 |     </Suspense>
+      | ^^^^^^^^^^
+> 587 |   );
+      | ^^^^^^^^^^
+> 588 | }
+      | ^^
+  589 |
+
+the name `default` is exported multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component Browser]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component SSR]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+[00:04:44.385] Server  LOG     ✓ Compiled in 55ms
+[00:04:44.662] Browser ERROR   ./src/app/(dashboards)/admin/messages/page.jsx:582:25
+Ecmascript file had an error
+  580 | }
+  581 |
+> 582 | export default function AdminMessagesPage() {
+      |                         ^^^^^^^^^^^^^^^^^
+  583 |   return (
+  584 |     <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Messages...</div>}>
+  585 |       <AdminMessagesContent />
+
+the name `AdminMessagesPage` is defined multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component Browser]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component SSR]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+[00:04:44.662] Browser ERROR   ./src/app/(dashboards)/admin/messages/page.jsx:582:1
+Ecmascript file had an error
+  580 | }
+  581 |
+> 582 | export default function AdminMessagesPage() {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 583 |   return (
+      | ^^^^^^^^^^
+> 584 |     <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Messages...</div>}>
+      | ^^^^^^^^^^
+> 585 |       <AdminMessagesContent />
+      | ^^^^^^^^^^
+> 586 |     </Suspense>
+      | ^^^^^^^^^^
+> 587 |   );
+      | ^^^^^^^^^^
+> 588 | }
+      | ^^
+  589 |
+
+the name `default` is exported multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component Browser]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboards)/admin/messages/page.jsx [Client Component SSR]
+    ./src/app/(dashboards)/admin/messages/page.jsx [Server Component]
+[00:04:50.139] Server  LOG     ✓ Compiled in 53ms
+[00:05:34.626] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:34.841] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:05:35.783] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:05:35.783] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:05:35.783] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:05:35.783] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:05:37.551] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:37.677] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:05:37.785] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:05:37.785] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:05:37.785] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:05:47.170] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:05:49.567] Browser LOG     Conversations API response: {"data":[],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-04-29T06:07:37.084Z"}
+[00:05:49.730] Browser LOG     Conversations API response: {"data":[],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-04-29T06:07:37.260Z"}

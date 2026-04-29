@@ -6,8 +6,9 @@ import PortalShell from "@/components/portal/PortalShell";
 import { Send, Search, ArrowLeft } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
 import { usePortalAuth } from "@/context/PortalAuthContext";
+import { Suspense } from "react";
 
-export default function LandlordMessagesPage() {
+function LandlordMessagesContent() {
   const { user: currentUser } = usePortalAuth();
   const searchParams = useSearchParams();
   const initialConversationId = searchParams?.get("conversationId");
@@ -505,6 +506,14 @@ export default function LandlordMessagesPage() {
         </div>
       </div>
     </PortalShell>
+  );
+}
+
+export default function LandlordMessagesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Messages...</div>}>
+      <LandlordMessagesContent />
+    </Suspense>
   );
 }
 
