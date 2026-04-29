@@ -1,6 +1,6 @@
 # Modern Property Management System
 
-> **Design Credit:** Aesthetically crafted and architected with the assistance of **Gemini**, focusing on premium user experience and data-driven insights.
+> **Design Credit:** The frontend experience was implemented based on a client-provided design reference(generated using GPT tools).
 
 ## 🚀 Overview
 
