@@ -215,7 +215,7 @@ export default function AddTenancyModal({ isOpen, onClose, onSubmit, properties 
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         >
                             <option value="">Select day</option>
-                            {[...Array(10)].map((_, i) => {
+                            {[...Array(31)].map((_, i) => {
                                 const day = i + 1;
                                 return (
                                     <option key={day} value={String(day)}>{day}</option>
