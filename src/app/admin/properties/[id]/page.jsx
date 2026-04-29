@@ -76,6 +76,12 @@ const docTypeColors = {
   Statement: "bg-teal-50 text-teal-700",
   Inspection: "bg-amber-50 text-amber-700",
   Invoice: "bg-rose-50 text-rose-700",
+  CONTRACT: "bg-teal-50 text-teal-700",
+  REFERENCE: "bg-blue-50 text-blue-700",
+  NOTICE: "bg-amber-50 text-amber-700",
+  DEMAND: "bg-orange-50 text-orange-700",
+  TERMINATION: "bg-red-50 text-red-700",
+  WARNING: "bg-rose-50 text-rose-700",
 };
 
 const priorityColors = {
@@ -957,7 +963,19 @@ export default function AdminPropertyProfilePage() {
               <tbody className="divide-y divide-slate-100">
                 {fetchedDocuments && fetchedDocuments.length > 0 ? (
                   fetchedDocuments.map((d, i) => {
-                    const docType = d.type ? (d.type === "LEASE" ? "Lease" : d.type === "RTB_REGISTRATION" ? "RTB Registration" : d.type) : d.type;
+                    const displayTypes = {
+                      LEASE: "Lease",
+                      RTB_REGISTRATION: "RTB Registration",
+                      INVOICE: "Invoice",
+                      STATEMENT: "Statement",
+                      CONTRACT: "Contract",
+                      REFERENCE: "Reference",
+                      NOTICE: "Notice",
+                      DEMAND: "Demand",
+                      TERMINATION: "Termination",
+                      WARNING: "Warning",
+                    };
+                    const docType = d.type ? (displayTypes[d.type.toUpperCase()] || d.type) : d.type;
                     const docName = d.name;
                     const docDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : d.date;
                     const docSize = d.fileSize || d.size;

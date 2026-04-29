@@ -13,6 +13,12 @@ const TYPE_STYLE = {
   LEASE: "bg-teal-100 text-teal-700",
   INVOICE: "bg-teal-100 text-teal-700",
   STATEMENT: "bg-indigo-100 text-indigo-700",
+  CONTRACT: "bg-teal-100 text-teal-700",
+  REFERENCE: "bg-blue-100 text-blue-700",
+  NOTICE: "bg-amber-100 text-amber-700",
+  DEMAND: "bg-orange-100 text-orange-700",
+  TERMINATION: "bg-red-100 text-red-700",
+  WARNING: "bg-rose-100 text-rose-700",
 };
 
 // Calculate relative time
@@ -37,13 +43,24 @@ function getRelativeTime(dateString) {
 // Transform API response to UI format
 function transformDocument(apiDoc) {
   const typeUpper = (apiDoc.type || "").toUpperCase();
+  const displayTypes = {
+    LEASE: "Lease",
+    INVOICE: "Invoice",
+    STATEMENT: "Statement",
+    CONTRACT: "Contract",
+    REFERENCE: "Reference",
+    NOTICE: "Notice",
+    DEMAND: "Demand",
+    TERMINATION: "Termination",
+    WARNING: "Warning",
+  };
   return {
     id: apiDoc.id,
     propertyId: apiDoc.property?.id || "",
     icon: "teal",
     name: apiDoc.name,
     sub: apiDoc.property?.name || "Unknown Property",
-    type: apiDoc.type,
+    type: displayTypes[typeUpper] || apiDoc.type,
     typeStyle: TYPE_STYLE[typeUpper] || "bg-teal-100 text-teal-700",
     property: apiDoc.property?.name || "Unknown",
     visibility: apiDoc.visibility || [],
@@ -341,6 +358,12 @@ export default function AdminDocumentsPage() {
           <option value="LEASE">Lease</option>
           <option value="INVOICE">Invoice</option>
           <option value="STATEMENT">Statement</option>
+          <option value="CONTRACT">Contract</option>
+          <option value="REFERENCE">Reference</option>
+          <option value="NOTICE">Notice</option>
+          <option value="DEMAND">Demand</option>
+          <option value="TERMINATION">Termination</option>
+          <option value="WARNING">Warning</option>
         </select>
         {/* visibility select removed as requested */}
         {/* <div className="flex-1" /> */}
@@ -504,6 +527,12 @@ export default function AdminDocumentsPage() {
                     <option value="LEASE">Lease</option>
                     <option value="INVOICE">Invoice</option>
                     <option value="STATEMENT">Statement</option>
+                    <option value="CONTRACT">Contract</option>
+                    <option value="REFERENCE">Reference</option>
+                    <option value="NOTICE">Notice</option>
+                    <option value="DEMAND">Demand</option>
+                    <option value="TERMINATION">Termination</option>
+                    <option value="WARNING">Warning</option>
                   </select>
                 </div>
                 <div>

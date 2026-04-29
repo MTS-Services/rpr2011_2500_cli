@@ -1,8 +1,19 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/documents/page": "app/admin/documents/page.js",
+  "/admin/landlords/[id]/page": "app/admin/landlords/[id]/page.js",
+  "/admin/landlords/page": "app/admin/landlords/page.js",
+  "/admin/properties/[id]/page": "app/admin/properties/[id]/page.js",
+  "/admin/properties/page": "app/admin/properties/page.js",
   "/admin/tenants/[id]/page": "app/admin/tenants/[id]/page.js",
   "/admin/tenants/page": "app/admin/tenants/page.js",
   "/login/page": "app/login/page.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/tenant/dashboard/page": "app/tenant/dashboard/page.js",
+  "/tenant/documents/page": "app/tenant/documents/page.js",
+  "/tenant/maintenance/page": "app/tenant/maintenance/page.js",
+  "/tenant/property/page": "app/tenant/property/page.js",
+  "/tenant/rent/page": "app/tenant/rent/page.js",
+  "/tenant/rtb/page": "app/tenant/rtb/page.js"
 }
