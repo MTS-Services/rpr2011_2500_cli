@@ -6883,3 +6883,50 @@ Import traces:
 [00:05:47.170] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
 [00:05:49.567] Browser LOG     Conversations API response: {"data":[],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-04-29T06:07:37.084Z"}
 [00:05:49.730] Browser LOG     Conversations API response: {"data":[],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-04-29T06:07:37.260Z"}
+[00:07:52.929] Browser ERROR   Error fetching tenancy: {}
+[00:07:53.128] Browser ERROR   Error fetching tenancy: {}
+[00:08:03.344] Browser WARN    Error fetching RTB details: {}
+[00:08:03.536] Browser WARN    Error fetching RTB details: {}
+[00:08:09.576] Browser LOG     Conversations API response: {"data":[],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-04-29T06:09:57.074Z"}
+[00:08:09.762] Browser LOG     Conversations API response: {"data":[],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-04-29T06:09:57.271Z"}
+[00:08:14.412] Browser ERROR   Error fetching tenancy: {}
+[00:08:14.612] Browser ERROR   Error fetching tenancy: {}
+[00:11:21.869] Server  LOG     ✓ Compiled in 46ms
+[00:11:22.669] Browser ERROR   uncaughtError: ReferenceError: Clock is not defined
+[00:11:29.850] Server  WARN    ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:11:29.872] Server  LOG     ✓ Compiled in 55ms
+[00:11:30.353] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:11:31.674] Browser ERROR   Error fetching tenancy: {}
+[00:11:53.666] Server  LOG     ✓ Compiled in 72ms
+[00:12:16.914] Server  LOG     ✓ Compiled in 54ms
+[00:12:18.877] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:12:35.364] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:12:38.220] Browser WARN    Error fetching RTB details: {}
+[00:12:38.422] Browser WARN    Error fetching RTB details: {}
+[00:14:04.436] Server  LOG     ✓ Compiled in 85ms
+[00:14:12.269] Browser ERROR   Error fetching tenancy: {}
+[00:14:12.457] Browser ERROR   Error fetching tenancy: {}
+[00:14:24.073] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:14:24.264] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:14:24.596] Browser ERROR   Error fetching tenancy: {}
+[00:14:41.637] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:14:42.031] Browser WARN    Error fetching RTB details: {}
+[00:14:42.225] Browser WARN    Error fetching RTB details: {}
+[00:14:44.582] Server  LOG     ✓ Compiled in 59ms
+[00:14:57.871] Browser WARN    Error fetching RTB details: {}
+[00:14:58.058] Browser WARN    Error fetching RTB details: {}
+[00:15:03.587] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:03.741] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:15:06.326] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:15:06.721] Browser WARN    Error fetching RTB details: {}
+[00:15:06.914] Browser WARN    Error fetching RTB details: {}
+[00:15:41.685] Server  LOG     ✓ Compiled in 62ms
+[00:15:42.667] Browser ERROR   uncaughtError: ReferenceError: Clock is not defined
+[00:15:47.121] Server  WARN    ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:15:47.396] Server  LOG     ✓ Compiled in 77ms
+[00:15:47.663] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:48.400] Browser WARN    Error fetching RTB details: {}
+[00:15:48.519] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:15:54.601] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:15:58.392] Browser WARN    Error fetching RTB details: {}
+[00:15:58.593] Browser WARN    Error fetching RTB details: {}
