@@ -380,6 +380,25 @@ export default function AdminTenantsPage() {
         </div>
       )}
 
+      {!loading && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search tenants…"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+              aria-label="Search tenants by name or email"
+            />
+          </div>
+        </div>
+      )}
+
       {!loading && totalItems === 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
           <p className="text-slate-600">No tenants found.</p>
@@ -388,23 +407,6 @@ export default function AdminTenantsPage() {
 
       {!loading && totalItems > 0 && (
         <>
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex-1 min-w-[200px] relative">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                aria-hidden="true"
-              />
-              <input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search tenants…"
-                className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-                aria-label="Search tenants by name or email"
-              />
-            </div>
-          </div>
 
           {/* Mobile cards — visible below lg */}
           <div className="lg:hidden space-y-3">
@@ -637,7 +639,10 @@ export default function AdminTenantsPage() {
             </div>
           </div>
 
-          {/* Add Modal */}
+            </>
+      )}
+
+      {/* Add Modal */}
           {showAddModal && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center"
@@ -913,8 +918,6 @@ export default function AdminTenantsPage() {
               </div>
             </div>
           )}
-        </>
-      )}
     </div>
   );
 }
