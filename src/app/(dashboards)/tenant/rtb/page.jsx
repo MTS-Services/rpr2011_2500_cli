@@ -1,7 +1,7 @@
 "use client";
 
 import TenantShell from "@/components/tenant/TenantShell";
-import { Shield, CheckCircle2, Hash, FileText, AlertCircle, Info, Loader2 } from "lucide-react";
+import { Shield, CheckCircle2, Hash, FileText, AlertCircle, Info, Loader2, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { authenticatedFetch } from "@/utils/authFetch";
 
@@ -98,7 +98,9 @@ export default function TenantRTBPage() {
     );
   }
 
-  if (error) {
+  if (error || !rtbData) {
+    const isPending = !rtbData || error?.includes("No RTB registration found");
+    
     return (
       <TenantShell>
         <div className="mb-3 xl:mb-5">
@@ -107,34 +109,44 @@ export default function TenantRTBPage() {
             Your tenancy registration with the Residential Tenancies Board (RTB)
           </p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-800">Unable to load RTB registration details</p>
-              <p className="text-sm text-red-700 mt-1">
-                {error || "No RTB registration found for your tenancy."}
+
+        {isPending ? (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center max-w-2xl mx-auto">
+            <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mb-6">
+              <Clock size={40} className="text-amber-500 animate-pulse" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-800 mb-3">RTB Data Processing</h1>
+            <p className="text-slate-600 leading-relaxed font-medium">
+              We couldn't find your RTB registration details in our system yet.
+            </p>
+            <p className="text-slate-500 text-sm mt-3">
+              Registration with the Residential Tenancies Board is typically processed shortly after 
+              your tenancy begins. Our team is currently updating these records.
+            </p>
+            <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+              <p className="text-slate-400 text-xs italic text-center">
+                Check back in a few days. Once the RTB certificate is issued, your registration number 
+                and full legal protection details will appear here automatically.
               </p>
             </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-8 px-8 py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition shadow-lg shadow-teal-600/20"
+            >
+              Refresh Details
+            </button>
           </div>
-        </div>
-      </TenantShell>
-    );
-  }
-
-  if (!rtbData) {
-    return (
-      <TenantShell>
-        <div className="mb-3 xl:mb-5">
-          <h1 className="text-3xl font-bold text-slate-800">RTB Registration</h1>
-          <p className="text-slate-500 mt-1 text-sm">
-            Your tenancy registration with the Residential Tenancies Board (RTB)
-          </p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
-          <p className="text-sm font-semibold text-slate-700">No RTB registration details found</p>
-          <p className="text-sm text-slate-500 mt-1">There is currently no RTB data available for your tenancy.</p>
-        </div>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-800">Unable to load RTB registration details</p>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </TenantShell>
     );
   }

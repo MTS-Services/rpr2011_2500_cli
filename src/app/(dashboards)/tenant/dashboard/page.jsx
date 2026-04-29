@@ -95,7 +95,7 @@ export default function TenantDashboardPage() {
       setError(null);
       try {
         const res = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenant/dashboard`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/tenant/dashboard`,
         );
         if (!res.ok) {
           throw new Error("Failed to fetch dashboard data");
@@ -130,9 +130,12 @@ export default function TenantDashboardPage() {
           <div className="flex items-start gap-3">
             <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-red-800">Unable to load dashboard</p>
+              <p className="text-sm font-semibold text-red-800">
+                Unable to load dashboard
+              </p>
               <p className="text-sm text-red-700 mt-1">
-                {error || "Failed to load your dashboard data. Please try refreshing."}
+                {error ||
+                  "Failed to load your dashboard data. Please try refreshing."}
               </p>
             </div>
           </div>
@@ -141,7 +144,15 @@ export default function TenantDashboardPage() {
     );
   }
 
-  const { profile, summary, nextPayment, alerts, tenancy, recentPayments, recentMaintenanceRequests } = dashboardData;
+  const {
+    profile,
+    summary,
+    nextPayment,
+    alerts,
+    tenancy,
+    recentPayments,
+    recentMaintenanceRequests,
+  } = dashboardData;
   const visibleAlerts = Array.isArray(alerts)
     ? alerts.filter((a) => a && (a.text || a.title || a.description || a.meta))
     : [];
@@ -153,7 +164,9 @@ export default function TenantDashboardPage() {
       <div className="flex items-center justify-between mb-3 xl:mb-5">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">
-            {profile?.name ? `Welcome Back, ${profile.name.split(" ")[0]}` : "Welcome Back"}
+            {profile?.name
+              ? `Welcome Back, ${profile.name.split(" ")[0]}`
+              : "Welcome Back"}
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
             {tenancy?.property?.name
@@ -169,13 +182,47 @@ export default function TenantDashboardPage() {
         </Link>
       </div>
 
+      {/* Pending Connection Banner */}
+      {!tenancy && (
+        <div className="mb-6 p-6 bg-gradient-to-r from-teal-50 to-blue-50 border border-teal-100 rounded-3xl shadow-sm">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
+              <Clock size={32} className="text-teal-600 animate-pulse" />
+            </div>
+            <div className="text-center md:text-left">
+              <h2 className="text-xl font-bold text-slate-800">
+                Welcome to RPR Property Management
+              </h2>
+              <p className="text-slate-600 mt-1 max-w-2xl">
+                We're currently setting up your digital tenancy. Once our
+                administrators connect your profile to your property.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3 justify-center md:justify-start">
+                <span className="px-3 py-1 bg-white/60 text-xs font-bold text-teal-700 rounded-full border border-teal-100 uppercase tracking-tight">
+                  Status: Connection Pending
+                </span>
+                <span className="px-3 py-1 bg-white/60 text-xs font-bold text-slate-500 rounded-full border border-slate-100">
+                  Estimated time: ~2-4 hours
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 xl:gap-3 mb-3 xl:mb-5">
         {/* Monthly Rent */}
-        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+        <div
+          className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}
+        >
           <div className="flex items-start justify-between">
-            <p className="text-sm font-semibold text-slate-500 leading-tight">Monthly Rent</p>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-teal-50 text-teal-600`}>
+            <p className="text-sm font-semibold text-slate-500 leading-tight">
+              Monthly Rent
+            </p>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-teal-50 text-teal-600`}
+            >
               <CreditCard size={20} />
             </div>
           </div>
@@ -188,10 +235,16 @@ export default function TenantDashboardPage() {
         </div>
 
         {/* Next Payment */}
-        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+        <div
+          className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}
+        >
           <div className="flex items-start justify-between">
-            <p className="text-sm font-semibold text-slate-500 leading-tight">Next Payment</p>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600`}>
+            <p className="text-sm font-semibold text-slate-500 leading-tight">
+              Next Payment
+            </p>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600`}
+            >
               <Calendar size={20} />
             </div>
           </div>
@@ -201,17 +254,25 @@ export default function TenantDashboardPage() {
           <p className="text-xs text-slate-400">
             {nextPayment?.dueDate
               ? `Due ${formatDate(nextPayment.dueDate)}${
-                  nextPayment?.daysUntilDue !== undefined ? ` · ${nextPayment.daysUntilDue} days` : ""
+                  nextPayment?.daysUntilDue !== undefined
+                    ? ` · ${nextPayment.daysUntilDue} days`
+                    : ""
                 }`
               : "—"}
           </p>
         </div>
 
         {/* Open Requests */}
-        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+        <div
+          className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}
+        >
           <div className="flex items-start justify-between">
-            <p className="text-sm font-semibold text-slate-500 leading-tight">Open Requests</p>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600`}>
+            <p className="text-sm font-semibold text-slate-500 leading-tight">
+              Open Requests
+            </p>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600`}
+            >
               <Wrench size={20} />
             </div>
           </div>
@@ -222,10 +283,16 @@ export default function TenantDashboardPage() {
         </div>
 
         {/* Documents */}
-        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+        <div
+          className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}
+        >
           <div className="flex items-start justify-between">
-            <p className="text-sm font-semibold text-slate-500 leading-tight">Documents</p>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600`}>
+            <p className="text-sm font-semibold text-slate-500 leading-tight">
+              Documents
+            </p>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600`}
+            >
               <FileText size={20} />
             </div>
           </div>
@@ -236,22 +303,33 @@ export default function TenantDashboardPage() {
         </div>
 
         {/* Rent Status */}
-        <div className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}>
+        <div
+          className={`bg-white rounded-2xl border p-4 flex flex-col gap-2 shadow-sm`}
+        >
           <div className="flex items-start justify-between">
-            <p className="text-sm font-semibold text-slate-500 leading-tight">Rent Status</p>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600`}>
+            <p className="text-sm font-semibold text-slate-500 leading-tight">
+              Rent Status
+            </p>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600`}
+            >
               <CheckCircle2 size={20} />
             </div>
           </div>
-          <p className="text-2xl font-bold text-slate-800 leading-tight">{rentStatus}</p>
-          <p className="text-xs text-slate-400">{nextPayment?.month ? formatPaymentMonth(nextPayment.month) : "Current month"}</p>
+          <p className="text-2xl font-bold text-slate-800 leading-tight">
+            {rentStatus}
+          </p>
+          <p className="text-xs text-slate-400">
+            {nextPayment?.month
+              ? formatPaymentMonth(nextPayment.month)
+              : "Current month"}
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Alerts + Rent History */}
         <div className="lg:col-span-2 space-y-3 xl:space-y-4">
-
           {/* Alerts */}
           {visibleAlerts && visibleAlerts.length > 0 && (
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -263,12 +341,22 @@ export default function TenantDashboardPage() {
               </div>
               <div className="divide-y divide-slate-100">
                 {visibleAlerts.map((a, i) => (
-                  <div key={i} className="flex items-start lg:items-center justify-between px-5 py-3 lg:py-4 gap-3">
+                  <div
+                    key={i}
+                    className="flex items-start lg:items-center justify-between px-5 py-3 lg:py-4 gap-3"
+                  >
                     <div className="flex items-start gap-3">
-                      <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                      <AlertCircle
+                        size={16}
+                        className="text-amber-500 shrink-0 mt-0.5"
+                      />
                       <div>
-                        <p className="text-sm lg:text-base text-slate-700 font-medium">{a.text || a.title}</p>
-                        <p className="text-xs lg:text-sm text-slate-400 mt-0.5">{a.meta || a.description || ""}</p>
+                        <p className="text-sm lg:text-base text-slate-700 font-medium">
+                          {a.text || a.title}
+                        </p>
+                        <p className="text-xs lg:text-sm text-slate-400 mt-0.5">
+                          {a.meta || a.description || ""}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -280,7 +368,9 @@ export default function TenantDashboardPage() {
           {/* Rent Payment History */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">Rent Payments</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Rent Payments
+              </h3>
               <Link
                 href="/tenant/rent"
                 className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5"
@@ -319,15 +409,20 @@ export default function TenantDashboardPage() {
                             year: "numeric",
                           });
                       return (
-                        <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                        <tr
+                          key={i}
+                          className="hover:bg-slate-50/60 transition-colors"
+                        >
                           <td className="px-5 py-3 text-base font-semibold text-slate-700">
                             {monthLabel}
                           </td>
-                          <td className="px-4 py-4 text-sm text-slate-500">{dateDisplay}</td>
+                          <td className="px-4 py-4 text-sm text-slate-500">
+                            {dateDisplay}
+                          </td>
                           <td className="px-4 py-4">
                             <span
                               className={`text-xs font-semibold px-3 py-1 rounded-full ${getPaymentStatusColor(
-                                p.status
+                                p.status,
                               )}`}
                             >
                               {mapPaymentStatus(p.status)}
@@ -341,7 +436,10 @@ export default function TenantDashboardPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="4" className="px-5 py-4 text-center text-slate-500">
+                      <td
+                        colSpan="4"
+                        className="px-5 py-4 text-center text-slate-500"
+                      >
                         No payments found
                       </td>
                     </tr>
@@ -371,15 +469,22 @@ export default function TenantDashboardPage() {
                         year: "numeric",
                       });
                   return (
-                    <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 ">
+                    <div
+                      key={i}
+                      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 "
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-sm font-semibold text-slate-700">{monthLabel}</div>
-                          <div className="text-xs text-slate-400 mt-1">{dateDisplay}</div>
+                          <div className="text-sm font-semibold text-slate-700">
+                            {monthLabel}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-1">
+                            {dateDisplay}
+                          </div>
                           <div className="mt-2">
                             <span
                               className={`text-xs font-semibold px-2 py-1 rounded-full ${getPaymentStatusColor(
-                                p.status
+                                p.status,
                               )}`}
                             >
                               {mapPaymentStatus(p.status)}
@@ -387,14 +492,18 @@ export default function TenantDashboardPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-base font-bold text-slate-800">{formatCurrency(p.amount)}</div>
+                          <div className="text-base font-bold text-slate-800">
+                            {formatCurrency(p.amount)}
+                          </div>
                         </div>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="text-center py-4 text-slate-500">No payments found</div>
+                <div className="text-center py-4 text-slate-500">
+                  No payments found
+                </div>
               )}
             </div>
           </div>
@@ -402,7 +511,9 @@ export default function TenantDashboardPage() {
           {/* Maintenance */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">Maintenance Requests</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Maintenance Requests
+              </h3>
               <Link
                 href="/tenant/maintenance"
                 className="text-sm text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1.5"
@@ -411,15 +522,21 @@ export default function TenantDashboardPage() {
               </Link>
             </div>
             <div className="divide-y divide-slate-100">
-              {recentMaintenanceRequests && recentMaintenanceRequests.length > 0 ? (
+              {recentMaintenanceRequests &&
+              recentMaintenanceRequests.length > 0 ? (
                 recentMaintenanceRequests.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between px-5 py-3">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between px-5 py-3"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
                         <Wrench size={18} className="text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-base font-semibold text-slate-700">{m.title || "—"}</p>
+                        <p className="text-base font-semibold text-slate-700">
+                          {m.title || "—"}
+                        </p>
                         <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1">
                           <Clock size={12} /> {formatDate(m.createdAt)}
                         </p>
@@ -427,7 +544,7 @@ export default function TenantDashboardPage() {
                     </div>
                     <span
                       className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap ml-4 ${getMaintenanceStatusColor(
-                        m.status
+                        m.status,
                       )}`}
                     >
                       {m.status || "—"}
@@ -456,14 +573,18 @@ export default function TenantDashboardPage() {
                   {tenancy?.property?.name || "—"}
                 </p>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  {tenancy?.property?.address ? `${tenancy.property.address}${tenancy.property.county ? `, ${tenancy.property.county}` : ""}` : "—"}
+                  {tenancy?.property?.address
+                    ? `${tenancy.property.address}${tenancy.property.county ? `, ${tenancy.property.county}` : ""}`
+                    : "—"}
                 </p>
               </div>
               <div className="space-y-2 text-sm">
                 {[
                   {
                     label: "Rent",
-                    value: tenancy?.rent ? `${formatCurrency(tenancy.rent)} / month` : "—",
+                    value: tenancy?.rent
+                      ? `${formatCurrency(tenancy.rent)} / month`
+                      : "—",
                   },
                   {
                     label: "Rent Due Day",
@@ -488,15 +609,25 @@ export default function TenantDashboardPage() {
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between">
                     <span className="text-slate-500">{label}</span>
-                    <span className="font-semibold text-slate-700">{value}</span>
+                    <span className="font-semibold text-slate-700">
+                      {value}
+                    </span>
                   </div>
                 ))}
               </div>
               <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Landlord</p>
-                <p className="text-sm font-semibold text-slate-800">{tenancy?.landlord?.name || "—"}</p>
-                <p className="text-xs text-slate-500 mt-1">{tenancy?.landlord?.email || "—"}</p>
-                <p className="text-xs text-slate-500">{tenancy?.landlord?.phone || "—"}</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                  Landlord
+                </p>
+                <p className="text-sm font-semibold text-slate-800">
+                  {tenancy?.landlord?.name || "—"}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {tenancy?.landlord?.email || "—"}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {tenancy?.landlord?.phone || "—"}
+                </p>
               </div>
               <Link
                 href="/tenant/property"
