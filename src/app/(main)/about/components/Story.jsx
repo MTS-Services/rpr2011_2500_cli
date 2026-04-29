@@ -23,7 +23,7 @@ export default function Story() {
               documents, and maintenance logs.
             </p>
             <p>
-              Today, we manage over 560 properties across Ireland, combining
+              Today, we manage over 210+ properties across Ireland, combining
               hands-on expertise with modern technology to deliver a
               management experience that is both personal and efficient.
             </p>
