@@ -25,6 +25,7 @@ const PROPERTY_STATUS_OPTIONS = [
   { value: "LET", label: "Let" },
   { value: "NOTICE", label: "Notice" },
   { value: "VACANT", label: "Vacant" },
+  { value: "MANAGED", label: "Managed" },
 ];
 
 function normalizePropertyStatus(statusStr) {
@@ -32,6 +33,7 @@ function normalizePropertyStatus(statusStr) {
   if (statusUpper === "NOTICE" || statusUpper === "NOTICE_SERVED") return "NOTICE";
   if (statusUpper === "LET") return "LET";
   if (statusUpper === "VACANT" || statusUpper === "AVAILABLE") return "VACANT";
+  if (statusUpper === "MANAGED") return "MANAGED";
   return "VACANT";
 }
 
@@ -41,6 +43,7 @@ function getStatusFromString(statusStr) {
   if (status === "LET") return "Let";
   if (status === "VACANT") return "Vacant";
   if (status === "NOTICE") return "Notice Served";
+  if (status === "MANAGED") return "Managed";
   return "Unknown";
 }
 
@@ -90,6 +93,7 @@ const PROP_STATUS = {
   Let: "bg-teal-500 text-white",
   "Notice Served": "bg-orange-100 text-orange-600 border border-orange-300",
   Vacant: "bg-slate-100 text-slate-600",
+  Managed: "bg-blue-100 text-blue-600 border border-blue-300",
 };
 
 export default function AdminPropertiesPage() {
