@@ -1,20 +1,6 @@
-[00:00:00.848] Server  LOG     ✓ Ready in 594ms
-[00:00:01.736] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:04.366] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:00:04.366] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:04.366] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:04.366] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:06.245] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
-[00:00:06.847] Browser WARN    Error fetching dashboard: {}
-[00:00:07.034] Browser WARN    Error fetching dashboard: {}
-[00:00:09.409] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:09.565] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:00:09.731] Browser WARN    Error fetching dashboard: {}
-[00:00:12.704] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
-[00:00:13.107] Browser ERROR   Error fetching tenancy: {}
-[00:00:13.298] Browser ERROR   Error fetching tenancy: {}
-[00:00:18.943] Browser WARN    Error fetching dashboard: {}
-[00:00:19.143] Browser WARN    Error fetching dashboard: {}
-[00:00:20.442] Browser WARN    Error fetching data: {}
-[00:00:20.442] Browser WARN    Error fetching data: {}
-[00:05:05.113] Server  LOG     ✓ Compiled in 837ms
+[00:00:01.381] Server  LOG     ✓ Ready in 973ms
+[00:00:01.431] Browser ERROR   uncaughtError: ChunkLoadError: Failed to load chunk /_next/static/chunks/src_app_(dashboards)_admin_landlords_%5Bid%5D_page_jsx_030b5ea8._.js from module [project]/node_modules/next/dist/compiled/react-server-dom-turbopack/cjs/react-server-dom-turbopack-client.browser.development.js [app-client] (ecmascript)
+[00:00:02.568] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:02.820] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:00:08.650] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:03:25.054] Server  LOG     ✓ Compiled in 1122ms
