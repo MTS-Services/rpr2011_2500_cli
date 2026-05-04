@@ -25,6 +25,7 @@ const PROPERTY_STATUS_OPTIONS = [
   { value: "LET", label: "Let" },
   { value: "NOTICE", label: "Notice" },
   { value: "VACANT", label: "Vacant" },
+  { value: "MANAGED", label: "Managed" },
 ];
 
 function normalizePropertyStatus(statusStr) {
@@ -32,6 +33,7 @@ function normalizePropertyStatus(statusStr) {
   if (statusUpper === "NOTICE" || statusUpper === "NOTICE_SERVED") return "NOTICE";
   if (statusUpper === "LET") return "LET";
   if (statusUpper === "VACANT" || statusUpper === "AVAILABLE") return "VACANT";
+  if (statusUpper === "MANAGED") return "MANAGED";
   return "VACANT";
 }
 
@@ -41,6 +43,7 @@ function getStatusFromString(statusStr) {
   if (status === "LET") return "Let";
   if (status === "VACANT") return "Vacant";
   if (status === "NOTICE") return "Notice Served";
+  if (status === "MANAGED") return "Managed";
   return "Unknown";
 }
 
@@ -90,6 +93,7 @@ const PROP_STATUS = {
   Let: "bg-teal-500 text-white",
   "Notice Served": "bg-orange-100 text-orange-600 border border-orange-300",
   Vacant: "bg-slate-100 text-slate-600",
+  Managed: "bg-blue-100 text-blue-600 border border-blue-300",
 };
 
 export default function AdminPropertiesPage() {
@@ -374,29 +378,41 @@ export default function AdminPropertiesPage() {
     setEditFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleEditFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditFormData((prev) => ({ ...prev, image: file }));
+    }
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editingProp) return;
 
     try {
       setEditLoading(true);
+      const payload = new FormData();
+      payload.append("name", editFormData.name);
+      payload.append("bedrooms", String(parseInt(editFormData.bedrooms) || 0));
+      payload.append("bathrooms", String(parseInt(editFormData.bathrooms) || 0));
+      payload.append("address", editFormData.address);
+      payload.append("county", editFormData.county);
+      payload.append("eircode", editFormData.eircode);
+      payload.append("propertyType", editFormData.propertyType);
+      payload.append("rent", String(parseFloat(editFormData.rent) || 0));
+      payload.append("status", normalizePropertyStatus(editFormData.status));
+      if (editFormData.rtbNumber) {
+        payload.append("rtbNumber", editFormData.rtbNumber);
+      }
+      if (editFormData.image) {
+        payload.append("image", editFormData.image);
+      }
+
       const response = await authenticatedFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/${editingProp.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: editFormData.name,
-            bedrooms: parseInt(editFormData.bedrooms) || 0,
-            bathrooms: parseInt(editFormData.bathrooms) || 0,
-            address: editFormData.address,
-            county: editFormData.county,
-            eircode: editFormData.eircode,
-            propertyType: editFormData.propertyType,
-            rent: parseFloat(editFormData.rent) || 0,
-            status: normalizePropertyStatus(editFormData.status),
-            rtbNumber: editFormData.rtbNumber || null,
-          }),
+          body: payload,
         },
       );
 
@@ -957,6 +973,22 @@ export default function AdminPropertiesPage() {
                     onChange={handleEditChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Property Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditFileChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+                  />
+                  {editingProp.img && !editFormData.image && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Current image: {editingProp.img.split("/").pop()}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
