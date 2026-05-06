@@ -526,6 +526,7 @@ export default function AdminPropertyProfilePage() {
             <InfoRow label="Bathrooms" value={fetchedProperty?.bathrooms ?? "—"} />
             <InfoRow label="County / City" value={fetchedProperty?.county || "—"} />
             <InfoRow label="Eircode" value={fetchedProperty?.eircode || "—"} mono />
+            <InfoRow label="MPRN" value={fetchedProperty?.mprn || "—"} mono />
             <InfoRow label="Address" value={fetchedProperty?.address || "—"} />
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
