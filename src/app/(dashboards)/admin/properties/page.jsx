@@ -28,6 +28,9 @@ const PROPERTY_STATUS_OPTIONS = [
   { value: "MANAGED", label: "Managed" },
 ];
 
+const DEFAULT_PROPERTY_IMAGE =
+  "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60";
+
 function normalizePropertyStatus(statusStr) {
   const statusUpper = String(statusStr || "").toUpperCase();
   if (statusUpper === "NOTICE" || statusUpper === "NOTICE_SERVED") return "NOTICE";
@@ -68,9 +71,7 @@ function transformProperty(apiProp) {
 
   return {
     id: apiProp.id,
-    img:
-      rawImageUrl ||
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60",
+    img: rawImageUrl || DEFAULT_PROPERTY_IMAGE,
     name: apiProp.name,
     area: `${apiProp.county || "Dublin"} · ${apiProp.bedrooms || "0"}+${apiProp.bathrooms || "0"}`,
     statusProp,
@@ -88,6 +89,16 @@ function transformProperty(apiProp) {
     status,
     rtbNumberRaw: apiProp.rtbNumber || "",
   };
+}
+
+function handlePropertyImageError(event) {
+  if (event.currentTarget.dataset.fallbackApplied === "true") {
+    return;
+  }
+
+  event.currentTarget.dataset.fallbackApplied = "true";
+  event.currentTarget.style.display = "";
+  event.currentTarget.src = DEFAULT_PROPERTY_IMAGE;
 }
 
 const PROP_STATUS = {
@@ -183,6 +194,29 @@ export default function AdminPropertiesPage() {
             : [];
         const transformed = rows.map((prop) => transformProperty(prop));
         setProperties(transformed);
+
+        // Once backend image URLs are available, release local blob previews for those properties.
+        setLocalImageOverrides((prev) => {
+          let hasChanges = false;
+          const next = { ...prev };
+
+          rows.forEach((row) => {
+            const rowId = row?.id;
+            const hasServerImage = Boolean(row?.image || row?.imageUrl);
+            if (rowId && hasServerImage && next[rowId]) {
+              URL.revokeObjectURL(next[rowId]);
+              delete next[rowId];
+              hasChanges = true;
+            }
+          });
+
+          if (!hasChanges) {
+            return prev;
+          }
+
+          localImageOverridesRef.current = next;
+          return next;
+        });
 
         const paginationMeta = data.meta?.pagination || data.data?.pagination || {};
         const totalItems = Number(paginationMeta.totalItems ?? rows.length);
@@ -368,8 +402,37 @@ export default function AdminPropertiesPage() {
         throw new Error(data.message || "Failed to create property");
       }
 
+      const createdProperty = data?.data?.property || data?.data || null;
+      if (createdProperty?.id) {
+        if (formData.image) {
+          setLocalImageOverrideForProperty(createdProperty.id, formData.image);
+        }
+
+        const createdRow = transformProperty(createdProperty);
+        if (currentPage === 1) {
+          setProperties((prev) => {
+            const withoutDuplicate = prev.filter(
+              (prop) => String(prop.id) !== String(createdRow.id),
+            );
+            return [createdRow, ...withoutDuplicate].slice(0, ITEMS_PER_PAGE);
+          });
+        }
+
+        setPagination((prev) => {
+          const totalItems = Math.max(0, Number(prev.totalItems) || 0) + 1;
+          const itemsPerPage = Number(prev.itemsPerPage) || ITEMS_PER_PAGE;
+          return {
+            ...prev,
+            totalItems,
+            totalPages: Math.max(1, Math.ceil(totalItems / itemsPerPage)),
+          };
+        });
+      }
+
       setCurrentPage(1);
-      setReloadKey((prev) => prev + 1);
+      window.setTimeout(() => {
+        loadProperties({ page: 1, showLoader: false });
+      }, 1500);
       await Swal.fire({
         icon: "success",
         title: "Property Added!",
@@ -755,7 +818,7 @@ export default function AdminPropertiesPage() {
                   />
                 </td>
                 <td className="w-48 px-3 py-3">
-                  <img src={localImageOverrides[p.id] || p.img} alt={p.name} className="w-32 h-20 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
+                  <img src={localImageOverrides[p.id] || p.img} alt={p.name} className="w-32 h-20 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={handlePropertyImageError} />
                 </td>
                 <td className="w-48 px-3 py-3">
                   <div className="flex items-center gap-4">
