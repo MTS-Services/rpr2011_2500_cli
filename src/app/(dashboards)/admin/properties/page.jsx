@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -51,6 +51,7 @@ function getStatusFromString(statusStr) {
 function transformProperty(apiProp) {
   const status = normalizePropertyStatus(apiProp.status);
   const statusProp = getStatusFromString(status);
+  const rawImageUrl = apiProp.image || apiProp.imageUrl || "";
   let rtb = "Unknown";
   let rtbStyle = "text-slate-500";
 
@@ -68,7 +69,7 @@ function transformProperty(apiProp) {
   return {
     id: apiProp.id,
     img:
-      apiProp.image ||
+      rawImageUrl ||
       "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=80&q=60",
     name: apiProp.name,
     area: `${apiProp.county || "Dublin"} · ${apiProp.bedrooms || "0"}+${apiProp.bathrooms || "0"}`,
@@ -113,12 +114,45 @@ export default function AdminPropertiesPage() {
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
+  const [localImageOverrides, setLocalImageOverrides] = useState({});
+  const localImageOverridesRef = useRef({});
   const [pagination, setPagination] = useState({
     currentPage: 1,
     itemsPerPage: ITEMS_PER_PAGE,
     totalItems: 0,
     totalPages: 1,
   });
+
+  const setLocalImageOverrideForProperty = (propertyId, file) => {
+    if (!propertyId || !file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+    setLocalImageOverrides((prev) => {
+      const next = { ...prev };
+      if (next[propertyId]) {
+        URL.revokeObjectURL(next[propertyId]);
+      }
+      next[propertyId] = objectUrl;
+      localImageOverridesRef.current = next;
+      return next;
+    });
+  };
+
+  const clearLocalImageOverrideForProperty = (propertyId) => {
+    if (!propertyId) return;
+
+    setLocalImageOverrides((prev) => {
+      if (!prev[propertyId]) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      URL.revokeObjectURL(next[propertyId]);
+      delete next[propertyId];
+      localImageOverridesRef.current = next;
+      return next;
+    });
+  };
 
   const loadProperties = async ({ page = currentPage, showLoader = false, signal } = {}) => {
     try {
@@ -274,6 +308,14 @@ export default function AdminPropertiesPage() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      Object.values(localImageOverridesRef.current).forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
+
   const filtered = properties;
 
   const toggleAll = () =>
@@ -422,6 +464,43 @@ export default function AdminPropertiesPage() {
 
       const data = await response.json();
       if (data.success) {
+        const nextStatus = normalizePropertyStatus(editFormData.status);
+        const nextStatusProp = getStatusFromString(nextStatus);
+        const parsedBedrooms = Number.parseInt(editFormData.bedrooms, 10) || 0;
+        const parsedBathrooms = Number.parseInt(editFormData.bathrooms, 10) || 0;
+        const parsedRent = Number.parseFloat(editFormData.rent) || 0;
+
+        if (editFormData.image) {
+          setLocalImageOverrideForProperty(editingProp.id, editFormData.image);
+        }
+
+        // Optimistically update row values so the edit is immediately visible.
+        setProperties((prev) =>
+          prev.map((prop) => {
+            if (prop.id !== editingProp.id) return prop;
+            return {
+              ...prop,
+              name: editFormData.name,
+              bedrooms: parsedBedrooms,
+              bathrooms: parsedBathrooms,
+              address: editFormData.address,
+              county: editFormData.county,
+              eircode: editFormData.eircode,
+              propertyType: editFormData.propertyType,
+              rent: `€${parsedRent}`,
+              status: nextStatus,
+              statusProp: nextStatusProp,
+              area: `${editFormData.county || "Dublin"} · ${parsedBedrooms}+${parsedBathrooms}`,
+              rtbNumberRaw: editFormData.rtbNumber || "",
+            };
+          }),
+        );
+
+        // Background sync after upload so eventual backend changes are pulled in.
+        window.setTimeout(() => {
+          loadProperties({ page: currentPage, showLoader: false });
+        }, 1500);
+
         Swal.fire({
           icon: "success",
           title: "Property Updated!",
@@ -429,7 +508,6 @@ export default function AdminPropertiesPage() {
           timer: 2000,
           showConfirmButton: false,
         });
-        setReloadKey((prev) => prev + 1);
         closeEditModal();
       }
     } catch (err) {
@@ -484,6 +562,8 @@ export default function AdminPropertiesPage() {
         timer: 2000,
         showConfirmButton: false,
       });
+
+      clearLocalImageOverrideForProperty(propId);
 
       if (properties.length === 1 && currentPage > 1) {
         setCurrentPage((prev) => Math.max(1, prev - 1));
@@ -675,7 +755,7 @@ export default function AdminPropertiesPage() {
                   />
                 </td>
                 <td className="w-48 px-3 py-3">
-                  <img src={p.img} alt={p.name} className="w-32 h-20 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
+                  <img src={localImageOverrides[p.id] || p.img} alt={p.name} className="w-32 h-20 rounded-lg object-cover flex-shrink-0 bg-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
                 </td>
                 <td className="w-48 px-3 py-3">
                   <div className="flex items-center gap-4">
