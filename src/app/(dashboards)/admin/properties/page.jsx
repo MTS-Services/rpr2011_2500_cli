@@ -88,6 +88,7 @@ function transformProperty(apiProp) {
     propertyType: apiProp.propertyType,
     status,
     rtbNumberRaw: apiProp.rtbNumber || "",
+    mprnRaw: apiProp.mprn || "",
   };
 }
 
@@ -466,7 +467,7 @@ export default function AdminPropertiesPage() {
       eircode: prop.eircode,
       propertyType: prop.propertyType,
       rent: prop.rent.replace("€", "").trim(),
-      rtbNumber: prop.rtbNumberRaw || "",
+      mprn: prop.mprnRaw || "",
       status: prop.status || "VACANT",
     });
     setEditModalOpen(true);
@@ -506,8 +507,8 @@ export default function AdminPropertiesPage() {
       payload.append("propertyType", editFormData.propertyType);
       payload.append("rent", String(parseFloat(editFormData.rent) || 0));
       payload.append("status", normalizePropertyStatus(editFormData.status));
-      if (editFormData.rtbNumber) {
-        payload.append("rtbNumber", editFormData.rtbNumber);
+      if (editFormData.mprn) {
+        payload.append("mprn", editFormData.mprn);
       }
       if (editFormData.image) {
         payload.append("image", editFormData.image);
@@ -554,7 +555,7 @@ export default function AdminPropertiesPage() {
               status: nextStatus,
               statusProp: nextStatusProp,
               area: `${editFormData.county || "Dublin"} · ${parsedBedrooms}+${parsedBathrooms}`,
-              rtbNumberRaw: editFormData.rtbNumber || "",
+              mprnRaw: editFormData.mprn || "",
             };
           }),
         );
@@ -1107,12 +1108,12 @@ export default function AdminPropertiesPage() {
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    RTB Number
+                    MPRN
                   </label>
                   <input
                     type="text"
-                    name="rtbNumber"
-                    value={editFormData.rtbNumber || ""}
+                    name="mprn"
+                    value={editFormData.mprn || ""}
                     onChange={handleEditChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />

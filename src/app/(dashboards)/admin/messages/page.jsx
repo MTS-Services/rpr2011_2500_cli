@@ -6,29 +6,36 @@ import { MessageSquare, Send, Search, ArrowLeft, Plus, Copy, Check } from "lucid
 import { authenticatedFetch } from "@/utils/authFetch";
 import { usePortalAuth } from "@/context/PortalAuthContext";
 
-// Mock: All available tenants (for search fallback)
-const ALL_TENANTS = [
-  { id: "tenant-1", name: "Sarah Kelly", initials: "SK", color: "bg-teal-100 text-teal-700", property: "Apt 39 Grand Canal Dock" },
-  { id: "tenant-2", name: "Kevin Madden", initials: "KM", color: "bg-indigo-100 text-indigo-700", property: "Apt 5B Rosewood Close" },
-  { id: "tenant-3", name: "Adam Walsh", initials: "AW", color: "bg-orange-100 text-orange-700", property: "Apt 65 Southern Cross" },
-  { id: "tenant-4", name: "Reginald Spencer", initials: "RS", color: "bg-sky-100 text-sky-700", property: "Apt 21C Harbour View" },
-  { id: "tenant-5", name: "Steven Keane", initials: "SK", color: "bg-emerald-100 text-emerald-700", property: "Apt 5 City Square" },
-  { id: "tenant-6", name: "Stephen Blake", initials: "SB", color: "bg-violet-100 text-violet-700", property: "Apt 30 Fairview Road" },
-  { id: "tenant-7", name: "Holly Quigley", initials: "HQ", color: "bg-pink-100 text-pink-700", property: "Apt 22 Parkside Plaza" },
-  { id: "tenant-8", name: "Peter Hughes", initials: "PH", color: "bg-amber-100 text-amber-700", property: "Apt 306 Fairview Road" },
-];
+// Helper to generate initials
+const getInitials = (name) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+};
 
-// Mock: All available landlords
-const ALL_LANDLORDS = [
-  { id: "landlord-1", name: "Joan Doyle", initials: "JD", color: "bg-purple-100 text-purple-700", property: "Multiple properties" },
-  { id: "landlord-2", name: "Edward O'Neill", initials: "EO", color: "bg-indigo-100 text-indigo-700", property: "Multiple properties" },
-  { id: "landlord-3", name: "Leo Mohan", initials: "LM", color: "bg-orange-100 text-orange-700", property: "Multiple properties" },
-  { id: "landlord-4", name: "Mark Sheehan", initials: "MS", color: "bg-sky-100 text-sky-700", property: "Multiple properties" },
-  { id: "landlord-5", name: "Brendan Walsh", initials: "BW", color: "bg-emerald-100 text-emerald-700", property: "Multiple properties" },
-  { id: "landlord-6", name: "Tony Brennan", initials: "TB", color: "bg-violet-100 text-violet-700", property: "Multiple properties" },
-  { id: "landlord-7", name: "Emma Curran", initials: "EC", color: "bg-pink-100 text-pink-700", property: "Multiple properties" },
-  { id: "landlord-8", name: "Zoe Finnegan", initials: "ZF", color: "bg-amber-100 text-amber-700", property: "Multiple properties" },
-];
+// Helper to get avatar color based on role
+const getColorForRole = (role) => {
+  const colors = [
+    "bg-teal-100 text-teal-700",
+    "bg-indigo-100 text-indigo-700",
+    "bg-purple-100 text-purple-700",
+    "bg-orange-100 text-orange-700",
+    "bg-sky-100 text-sky-700",
+    "bg-emerald-100 text-emerald-700",
+    "bg-violet-100 text-violet-700",
+    "bg-pink-100 text-pink-700",
+    "bg-amber-100 text-amber-700",
+  ];
+  
+  const normalizedRole = String(role || "").toUpperCase();
+  if (normalizedRole === "TENANT") return "bg-teal-100 text-teal-700";
+  if (normalizedRole === "LANDLORD") return "bg-purple-100 text-purple-700";
+  
+  return colors[Math.floor(Math.random() * colors.length)];
+};
 
 function AdminMessagesContent() {
   const { user: currentUser } = usePortalAuth();
@@ -43,6 +50,8 @@ function AdminMessagesContent() {
   const [loading, setLoading]       = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendError, setSendError]   = useState(null);
+  const [allUsers, setAllUsers]     = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const scrollRef                   = useRef(null);
 
   const active = convos.find((c) => c.id === activeId);
@@ -130,6 +139,84 @@ function AdminMessagesContent() {
 
     fetchConvos();
   }, [searchParams]);
+
+  // Fetch all users for new conversation search
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setUsersLoading(true);
+        let page = 1;
+        const limit = 100;
+        let hasNextPage = true;
+        const allUsersList = [];
+
+        while (hasNextPage) {
+          const params = new URLSearchParams();
+          params.append("page", String(page));
+          params.append("limit", String(limit));
+
+          const response = await authenticatedFetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?${params.toString()}`
+          );
+
+          if (!response.ok) {
+            console.error(`Failed to fetch users page ${page}`);
+            break;
+          }
+
+          const data = await response.json();
+          
+          // Extract users array from response
+          let usersArray = [];
+          if (Array.isArray(data)) {
+            usersArray = data;
+          } else if (data.data && Array.isArray(data.data)) {
+            usersArray = data.data;
+          } else if (data.users && Array.isArray(data.users)) {
+            usersArray = data.users;
+          }
+
+          allUsersList.push(...usersArray);
+
+          // Check pagination
+          const pagination = data.meta?.pagination || data.data?.pagination || {};
+          if (typeof pagination.hasNextPage === "boolean") {
+            hasNextPage = pagination.hasNextPage;
+          } else if (pagination.currentPage && pagination.totalPages) {
+            hasNextPage = pagination.currentPage < pagination.totalPages;
+          } else {
+            hasNextPage = false;
+          }
+
+          page += 1;
+          if (page > 50) hasNextPage = false; // Safety limit
+        }
+
+        // Transform users to UI format
+        const formattedUsers = allUsersList.map((user) => ({
+          id: user.id,
+          name: user.name || user.email || "Unknown",
+          email: user.email || "",
+          role: user.role || "USER",
+          phone: user.phone || "",
+          initials: getInitials(user.name || user.email || "User"),
+          color: getColorForRole(user.role),
+          property: user.role === "LANDLORD" 
+            ? `${user.profileSummary?.propertiesCount || 0} properties`
+            : user.profileSummary?.currentTenancy ? "Active Tenancy" : "No active tenancy"
+        }));
+
+        setAllUsers(formattedUsers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setAllUsers([]);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Fetch messages for active conversation
   useEffect(() => {
@@ -240,10 +327,10 @@ function AdminMessagesContent() {
 
   // Search results when starting new conversation
   const searchResults = startNewConvo && search.trim()
-    ? [
-        ...ALL_TENANTS.filter(t => t.name.toLowerCase().includes(search.toLowerCase())),
-        ...ALL_LANDLORDS.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
-      ]
+    ? allUsers.filter(u => 
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+      )
     : [];
 
   // Handle starting new conversation with a user
@@ -262,12 +349,11 @@ function AdminMessagesContent() {
       const newConvo = await response.json();
       const createdConvo = newConvo?.data || newConvo;
 
-      const roleLabel = ALL_TENANTS.some(t => t.id === user.id) ? "Tenant" : "Landlord";
       const formattedConvo = {
         id: createdConvo?.id || createdConvo?.conversationId,
         name: user.name,
         participantId: user.id,
-        role: roleLabel,
+        role: user.role === "TENANT" ? "Tenant" : user.role === "LANDLORD" ? "Landlord" : "User",
         property: user.property,
         avatar_bg: user.color,
         preview: "Conversation started",
@@ -423,7 +509,11 @@ function AdminMessagesContent() {
             {startNewConvo ? (
               // ── START NEW CONVERSATION: Show search results ──
               <>
-                {searchResults.length > 0 ? (
+                {usersLoading && !search.trim() ? (
+                  <div className="p-4 text-center text-sm text-slate-500">
+                    Loading users...
+                  </div>
+                ) : searchResults.length > 0 ? (
                   searchResults.map((user) => (
                     <button
                       key={user.id}
@@ -435,7 +525,8 @@ function AdminMessagesContent() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-                        <p className="text-xs text-slate-400 truncate">{user.property}</p>
+                        <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{user.property}</p>
                         <div className="mt-1.5 inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs font-mono text-slate-600 cursor-pointer hover:bg-slate-200 transition"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -457,7 +548,7 @@ function AdminMessagesContent() {
                   </div>
                 ) : (
                   <div className="p-4 text-center text-sm text-slate-400">
-                    Type a name to search
+                    Type a name or email to search
                   </div>
                 )}
               </>
