@@ -45,6 +45,7 @@ export default function TenantDetailPage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("Details");
   const [showPps, setShowPps] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -201,6 +202,23 @@ export default function TenantDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InfoRow label="Full Name" value={tenant.name || "N/A"} />
               <InfoRow label="Email" value={tenant.email || "N/A"} />
+              <InfoRow label="Password" mono>
+                {tenant.password ? (
+                  <div className="flex items-center gap-3">
+                    <p className="text-base font-semibold font-mono">
+                      {showPassword ? tenant.password : "••••••••"}
+                    </p>
+                    <button
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-base text-slate-500">N/A</p>
+                )}
+              </InfoRow>
               <InfoRow label="Phone" value={tenant.phone || "N/A"} />
               <InfoRow label="Address" value={tenant.address || "N/A"} />
               <InfoRow

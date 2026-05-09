@@ -1012,7 +1012,7 @@ export default function AdminLandlordsPage() {
                 </label>
                 <input
                   name="ppsNumber"
-                  placeholder="Length must be 7 character"
+                  placeholder="Enter PPS Number"
                   defaultValue={editing.ppsNumber}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg"
                 />
