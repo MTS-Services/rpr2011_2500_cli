@@ -601,12 +601,14 @@ export default function AdminLandlordsPage() {
                 <Eye size={14} /> View
               </Link>
               <button
+                onClick={() => openEdit(landlord)}
                 aria-label="Edit"
                 className="flex-1 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition text-xs gap-1 font-medium"
               >
                 <Edit size={14} /> Edit
               </button>
               <button
+                onClick={() => handleDelete(landlord.id)}
                 aria-label="Delete"
                 className="flex-1 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition text-xs gap-1 font-medium"
               >
