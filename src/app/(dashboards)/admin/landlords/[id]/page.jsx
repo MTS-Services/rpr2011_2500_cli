@@ -178,6 +178,7 @@ export default function AdminLandlordProfilePage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("Details");
   const [showPps, setShowPps] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
 
@@ -836,6 +837,23 @@ export default function AdminLandlordProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InfoRow label="Full Name" value={landlordDetails.name || "N/A"} />
               <InfoRow label="Email" value={landlordDetails.email || "N/A"} />
+              <InfoRow label="Password" mono>
+                {landlordDetails.password ? (
+                  <div className="flex items-center gap-3">
+                    <p className="text-base font-semibold font-mono">
+                      {showPassword ? landlordDetails.password : "••••••••"}
+                    </p>
+                    <button
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-base text-slate-500">N/A</p>
+                )}
+              </InfoRow>
               <InfoRow label="Phone" value={landlordDetails.phone || "N/A"} />
               <InfoRow label="Address" value={landlordDetails.address || "N/A"} />
               <InfoRow 
