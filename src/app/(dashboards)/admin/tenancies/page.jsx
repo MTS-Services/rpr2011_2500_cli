@@ -12,6 +12,7 @@ import EditTenancyModal from "./components/EditTenancyModal";
 import { authenticatedFetch } from "@/utils/authFetch";
 
 const ITEMS_PER_PAGE = 10;
+const REFERENCE_PAGE_LIMIT = 100;
 
 const TENANCY_STATUS_FILTER_OPTIONS = [
   { label: "All Status", value: "ALL" },
@@ -148,49 +149,81 @@ function AdminTenanciesInner() {
 
     const fetchReferenceData = async () => {
       try {
-        const [usersResponse, propertiesResponse] = await Promise.all([
-          authenticatedFetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users?role=TENANT`,
-            { signal: controller.signal }
-          ),
-          authenticatedFetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties`,
-            { signal: controller.signal }
-          ),
+        const fetchAllReferenceItems = async (endpointPath, collectionKey) => {
+          const allItems = [];
+          let page = 1;
+          let totalPages = 1;
+
+          while (page <= totalPages) {
+            const separator = endpointPath.includes("?") ? "&" : "?";
+            const response = await authenticatedFetch(
+              `${process.env.NEXT_PUBLIC_API_URL}${endpointPath}${separator}page=${page}&limit=${REFERENCE_PAGE_LIMIT}`,
+              { signal: controller.signal }
+            );
+
+            if (!response.ok) {
+              throw new Error(`Failed to fetch ${collectionKey}: ${response.statusText}`);
+            }
+
+            const responseData = await response.json();
+            if (!responseData?.success) {
+              throw new Error(responseData?.message || `Failed to fetch ${collectionKey}`);
+            }
+
+            const payload = responseData?.data;
+            const pageItems = Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.[collectionKey])
+                ? payload[collectionKey]
+                : Array.isArray(payload?.items)
+                  ? payload.items
+                  : [];
+
+            allItems.push(...pageItems);
+
+            const pageMeta = payload?.pagination || responseData?.meta?.pagination;
+            const serverTotalPages = Number(pageMeta?.totalPages);
+
+            if (Number.isFinite(serverTotalPages) && serverTotalPages > 0) {
+              totalPages = serverTotalPages;
+            } else {
+              // Fallback when API omits pagination metadata.
+              totalPages = pageItems.length === REFERENCE_PAGE_LIMIT ? page + 1 : page;
+            }
+
+            page += 1;
+          }
+
+          return allItems;
+        };
+
+        const [tenantUsers, propertiesList] = await Promise.all([
+          fetchAllReferenceItems("/api/v1/users?role=TENANT", "users"),
+          fetchAllReferenceItems("/api/v1/properties", "properties"),
         ]);
 
-        // Fetch all tenants from users endpoint
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          if (usersData.success && usersData.data) {
-            const allTenants = usersData.data
-              .filter((user) => user.role === "TENANT")
-              .map((user) => ({
-                id: user.id,
-                name: user.name,
-                property: "", // No property directly from users endpoint
-              }));
-            setTenants(allTenants);
-          }
-        }
+        const allTenants = tenantUsers
+          .filter((user) => !user?.role || user.role === "TENANT")
+          .map((user) => ({
+            id: user.id,
+            name: user.name,
+            property: "", // No property directly from users endpoint
+          }));
+        setTenants(allTenants);
 
-        // Fetch all available properties
-        if (propertiesResponse.ok) {
-          const propertiesData = await propertiesResponse.json();
-          if (propertiesData.success && propertiesData.data) {
-            const propNames = propertiesData.data.map(prop => prop.name).filter(Boolean);
-            setAvailableProperties(propNames);
-            
-            // Build map of property name to ID
-            const idMap = {};
-            propertiesData.data.forEach(prop => {
-              if (prop.name && prop.id) {
-                idMap[prop.name] = prop.id;
-              }
-            });
-            setPropertyIdMap(idMap);
+        const propNames = propertiesList
+          .map((prop) => prop?.name)
+          .filter(Boolean);
+        setAvailableProperties(propNames);
+
+        // Build map of property name to ID
+        const idMap = {};
+        propertiesList.forEach((prop) => {
+          if (prop?.name && prop?.id) {
+            idMap[prop.name] = prop.id;
           }
-        }
+        });
+        setPropertyIdMap(idMap);
       } catch (err) {
         if (err.name === "AbortError") return;
         console.error("Error fetching reference data:", err);
