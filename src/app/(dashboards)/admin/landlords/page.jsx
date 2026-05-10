@@ -247,7 +247,7 @@ export default function AdminLandlordsPage() {
       address: formData.get("address") || formData.get("sub"),
       ppsNumber: formData.get("ppsNumber"),
       dateOfBirth: formData.get("dateOfBirth"),
-      companyName: formData.get("companyName"),
+      companyName: null, // Company name field disabled for now
       pps2: formData.get("cro"),
     });
   };
@@ -810,6 +810,8 @@ export default function AdminLandlordsPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
+              {/* Company name field - commented for now */}
+              {/*
               <div>
                 <label
                   htmlFor="addCompanyName"
@@ -824,6 +826,7 @@ export default function AdminLandlordsPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
+              */}
               <div>
                 <label
                   htmlFor="addEmail"
