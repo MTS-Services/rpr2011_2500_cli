@@ -570,7 +570,7 @@ export default function AdminTenantsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-sm font-semibold ${
+                          className={`px-1.5 py-1 rounded-full text-[10px] font-semibold ${
                             STATUS_STYLES[tenant.status] ||
                             "bg-gray-100 text-gray-800"
                           }`}
@@ -583,18 +583,18 @@ export default function AdminTenantsPage() {
                           <Link
                             href={`/admin/tenants/${tenant.id}`}
                             aria-label={`View ${tenant.name}`}
-                            className="w-8 h-8 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-teal-700 rounded transition"
+                            className="p-2 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-teal-700 rounded transition"
                             title="View tenant"
                           >
-                            <Eye size={14} aria-hidden="true" />
+                            <Eye size={16} aria-hidden="true" />
                           </Link>
                           <button
                             aria-label={`Edit ${tenant.name}`}
                             onClick={() => openEditModal(tenant)}
-                            className="w-8 h-8 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 text-slate-600 rounded transition"
+                            className="p-2 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 text-slate-600 rounded transition"
                             title="Edit tenant"
                           >
-                            <Edit size={14} aria-hidden="true" />
+                            <Edit size={16} aria-hidden="true" />
                           </button>
                           <button
                             aria-label={`Delete ${tenant.name}`}
@@ -613,10 +613,10 @@ export default function AdminTenantsPage() {
                                 }
                               });
                             }}
-                            className="w-8 h-8 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded transition"
+                            className="p-2 inline-flex items-center justify-center bg-rose-100 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 text-rose-600 rounded transition"
                             title="Delete tenant"
                           >
-                            <Trash size={14} aria-hidden="true" />
+                            <Trash size={16} aria-hidden="true" />
                           </button>
                         </div>
                       </td>

@@ -146,3 +146,62 @@ Import traces:
     ./src/app/(dashboards)/admin/reports/page.jsx [Client Component SSR]
     ./src/app/(dashboards)/admin/reports/page.jsx [Server Component]
 [00:52:11.131] Server  LOG     ✓ Compiled in 120ms
+[00:59:09.945] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[01:03:45.966] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:04:04.753] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[01:12:40.345] Server  LOG     ✓ Compiled in 58ms
+[01:12:51.089] Server  LOG     ✓ Compiled in 45ms
+[01:12:56.307] Server  LOG     ✓ Compiled in 56ms
+[01:13:42.242] Server  LOG     ✓ Compiled in 46ms
+[01:14:43.020] Server  LOG     ✓ Compiled in 69ms
+[01:15:05.941] Server  LOG     ✓ Compiled in 74ms
+[01:15:17.418] Server  LOG     ✓ Compiled in 62ms
+[01:16:11.439] Server  LOG     ✓ Compiled in 44ms
+[01:16:11.674] Server  LOG     ✓ Compiled in 42ms
+[01:16:12.272] Server  LOG     ✓ Compiled in 46ms
+[01:16:12.404] Server  LOG     ✓ Compiled in 50ms
+[01:16:12.689] Server  LOG     ✓ Compiled in 55ms
+[01:16:12.873] Server  LOG     ✓ Compiled in 44ms
+[01:16:13.625] Server  LOG     ✓ Compiled in 42ms
+[01:16:13.975] Server  LOG     ✓ Compiled in 40ms
+[01:16:14.122] Server  LOG     ✓ Compiled in 48ms
+[01:16:14.191] Server  LOG     ✓ Compiled in 43ms
+[01:16:14.458] Server  LOG     ✓ Compiled in 42ms
+[01:16:21.033] Server  LOG     ✓ Compiled in 62ms
+[01:16:21.249] Server  LOG     ✓ Compiled in 45ms
+[01:16:21.968] Server  LOG     ✓ Compiled in 102ms
+[01:16:22.318] Server  LOG     ✓ Compiled in 69ms
+[01:16:22.649] Server  LOG     ✓ Compiled in 59ms
+[01:16:23.282] Server  LOG     ✓ Compiled in 71ms
+[01:16:23.583] Server  LOG     ✓ Compiled in 46ms
+[01:16:32.026] Server  LOG     ✓ Compiled in 45ms
+[01:16:32.304] Server  LOG     ✓ Compiled in 44ms
+[01:18:35.682] Server  LOG     ✓ Compiled in 59ms
+[01:19:22.645] Server  LOG     ✓ Compiled in 47ms
+[01:19:36.026] Server  LOG     ✓ Compiled in 51ms
+[01:19:55.746] Server  LOG     ✓ Compiled in 44ms
+[01:19:58.565] Server  LOG     ✓ Compiled in 52ms
+[01:20:03.438] Server  LOG     ✓ Compiled in 44ms
+[01:20:03.636] Server  LOG     ✓ Compiled in 48ms
+[01:20:04.524] Server  LOG     ✓ Compiled in 56ms
+[01:20:09.605] Server  LOG     ✓ Compiled in 41ms
+[01:20:12.901] Server  LOG     ✓ Compiled in 37ms
+[01:20:18.040] Server  LOG     ✓ Compiled in 37ms
+[01:21:58.017] Server  LOG     ✓ Compiled in 55ms
+[01:21:58.149] Server  LOG     ✓ Compiled in 60ms
+[01:22:32.698] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:22:32.698] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:24:12.518] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:24:12.518] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
