@@ -246,8 +246,9 @@ export default function AdminLandlordsPage() {
       phone: formData.get("phone") || formData.get("mobile"),
       address: formData.get("address") || formData.get("sub"),
       ppsNumber: formData.get("ppsNumber"),
-      pps2: formData.get("pps2"),
       dateOfBirth: formData.get("dateOfBirth"),
+      companyName: formData.get("companyName"),
+      pps2: formData.get("cro"),
     });
   };
 
@@ -259,6 +260,8 @@ export default function AdminLandlordsPage() {
       email: l.email === "N/A" ? "" : l.email || "",
       sub: l.sub === "N/A" ? "" : l.sub || "",
       ppsNumber: l.ppsNumber === "N/A" ? "" : l.ppsNumber || "",
+      companyName: l.companyName === "N/A" ? "" : l.companyName || "",
+      cro: l.cro === "N/A" ? "" : l.cro || "",
       dateOfBirth: l.dateOfBirth || "",
     });
     setEditOpen(true);
@@ -294,6 +297,8 @@ export default function AdminLandlordsPage() {
       mobile: fmtString(u.phone),
       dob: u.profile?.dateOfBirth ? new Date(u.profile.dateOfBirth).toLocaleDateString("en-IE") : "N/A",
       dateOfBirth: u.profile?.dateOfBirth ? new Date(u.profile.dateOfBirth).toISOString().split('T')[0] : "",
+      companyName: fmtString(u.profile?.companyName),
+      cro: fmtString(u.profile?.pps2),
       email: fmtString(u.email),
       ppsNumber: fmtString(u.ppsNumber),
     };
@@ -308,7 +313,9 @@ export default function AdminLandlordsPage() {
         phone: updated.mobile || updated.phone || null,
         address: updated.sub || updated.address || null,
         ppsNumber: updated.ppsNumber || null,
-        dateOfBirth: updated.dateOfBirth ? new Date(updated.dateOfBirth).toISOString() : null,
+        dateOfBirth: updated.dateOfBirth ? new Date(updated.dateOfBirth).toISOString().split('T')[0] : null,
+        companyName: updated.companyName || null,
+        pps2: updated.cro || null,
       };
 
       const res = await authenticatedFetch(
@@ -805,6 +812,20 @@ export default function AdminLandlordsPage() {
               </div>
               <div>
                 <label
+                  htmlFor="addCompanyName"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  Company name
+                </label>
+                <input
+                  id="addCompanyName"
+                  name="companyName"
+                  placeholder="e.g., Doe Properties Ltd"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label
                   htmlFor="addEmail"
                   className="block text-sm font-medium text-slate-700 mb-1"
                 >
@@ -890,14 +911,14 @@ export default function AdminLandlordsPage() {
               </div>
               <div>
                 <label
-                  htmlFor="addPps2"
+                  htmlFor="addCro"
                   className="block text-sm font-medium text-slate-700 mb-1"
                 >
-                  PPS2
+                  CRO
                 </label>
                 <input
-                  id="addPps2"
-                  name="pps2"
+                  id="addCro"
+                  name="cro"
                   placeholder="e.g., 7654321"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
@@ -965,6 +986,8 @@ export default function AdminLandlordsPage() {
                   mobile: f.mobile.value,
                   sub: f.sub.value,
                   ppsNumber: f.ppsNumber.value,
+                  companyName: f.companyName.value,
+                  cro: f.cro.value,
                   dateOfBirth: f.dateOfBirth.value,
                 });
               }}
@@ -1018,6 +1041,28 @@ export default function AdminLandlordsPage() {
                   name="ppsNumber"
                   placeholder="Enter PPS Number"
                   defaultValue={editing.ppsNumber}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">
+                  Company Name
+                </label>
+                <input
+                  name="companyName"
+                  placeholder="Enter Company Name"
+                  defaultValue={editing.companyName || ""}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">
+                  CRO
+                </label>
+                <input
+                  name="cro"
+                  placeholder="Enter CRO"
+                  defaultValue={editing.cro || ""}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg"
                 />
               </div>

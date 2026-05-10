@@ -877,6 +877,15 @@ export default function AdminLandlordProfilePage() {
                 )}
               </InfoRow>
               <InfoRow 
+                label="Company Name" 
+                value={landlordDetails.profile?.companyName || "N/A"} 
+              />
+              <InfoRow 
+                label="CRO" 
+                value={landlordDetails.profile?.pps2 || "N/A"} 
+                mono
+              />
+              <InfoRow 
                 label="Date of Birth" 
                 value={landlordDetails.profile?.dateOfBirth 
                   ? new Date(landlordDetails.profile.dateOfBirth).toLocaleDateString()
