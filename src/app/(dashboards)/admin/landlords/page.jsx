@@ -259,6 +259,7 @@ export default function AdminLandlordsPage() {
       email: l.email === "N/A" ? "" : l.email || "",
       sub: l.sub === "N/A" ? "" : l.sub || "",
       ppsNumber: l.ppsNumber === "N/A" ? "" : l.ppsNumber || "",
+      dateOfBirth: l.dateOfBirth || "",
     });
     setEditOpen(true);
   };
@@ -291,7 +292,8 @@ export default function AdminLandlordsPage() {
       properties,
       tenants,
       mobile: fmtString(u.phone),
-      dob: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A",
+      dob: u.profile?.dateOfBirth ? new Date(u.profile.dateOfBirth).toLocaleDateString("en-IE") : "N/A",
+      dateOfBirth: u.profile?.dateOfBirth ? new Date(u.profile.dateOfBirth).toISOString().split('T')[0] : "",
       email: fmtString(u.email),
       ppsNumber: fmtString(u.ppsNumber),
     };
@@ -306,6 +308,7 @@ export default function AdminLandlordsPage() {
         phone: updated.mobile || updated.phone || null,
         address: updated.sub || updated.address || null,
         ppsNumber: updated.ppsNumber || null,
+        dateOfBirth: updated.dateOfBirth ? new Date(updated.dateOfBirth).toISOString() : null,
       };
 
       const res = await authenticatedFetch(
@@ -962,6 +965,7 @@ export default function AdminLandlordsPage() {
                   mobile: f.mobile.value,
                   sub: f.sub.value,
                   ppsNumber: f.ppsNumber.value,
+                  dateOfBirth: f.dateOfBirth.value,
                 });
               }}
               className="mt-4 space-y-3"
@@ -1014,6 +1018,17 @@ export default function AdminLandlordsPage() {
                   name="ppsNumber"
                   placeholder="Enter PPS Number"
                   defaultValue={editing.ppsNumber}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">
+                  Date of Birth
+                </label>
+                <input
+                  name="dateOfBirth"
+                  type="date"
+                  defaultValue={editing.dateOfBirth}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg"
                 />
               </div>

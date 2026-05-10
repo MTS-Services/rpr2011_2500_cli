@@ -271,8 +271,8 @@ export default function AdminLandlordProfilePage() {
               email: user.email || "N/A",
               mobile: user.phone || "N/A",
               address: user.address || "N/A",
-              dob: user.createdAt
-                ? new Date(user.createdAt).toLocaleDateString()
+              dob: user.profile?.dateOfBirth
+                ? new Date(user.profile.dateOfBirth).toLocaleDateString("en-IE")
                 : "N/A",
               pps: user.ppsNumber || "N/A",
             });

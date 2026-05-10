@@ -184,6 +184,8 @@ export default function AdminTenantsPage() {
         name: updated.name,
         email: updated.email,
         phone: updated.phone,
+        ppsNumber: updated.ppsNumber || null,
+        dateOfBirth: updated.dateOfBirth ? new Date(updated.dateOfBirth).toISOString() : null,
       };
 
       const response = await authenticatedFetch(
@@ -318,6 +320,8 @@ export default function AdminTenantsPage() {
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
+      ppsNumber: formData.get("ppsNumber"),
+      dateOfBirth: formData.get("dateOfBirth"),
     });
   };
 
@@ -896,6 +900,35 @@ export default function AdminTenantsPage() {
                       name="phone"
                       type="tel"
                       defaultValue={editingTenant.phone === "N/A" ? "" : editingTenant.phone}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="editPpsNumber"
+                      className="block text-sm font-medium text-slate-700 mb-1"
+                    >
+                      PPS Number
+                    </label>
+                    <input
+                      id="editPpsNumber"
+                      name="ppsNumber"
+                      defaultValue={editingTenant.ppsNumber === "N/A" ? "" : editingTenant.ppsNumber}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="editDateOfBirth"
+                      className="block text-sm font-medium text-slate-700 mb-1"
+                    >
+                      Date of Birth
+                    </label>
+                    <input
+                      id="editDateOfBirth"
+                      name="dateOfBirth"
+                      type="date"
+                      defaultValue={editingTenant.dateOfBirth ? editingTenant.dateOfBirth : ""}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
