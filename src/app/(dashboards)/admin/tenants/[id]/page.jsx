@@ -246,6 +246,14 @@ export default function TenantDetailPage() {
                 value={tenant.profile?.status || "N/A"}
               />
               <InfoRow
+                label="Date of Birth"
+                value={
+                  tenant.profile?.dateOfBirth
+                    ? new Date(tenant.profile.dateOfBirth).toLocaleDateString("en-IE")
+                    : "N/A"
+                }
+              />
+              <InfoRow
                 label="Member Since"
                 value={
                   tenant.createdAt

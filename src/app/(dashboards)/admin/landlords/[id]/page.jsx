@@ -271,8 +271,8 @@ export default function AdminLandlordProfilePage() {
               email: user.email || "N/A",
               mobile: user.phone || "N/A",
               address: user.address || "N/A",
-              dob: user.createdAt
-                ? new Date(user.createdAt).toLocaleDateString()
+              dob: user.profile?.dateOfBirth
+                ? new Date(user.profile.dateOfBirth).toLocaleDateString("en-IE")
                 : "N/A",
               pps: user.ppsNumber || "N/A",
             });
@@ -876,6 +876,15 @@ export default function AdminLandlordProfilePage() {
                   </div>
                 )}
               </InfoRow>
+              <InfoRow 
+                label="Company Name" 
+                value={landlordDetails.profile?.companyName || "N/A"} 
+              />
+              <InfoRow 
+                label="CRO" 
+                value={landlordDetails.profile?.pps2 || "N/A"} 
+                mono
+              />
               <InfoRow 
                 label="Date of Birth" 
                 value={landlordDetails.profile?.dateOfBirth 

@@ -1,7 +1,9 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
-import { Download, TrendingUp, Banknote, Wrench } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Download, TrendingUp, Banknote, Wrench, Loader2 } from "lucide-react";
 import { authenticatedFetch } from "@/utils/authFetch";
+import CalendarGrid from "@/components/admin/CalendarGrid";
+import PaymentModal from "@/components/admin/PaymentModal";
 import {
   ResponsiveContainer,
   BarChart,
@@ -112,6 +114,18 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ── Calendar state ─────────────────────────────────────────────────────────
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth() + 1);
+  const [calData, setCalData] = useState({ summary: {}, days: {} });
+  const [calLoading, setCalLoading] = useState(false);
+  const [calError, setCalError] = useState("");
+
+  // Modal
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedPayments, setSelectedPayments] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+
   useEffect(() => {
     let mounted = true;
 
@@ -153,38 +167,127 @@ export default function AdminReportsPage() {
     return () => { mounted = false; };
   }, []);
 
+  // ── Calendar data fetch ────────────────────────────────────────────────────
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCalendar() {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!baseUrl) return;
+      try {
+        setCalLoading(true);
+        setCalError("");
+        const res = await authenticatedFetch(
+          `${baseUrl}/api/v1/rent-payments/admin/calendar?year=${calYear}&month=${calMonth}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) throw new Error(`Calendar request failed (${res.status})`);
+        const json = await res.json();
+        if (!mounted) return;
+        if (!json?.success || !json?.data)
+          throw new Error(json?.message || "Invalid calendar payload");
+        setCalData({
+          summary: json.data.summary || {},
+          days: json.data.days || {},
+        });
+      } catch (err) {
+        if (mounted) {
+          setCalError(err?.message || "Failed to load calendar");
+          setCalData({ summary: {}, days: {} });
+        }
+      } finally {
+        if (mounted) setCalLoading(false);
+      }
+    }
+
+    loadCalendar();
+    return () => { mounted = false; };
+  }, [calYear, calMonth]);
+
+  // ── Calendar handlers ──────────────────────────────────────────────────────
+  const handlePrevMonth = useCallback(() => {
+    if (calMonth === 1) { setCalYear((y) => y - 1); setCalMonth(12); }
+    else setCalMonth((m) => m - 1);
+  }, [calMonth]);
+
+  const handleNextMonth = useCallback(() => {
+    if (calMonth === 12) { setCalYear((y) => y + 1); setCalMonth(1); }
+    else setCalMonth((m) => m + 1);
+  }, [calMonth]);
+
+  const handleSetMonth = useCallback((nextMonth) => {
+    if (nextMonth < 1 || nextMonth > 12) return;
+    setCalMonth(nextMonth);
+  }, []);
+
+  const handleSetYear = useCallback((nextYear) => {
+    if (!Number.isFinite(nextYear)) return;
+    setCalYear(nextYear);
+  }, []);
+
+  const handleJumpToToday = useCallback(() => {
+    const now = new Date();
+    setCalYear(now.getFullYear());
+    setCalMonth(now.getMonth() + 1);
+  }, []);
+
+  const handleDateClick = useCallback((dateKey, payments) => {
+    setSelectedDate(dateKey);
+    setSelectedPayments(payments);
+    setShowModal(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setShowModal(false);
+    setSelectedDate(null);
+    setSelectedPayments([]);
+  }, []);
+
   const statCards = useMemo(
     () => [
       {
-        label: "Total Rent Collected",
-        value: formatCurrency(report.cards.rentCollected.value),
-        sub: report.cards.rentCollected.label,
+        label: "Payments",
+        value: (calData.summary.totalPayments ?? 0).toLocaleString("en-IE"),
+        sub: "Total for " + getMonthLabel(calYear, calMonth),
         Icon: Banknote,
         iconBg: "bg-teal-50",
         iconColor: "text-teal-600",
-        trend: report.cards.rentCollected.changePercent,
+        trend: 0,
       },
       {
-        label: "Outstanding Balance",
-        value: formatCurrency(report.cards.outstandingBalance.value),
-        sub: report.cards.outstandingBalance.label,
+        label: "Total Due",
+        value: formatCurrency(calData.summary.totalDue),
+        sub: "Amount outstanding",
         Icon: TrendingUp,
+        iconBg: "bg-slate-50",
+        iconColor: "text-slate-600",
+        trend: 0,
+      },
+      {
+        label: "Pending",
+        value: formatCurrency(calData.summary.totalPending),
+        sub: "Awaiting payment",
+        Icon: Wrench,
+        iconBg: "bg-amber-50",
+        iconColor: "text-amber-500",
+        trend: 0,
+      },
+      {
+        label: "Overdue",
+        value: formatCurrency(calData.summary.totalOverdue),
+        sub: "Past due date",
+        Icon: Banknote,
         iconBg: "bg-rose-50",
         iconColor: "text-rose-500",
-        trend: report.cards.outstandingBalance.changePercent,
-      },
-      {
-        label: "Maintenance Costs",
-        value: formatCurrency(report.cards.maintenanceCosts.value),
-        sub: report.cards.maintenanceCosts.label,
-        Icon: Wrench,
-        iconBg: "bg-orange-50",
-        iconColor: "text-orange-500",
-        trend: report.cards.maintenanceCosts.changePercent,
+        trend: 0,
       },
     ],
-    [report]
+    [calData, calYear, calMonth]
   );
+
+  function getMonthLabel(year, month) {
+    return new Date(year, month - 1, 1).toLocaleDateString("en-IE", { month: "long", year: "numeric" });
+  }
 
   const rentData = useMemo(
     () =>
@@ -240,31 +343,72 @@ export default function AdminReportsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700 flex items-start gap-2">
+          <div className="flex-shrink-0 font-bold text-rose-500">⚠</div>
+          <div className="flex-1">
+            <p className="font-semibold">Error loading report data</p>
+            <p className="text-xs mt-1">{error}</p>
+          </div>
         </div>
       ) : null}
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {statCards.map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col gap-2 shadow-sm">
-            <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold text-slate-500 leading-tight">{s.label}</p>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.iconBg}`}>
-                <s.Icon size={18} className={s.iconColor} />
+      {/* Stat cards from calendar summary */}
+      {calLoading ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center">
+          <Loader2 size={20} className="text-teal-500 animate-spin mx-auto mb-2" />
+          <p className="text-sm font-semibold text-slate-600">Loading payment statistics...</p>
+        </div>
+      ) : calError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700 flex items-start gap-2">
+          <div className="flex-shrink-0 font-bold text-rose-500">⚠</div>
+          <div className="flex-1">
+            <p className="font-semibold">Unable to load statistics</p>
+            <p className="text-xs mt-1">{calError}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {statCards.map((s) => (
+            <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col gap-2 shadow-sm">
+              <div className="flex items-start justify-between">
+                <p className="text-sm font-semibold text-slate-500 leading-tight">{s.label}</p>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.iconBg}`}>
+                  <s.Icon size={18} className={s.iconColor} />
+                </div>
               </div>
-            </div>
             <p className="text-3xl font-bold text-slate-800">{s.value}</p>
             <div className="flex items-center justify-between">
               <p className="text-xs text-slate-400">{s.sub}</p>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                s.trend >= 0 ? "bg-teal-50 text-teal-600" : "bg-rose-50 text-rose-500"
-              }`}>{`${s.trend > 0 ? "+" : ""}${s.trend}%`}</span>
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
+
+      {/* ── Rent Payment Calendar ── */}
+      <CalendarGrid
+        year={calYear}
+        month={calMonth}
+        days={calData.days}
+        summary={calData.summary}
+        loading={calLoading}
+        calError={calError}
+        onDateClick={handleDateClick}
+        onPrevMonth={handlePrevMonth}
+        onNextMonth={handleNextMonth}
+        onSetMonth={handleSetMonth}
+        onSetYear={handleSetYear}
+        onJumpToToday={handleJumpToToday}
+      />
+
+      {/* Payment detail modal */}
+      {showModal && (
+        <PaymentModal
+          dateKey={selectedDate}
+          payments={selectedPayments}
+          onClose={handleCloseModal}
+        />
+      )}
 
       {/* Bar chart - Enhanced */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
