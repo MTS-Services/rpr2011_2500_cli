@@ -10,6 +10,8 @@ import {
   CreditCard,
   Loader2,
   User,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 /* ─── Sub-components ──────────────────────────── */
@@ -52,6 +54,7 @@ export default function AdminDashboardPage() {
   const [dashboardResponse, setDashboardResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [monthlyRevenuePage, setMonthlyRevenuePage] = useState(1);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -86,14 +89,36 @@ export default function AdminDashboardPage() {
   const monthlyRevenue = Array.isArray(systemOverview?.monthlyRevenue)
     ? systemOverview.monthlyRevenue
     : [];
-  const [showAllMonths, setShowAllMonths] = useState(false);
-  const visibleMonths = showAllMonths ? monthlyRevenue : monthlyRevenue.slice(-2);
+  const sortedMonthlyRevenue = useMemo(
+    () =>
+      [...monthlyRevenue].sort((a, b) => {
+        const aMonth = a?.month || "";
+        const bMonth = b?.month || "";
+        return aMonth.localeCompare(bMonth);
+      }),
+    [monthlyRevenue]
+  );
+  const monthlyRevenuePageSize = 2;
+  const monthlyRevenueTotalPages = Math.max(
+    1,
+    Math.ceil(sortedMonthlyRevenue.length / monthlyRevenuePageSize)
+  );
+  const safeMonthlyRevenuePage = Math.min(monthlyRevenuePage, monthlyRevenueTotalPages);
+  const monthlyRevenueStart = (safeMonthlyRevenuePage - 1) * monthlyRevenuePageSize;
+  const visibleMonths = sortedMonthlyRevenue.slice(
+    monthlyRevenueStart,
+    monthlyRevenueStart + monthlyRevenuePageSize
+  );
   const hasAnyData = Boolean(
     (profile && Object.keys(profile).length > 0) ||
     (summary && Object.keys(summary).length > 0) ||
     (systemOverview && Object.keys(systemOverview).length > 0) ||
     (monthlyRevenue && monthlyRevenue.length > 0)
   );
+
+  useEffect(() => {
+    setMonthlyRevenuePage(1);
+  }, [monthlyRevenue.length]);
 
   const kpis = useMemo(
     () => [
@@ -134,6 +159,14 @@ export default function AdminDashboardPage() {
     pending: "bg-amber-50 text-amber-700 border-amber-100",
     late: "bg-orange-50 text-orange-700 border-orange-100",
     overdue: "bg-rose-50 text-rose-700 border-rose-100",
+  };
+
+  const goToPreviousMonthlyPage = () => {
+    setMonthlyRevenuePage((current) => Math.max(1, current - 1));
+  };
+
+  const goToNextMonthlyPage = () => {
+    setMonthlyRevenuePage((current) => Math.min(monthlyRevenueTotalPages, current + 1));
   };
 
   if (isLoading) {
@@ -245,7 +278,7 @@ export default function AdminDashboardPage() {
           <p className="text-sm text-slate-500 mt-1">Monthly collections and payment breakdowns.</p>
         </div>
         <div className="p-4 lg:p-5">
-          {monthlyRevenue.length === 0 ? (
+          {sortedMonthlyRevenue.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-500">
               No monthly revenue data available.
             </div>
@@ -313,17 +346,29 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
 
-              {/* {monthlyRevenue.length > 2 && (
-                <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex justify-end">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowAllMonths((s) => !s)}
-                    className="px-4 py-2 text-sm rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    onClick={goToPreviousMonthlyPage}
+                    disabled={safeMonthlyRevenuePage === 1}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white"
                   >
-                    {showAllMonths ? "Show less" : "Show all months"}
+                    <ChevronLeft size={16} />
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToNextMonthlyPage}
+                    disabled={safeMonthlyRevenuePage === monthlyRevenueTotalPages}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white"
+                  >
+                    Next
+                    <ChevronRight size={16} />
                   </button>
                 </div>
-              )} */}
+              </div>
+
             </>
           )}
         </div>
