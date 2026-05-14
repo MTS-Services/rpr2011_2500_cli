@@ -1,14 +1,17 @@
-[00:00:01.664] Server  LOG     ✓ Ready in 1272ms
-[00:00:03.498] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:05.924] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:06.071] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:00:06.189] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:06.189] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:06.189] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:07.548] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
-[00:12:42.383] Server  LOG     ✓ Compiled in 116ms
-[00:13:37.909] Server  LOG     ✓ Compiled in 81ms
-[00:16:00.293] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:16:00.505] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:21:21.247] Server  LOG     ✓ Compiled in 60ms
-[00:21:32.511] Server  LOG     ✓ Compiled in 48ms
+[00:00:01.696] Server  LOG     ✓ Ready in 1242ms
+[00:00:47.326] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:47.326] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:00:47.493] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:00:47.493] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:00:47.493] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:00:49.308] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:01:44.138] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:29.436] Server  LOG     ✓ Compiled in 1121ms
+[00:08:21.710] Server  LOG     ✓ Compiled in 362ms
+[00:09:19.483] Server  LOG     ✓ Compiled in 55ms
+[00:09:28.314] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:28.521] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:10:44.851] Server  LOG     ✓ Compiled in 81ms
+[00:11:31.194] Server  LOG     ✓ Compiled in 70ms
+[00:11:39.078] Server  LOG     ✓ Compiled in 56ms
+[00:12:24.228] Server  LOG     ✓ Compiled in 47ms
