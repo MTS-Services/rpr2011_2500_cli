@@ -6,4 +6,4 @@
 # build output
 /.next
 /out
-.env
+config.bat
