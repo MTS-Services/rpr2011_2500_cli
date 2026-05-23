@@ -1,30 +1,326 @@
-[00:00:01.655] Server  LOG     ✓ Ready in 1228ms
-[00:00:19.619] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:19.826] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:00:19.986] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:19.986] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:19.986] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
-[00:00:23.204] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
-[00:01:05.349] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+[00:00:01.831] Server  LOG     ✓ Ready in 1354ms
+[00:00:08.997] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:09.253] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:00:09.364] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:00:09.364] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:00:09.364] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:00:11.144] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:16:56.355] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:16:56.554] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:17:03.676] Browser ERROR   Error recording partial payment: {}
+[00:25:35.463] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:25:35.665] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:28:15.599] Server  LOG     ✓ Compiled in 1087ms
+[00:28:39.665] Server  LOG     ✓ Compiled in 84ms
+[00:32:07.545] Server  LOG     ✓ Compiled in 67ms
+[00:32:28.529] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:28.751] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:33:53.011] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:33:53.195] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:34:09.273] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
        please check the style of container, or the props width(100%) and height(100%),
        or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
        height and width.
-[00:01:05.349] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+[00:34:09.273] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
        please check the style of container, or the props width(100%) and height(100%),
        or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
        height and width.
-[00:01:26.858] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+[00:34:09.273] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:34:49.610] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
        please check the style of container, or the props width(100%) and height(100%),
        or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
        height and width.
-[00:01:26.858] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+[00:34:49.610] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
        please check the style of container, or the props width(100%) and height(100%),
        or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
        height and width.
-[00:06:11.101] Server  LOG     ✓ Compiled in 892ms
-[00:06:30.936] Server  LOG     ✓ Compiled in 111ms
-[00:08:17.809] Server  LOG     ✓ Compiled in 54ms
-[00:08:19.083] Server  LOG     ✓ Compiled in 55ms
-[00:08:19.287] Server  LOG     ✓ Compiled in 85ms
-[00:08:21.144] Server  LOG     ✓ Compiled in 45ms
-[00:08:30.052] Server  LOG     ✓ Compiled in 77ms
+[00:34:52.123] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:34:52.373] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:34:52.373] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:34:52.373] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:35:32.945] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:35:32.945] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:40:03.004] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:40:03.004] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:43:48.052] Server  LOG     ✓ Compiled in 91ms
+[00:43:59.103] Server  LOG     ✓ Compiled in 76ms
+[00:44:09.247] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:44:21.943] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:21.943] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:33.785] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:33.786] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:36.482] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:44:36.770] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:36.770] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:36.770] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:44:40.773] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:44:49.502] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:49.502] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:51.830] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:44:52.042] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:52.042] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:44:52.042] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:46:51.875] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:47:04.074] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:47:04.074] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:47:40.423] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:47:40.423] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:47:40.423] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:47:44.311] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:47:44.311] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:48:25.811] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:48:25.811] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:48:43.149] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:48:43.311] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:51:49.078] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:54:22.798] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:54:22.798] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:54:46.414] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:54:46.414] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:55:02.826] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:55:02.826] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:03:22.331] Server  LOG     ✓ Compiled in 191ms
+[01:03:22.722] Browser ERROR   ./src/app/(dashboards)/admin/landlords/page.jsx:311:9
+Ecmascript file had an error
+  309 |   };
+  310 |
+> 311 |   const mapUserToRow = (u, prev = null, idx = 0) => {
+      |         ^^^^^^^^^^^^
+  312 |     const row = mapUserToRow(u, prev, idx);
+  313 |     return {
+  314 |       ...row,
+
+the name `mapUserToRow` is defined multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboards)/admin/landlords/page.jsx [Client Component Browser]
+    ./src/app/(dashboards)/admin/landlords/page.jsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboards)/admin/landlords/page.jsx [Client Component SSR]
+    ./src/app/(dashboards)/admin/landlords/page.jsx [Server Component]
+[01:04:12.040] Server  LOG     ✓ Compiled in 216ms
+[01:04:57.740] Server  LOG     ✓ Compiled in 93ms
+[01:20:13.360] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:20:13.680] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[01:20:13.680] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[01:20:13.680] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[01:21:07.576] Browser ERROR   Error creating property: {}
+[01:21:42.142] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:21:42.142] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:21:56.869] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:21:57.078] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:21:57.079] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:21:57.180] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:22:06.720] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[01:23:49.099] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:23:49.099] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:25:29.911] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:25:29.912] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:26:10.821] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:26:10.821] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:30:17.134] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:30:17.313] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:30:27.504] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:30:27.504] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:30:27.504] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[01:32:05.727] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:32:05.907] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:32:16.169] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:32:16.323] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:32:24.254] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[01:32:48.849] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:32:48.849] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:33:31.884] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[01:33:31.884] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[02:23:29.449] Server  LOG     ✓ Compiled in 1593ms
+[02:23:43.833] Server  LOG     ✓ Compiled in 237ms
+[02:24:56.177] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:28:38.555] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:28:39.922] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:33:17.997] Server  LOG     ✓ Compiled in 1026ms
+[02:33:31.211] Server  LOG     ✓ Compiled in 199ms
+[02:34:41.734] Server  LOG     ✓ Compiled in 834ms
+[02:34:53.156] Server  LOG     ✓ Compiled in 114ms
+[02:34:55.343] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:35:05.741] Server  LOG     ✓ Compiled in 804ms
+[02:35:17.902] Server  LOG     ✓ Compiled in 105ms
+[02:35:24.637] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:35:25.569] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:35:26.207] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:36:08.472] Server  LOG     ✓ Compiled in 969ms
+[02:36:24.219] Server  LOG     ✓ Compiled in 106ms
+[02:37:14.484] Server  LOG     ✓ Compiled in 811ms
+[02:37:33.040] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[02:37:33.258] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[02:37:35.771] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[03:12:08.931] Browser ERROR   Full API Error Response: {"message":"Tenant already has an active tenancy (status: ACTIVE) for property \"mcTest\". A new tenancy can only be created after the existing one is EXPIRED or TERMINATED.","stack":"Error: Tenant already has an active tenancy (status: ACTIVE) for property \"mcTest\". A new tenancy can only be created after the existing one is EXPIRED or TERMINATED.\n    at TenancyService.createTenancy (/app/src/services/tenancy.service.js:144:17)\n    at async /app/src/controllers/tenancy.controller.js:123:20","statusCode":409,"success":false,"timestamp":"2026-05-23T07:01:08.376Z"}
+[03:12:08.931] Browser ERROR   Error adding tenancy: {}
+[03:12:08.931] Browser ERROR   Full error details: {"formData":{"endDate":"2026-07-12","property":"anotext","propertyId":"cmphzzdtz00875ombfttgb6nu","rentDueDay":"17","rentReviewDate":"","rtbNumber":"","rtbRegistration":"","rtbStatus":"","startDate":"2026-02-12","status":"Notice","tenantId":"cmp49c0fx00lb677vrr5oz6ni"},"message":"Tenant already has an active tenancy (status: ACTIVE) for property \"mcTest\". A new tenancy can only be created after the existing one is EXPIRED or TERMINATED.","stack":"Error: Tenant already has an active tenancy (status: ACTIVE) for property \"mcTest\". A new tenancy can only be created after the existing one is EXPIRED or TERMINATED.\n    at handleAddTenancy (http://localhost:3000/_next/static/chunks/src_eaca1657._.js:1810:23)\n    at async handleSubmit (http://localhost:3000/_next/static/chunks/src_eaca1657._.js:287:28)"}
+[03:12:19.744] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[03:12:19.744] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[03:12:40.201] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[03:12:40.201] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[03:12:47.723] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[03:12:47.723] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[03:12:49.711] Browser LOG     Conversations API response: {"data":[{"createdAt":"2026-05-07T10:20:28.412Z","id":"cmovc51mj00rnlzrhtlns4jkg","lastMessage":{"createdAt":"2026-05-12T16:44:42.644Z","id":"cmp2v2fpw008h677vquqd2zam","senderId":"cmoi2nymb00002fpxvdx7vnc1","text":"hi Iwiona this ia test"},"participants":[{"avatar":null,"email":"ostrza11@gmail.com","name":"Iwona Ostrzonesk","role":"TENANT","userId":"cmojsdjns00053hs5hzza0ijv"}],"unreadCount":0,"updatedAt":"2026-05-12T16:44:42.643Z"},{"createdAt":"2026-05-12T16:43:54.982Z","id":"cmp2v1exy0086677vtgu9cvrl","lastMessage":{"createdAt":"2026-05-12T16:44:32.324Z","id":"cmp2v27r8008f677v399ggjwe","senderId":"cmoi2nymb00002fpxvdx7vnc1","text":"this is head office test message in your accounts"},"participants":[{"avatar":null,"email":"shannaon@buildstaff.ie","name":"Majella Kelly","role":"LANDLORD","userId":"cmp2uxhqz007n677vckwuobp0"}],"unreadCount":0,"updatedAt":"2026-05-12T16:44:32.323Z"},{"createdAt":"2026-05-07T11:33:15.114Z","id":"cmoveqmzt00s7lzrhgifkz52k","lastMessage":null,"participants":[{"avatar":null,"email":"info@mccannandcurran.com","name":"Fintan Kelly PRB","role":"LANDLORD","userId":"cmoiz8x530005c37rvylhcgfk"}],"unreadCount":0,"updatedAt":"2026-05-07T11:33:15.114Z"},{"createdAt":"2026-05-07T10:21:27.350Z","id":"cmovc6b3p00rvlzrhpcftoy0y","lastMessage":null,"participants":[{"avatar":null,"email":"jockdoyle81@gmail.com","name":"Rory Doyle ","role":"LANDLORD","userId":"cmoudctjh00jylzrhuucfan7b"}],"unreadCount":0,"updatedAt":"2026-05-07T10:21:27.350Z"}],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-05-23T07:01:49.144Z"}
+[03:12:49.903] Browser LOG     Conversations API response: {"data":[{"createdAt":"2026-05-07T10:20:28.412Z","id":"cmovc51mj00rnlzrhtlns4jkg","lastMessage":{"createdAt":"2026-05-12T16:44:42.644Z","id":"cmp2v2fpw008h677vquqd2zam","senderId":"cmoi2nymb00002fpxvdx7vnc1","text":"hi Iwiona this ia test"},"participants":[{"avatar":null,"email":"ostrza11@gmail.com","name":"Iwona Ostrzonesk","role":"TENANT","userId":"cmojsdjns00053hs5hzza0ijv"}],"unreadCount":0,"updatedAt":"2026-05-12T16:44:42.643Z"},{"createdAt":"2026-05-12T16:43:54.982Z","id":"cmp2v1exy0086677vtgu9cvrl","lastMessage":{"createdAt":"2026-05-12T16:44:32.324Z","id":"cmp2v27r8008f677v399ggjwe","senderId":"cmoi2nymb00002fpxvdx7vnc1","text":"this is head office test message in your accounts"},"participants":[{"avatar":null,"email":"shannaon@buildstaff.ie","name":"Majella Kelly","role":"LANDLORD","userId":"cmp2uxhqz007n677vckwuobp0"}],"unreadCount":0,"updatedAt":"2026-05-12T16:44:32.323Z"},{"createdAt":"2026-05-07T11:33:15.114Z","id":"cmoveqmzt00s7lzrhgifkz52k","lastMessage":null,"participants":[{"avatar":null,"email":"info@mccannandcurran.com","name":"Fintan Kelly PRB","role":"LANDLORD","userId":"cmoiz8x530005c37rvylhcgfk"}],"unreadCount":0,"updatedAt":"2026-05-07T11:33:15.114Z"},{"createdAt":"2026-05-07T10:21:27.350Z","id":"cmovc6b3p00rvlzrhpcftoy0y","lastMessage":null,"participants":[{"avatar":null,"email":"jockdoyle81@gmail.com","name":"Rory Doyle ","role":"LANDLORD","userId":"cmoudctjh00jylzrhuucfan7b"}],"unreadCount":0,"updatedAt":"2026-05-07T10:21:27.350Z"}],"message":"Conversations retrieved successfully","statusCode":200,"success":true,"timestamp":"2026-05-23T07:01:49.343Z"}
+[03:12:50.104] Browser LOG     Messages API response: {"data":[{"conversationId":"cmovc51mj00rnlzrhtlns4jkg","createdAt":"2026-05-12T16:44:42.644Z","id":"cmp2v2fpw008h677vquqd2zam","sender":{"avatar":null,"id":"cmoi2nymb00002fpxvdx7vnc1","name":"System Admin","role":"ADMIN"},"senderId":"cmoi2nymb00002fpxvdx7vnc1","text":"hi Iwiona this ia test"},{"conversationId":"cmovc51mj00rnlzrhtlns4jkg","createdAt":"2026-05-07T11:35:15.296Z","id":"cmovet7q800sclzrhlpz28mht","sender":{"avatar":null,"id":"cmoi2nymb00002fpxvdx7vnc1","name":"System Admin","role":"ADMIN"},"senderId":"cmoi2nymb00002fpxvdx7vnc1","text":"hello iwona, if you need something from me, feel freee to ask..."}],"message":"Messages retrieved successfully","meta":{"pagination":{"currentPage":1,"hasNextPage":false,"hasPreviousPage":false,"itemsPerPage":30,"totalItems":2,"totalPages":1}},"statusCode":200,"success":true,"timestamp":"2026-05-23T07:01:49.540Z"}
+[03:13:19.881] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[03:13:20.086] Browser WARN    Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[03:13:20.453] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[03:13:20.453] Browser WARN    Image with src "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[03:13:20.453] Browser WARN    Image with src "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[03:13:20.453] Browser WARN    Image with src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&q=70" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[03:13:21.642] Browser WARN    Image with src "/dashboardlogo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.

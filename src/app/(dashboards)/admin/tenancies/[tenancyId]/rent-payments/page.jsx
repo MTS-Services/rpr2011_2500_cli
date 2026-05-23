@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowUpDown, Banknote, CheckCircle2, X } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Banknote, CheckCircle2, Filter, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Pagination from "@/components/portal/Pagination";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
 const DEFAULT_ITEMS_PER_PAGE = 10;
+const STATUS_FILTERS = [
+  { label: "All", value: "ALL" },
+  { label: "Overdue", value: "OVERDUE" },
+  { label: "Paid", value: "PAID" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Late", value: "LATE" },
+  { label: "Partial", value: "PARTIAL" },
+];
 
 const PAYMENT_STATUS_STYLES = {
   PAID: "bg-teal-100 text-teal-700",
@@ -67,7 +75,7 @@ export default function AdminTenancyRentPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [pagination, setPagination] = useState({
     currentPage: 1,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
@@ -76,6 +84,11 @@ export default function AdminTenancyRentPaymentsPage() {
   });
   const [savingPaymentId, setSavingPaymentId] = useState(null);
   const [partialPaymentDraft, setPartialPaymentDraft] = useState(null);
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
 
   const closePartialPaymentModal = () => {
     setPartialPaymentDraft(null);
@@ -155,13 +168,12 @@ export default function AdminTenancyRentPaymentsPage() {
       setSavingPaymentId(payment.id);
 
       const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/${payment.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments/${payment.id}/partial`,
         {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            status: nextStatus,
-            paidAmount: nextPaidAmount,
+            amountReceived: amountPaid,
           }),
         }
       );
@@ -224,7 +236,10 @@ export default function AdminTenancyRentPaymentsPage() {
         const query = new URLSearchParams();
         query.append("tenancyId", tenancyId);
         query.append("page", String(currentPage));
-        query.append("limit", String(itemsPerPage));
+        query.append("limit", String(DEFAULT_ITEMS_PER_PAGE));
+        if (statusFilter !== "ALL") {
+          query.append("status", statusFilter);
+        }
 
         const response = await authenticatedFetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/v1/rent-payments?${query.toString()}`,
@@ -242,7 +257,7 @@ export default function AdminTenancyRentPaymentsPage() {
 
         const serverPagination = result.meta?.pagination || {};
         const totalItems = Number(serverPagination.totalItems ?? result.data.length);
-        const resolvedItemsPerPage = Number(serverPagination.itemsPerPage ?? itemsPerPage);
+        const resolvedItemsPerPage = DEFAULT_ITEMS_PER_PAGE;
         const totalPages = Number(
           serverPagination.totalPages ??
           Math.max(1, Math.ceil(totalItems / Math.max(1, resolvedItemsPerPage)))
@@ -261,7 +276,7 @@ export default function AdminTenancyRentPaymentsPage() {
         setPayments([]);
         setPagination({
           currentPage: 1,
-          itemsPerPage,
+          itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
           totalItems: 0,
           totalPages: 1,
         });
@@ -272,7 +287,7 @@ export default function AdminTenancyRentPaymentsPage() {
 
     fetchRentPayments();
     return () => controller.abort();
-  }, [tenancyId, currentPage, itemsPerPage]);
+  }, [tenancyId, currentPage, statusFilter]);
 
   const summary = useMemo(() => {
     const first = payments[0] || {};
@@ -286,11 +301,6 @@ export default function AdminTenancyRentPaymentsPage() {
       propertyLocation: [property.address, property.county].filter(Boolean).join(" - ") || "N/A",
     };
   }, [payments]);
-
-  const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(value);
-    setCurrentPage(1);
-  };
 
   useEffect(() => {
     const handleEsc = (event) => {
@@ -328,6 +338,33 @@ export default function AdminTenancyRentPaymentsPage() {
             <p className="font-semibold text-slate-800 mt-1">{summary.propertyName}</p>
             <p className="text-slate-500">{summary.propertyLocation}</p>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+            <Filter size={15} className="text-slate-400" />
+            Filter by status
+          </span>
+          {STATUS_FILTERS.map((option) => {
+            const active = statusFilter === option.value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleStatusFilterChange(option.value)}
+                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                  active
+                    ? "border-teal-600 bg-teal-600 text-white shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -423,8 +460,7 @@ export default function AdminTenancyRentPaymentsPage() {
                 itemsPerPage={pagination.itemsPerPage}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
-                onItemsPerPageChange={handleItemsPerPageChange}
-                showItemsPerPage
+                showItemsPerPage={false}
               />
             </div>
           </div>
@@ -512,8 +548,7 @@ export default function AdminTenancyRentPaymentsPage() {
               itemsPerPage={pagination.itemsPerPage}
               currentPage={currentPage}
               onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-              showItemsPerPage
+              showItemsPerPage={false}
             />
           </div>
         </>

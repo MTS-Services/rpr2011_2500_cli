@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -62,9 +62,34 @@ export default function AdminLandlordsPage() {
     return v;
   };
 
-  // When using server-side pagination the API returns already filtered results.
-  // `filtered` represents the currently loaded page of landlords.
-  const filtered = landlords;
+  const filtered = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase();
+
+    return landlords.filter((landlord) => {
+      const countyMatches =
+        !countyFilter || countyFilter === "All County/City" || landlord.sub === countyFilter;
+
+      if (!countyMatches) return false;
+
+      if (!query) return true;
+
+      const searchableFields = [
+        landlord.name,
+        landlord.sub,
+        landlord.address,
+        landlord.mobile,
+        landlord.email,
+        landlord.ppsNumber,
+        String(landlord.properties ?? ""),
+        String(landlord.tenants ?? ""),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableFields.includes(query);
+    });
+  }, [landlords, debouncedSearch, countyFilter]);
 
   // Debounce search input to avoid excessive requests
   useEffect(() => {
@@ -561,72 +586,78 @@ export default function AdminLandlordsPage() {
 
       {/* Mobile cards — visible below lg */}
       <div className="lg:hidden space-y-3">
-        {filtered.map((landlord) => (
-          <div
-            key={landlord.id}
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3"
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full ${landlord.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
-              >
-                {landlord.initials}
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-slate-800 text-sm truncate">
-                  {landlord.name}
-                </p>
-                <p className="text-xs text-slate-400 truncate">
-                  {landlord.sub}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Properties</p>
-                <p className="font-semibold text-slate-700 flex items-center gap-1">
-                  <Home size={12} className="text-slate-400" />
-                  {landlord.properties}
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Tenants</p>
-                <p className="font-semibold text-slate-700 flex items-center gap-1">
-                  <Users size={12} className="text-slate-400" />
-                  {landlord.tenants}
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-xs text-slate-400 mb-0.5">Mobile</p>
-                <p className="font-medium text-slate-700">{landlord.mobile}</p>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 truncate">{landlord.email}</p>
-            <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
-              <Link
-                href={`/admin/landlords/${landlord.id}`}
-                aria-label="View"
-                className="flex-1 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs gap-1 font-medium"
-              >
-                <Eye size={14} /> View
-              </Link>
-              <button
-                onClick={() => openEdit(landlord)}
-                aria-label="Edit"
-                className="flex-1 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition text-xs gap-1 font-medium"
-              >
-                <Edit size={14} /> Edit
-              </button>
-              <button
-                onClick={() => handleDelete(landlord.id)}
-                aria-label="Delete"
-                className="flex-1 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition text-xs gap-1 font-medium"
-              >
-                <Trash size={14} /> Delete
-              </button>
-            </div>
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-sm text-slate-500">
+            No landlords match your search.
           </div>
-        ))}
+        ) : (
+          filtered.map((landlord) => (
+            <div
+              key={landlord.id}
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-full ${landlord.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
+                >
+                  {landlord.initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-800 text-sm truncate">
+                    {landlord.name}
+                  </p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {landlord.sub}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-slate-50 rounded-lg p-2">
+                  <p className="text-xs text-slate-400 mb-0.5">Properties</p>
+                  <p className="font-semibold text-slate-700 flex items-center gap-1">
+                    <Home size={12} className="text-slate-400" />
+                    {landlord.properties}
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-2">
+                  <p className="text-xs text-slate-400 mb-0.5">Tenants</p>
+                  <p className="font-semibold text-slate-700 flex items-center gap-1">
+                    <Users size={12} className="text-slate-400" />
+                    {landlord.tenants}
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-2">
+                  <p className="text-xs text-slate-400 mb-0.5">Mobile</p>
+                  <p className="font-medium text-slate-700">{landlord.mobile}</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 truncate">{landlord.email}</p>
+              <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                <Link
+                  href={`/admin/landlords/${landlord.id}`}
+                  aria-label="View"
+                  className="flex-1 h-9 inline-flex items-center justify-center bg-teal-100 hover:bg-teal-200 text-teal-700 rounded-md transition text-xs gap-1 font-medium"
+                >
+                  <Eye size={14} /> View
+                </Link>
+                <button
+                  onClick={() => openEdit(landlord)}
+                  aria-label="Edit"
+                  className="flex-1 h-9 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md transition text-xs gap-1 font-medium"
+                >
+                  <Edit size={14} /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(landlord.id)}
+                  aria-label="Delete"
+                  className="flex-1 h-9 inline-flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md transition text-xs gap-1 font-medium"
+                >
+                  <Trash size={14} /> Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
           <Pagination
             total={totalItems}
@@ -684,7 +715,14 @@ export default function AdminLandlordsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filtered.map((landlord) => (
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
+                  No landlords match your search.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((landlord) => (
               <tr
                 key={landlord.id}
                 className={`hover:bg-slate-50/70 transition ${selected.includes(landlord.id) ? "bg-teal-50/40" : ""}`}
@@ -756,7 +794,8 @@ export default function AdminLandlordsPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
         <div className="border-t border-slate-100 px-4 py-3">

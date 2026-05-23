@@ -246,43 +246,34 @@ export default function AdminReportsPage() {
   const statCards = useMemo(
     () => [
       {
-        label: "Payments",
-        value: (calData.summary.totalPayments ?? 0).toLocaleString("en-IE"),
-        sub: "Total for " + getMonthLabel(calYear, calMonth),
+        label: "Rent Collected",
+        value: report.cards.rentCollected.value.toLocaleString("en-IE"),
+        sub: report.cards.rentCollected.label,
         Icon: Banknote,
         iconBg: "bg-teal-50",
         iconColor: "text-teal-600",
-        trend: 0,
+        trend: report.cards.rentCollected.changePercent,
       },
       {
-        label: "Total Due",
-        value: formatCurrency(calData.summary.totalDue),
-        sub: "Amount outstanding",
+        label: "Outstanding Balance",
+        value: formatCurrency(report.cards.outstandingBalance.value),
+        sub: report.cards.outstandingBalance.label,
         Icon: TrendingUp,
         iconBg: "bg-slate-50",
         iconColor: "text-slate-600",
-        trend: 0,
+        trend: report.cards.outstandingBalance.changePercent,
       },
       {
-        label: "Pending",
-        value: formatCurrency(calData.summary.totalPending),
-        sub: "Awaiting payment",
+        label: "Maintenance Costs",
+        value: formatCurrency(report.cards.maintenanceCosts.value),
+        sub: report.cards.maintenanceCosts.label,
         Icon: Wrench,
         iconBg: "bg-amber-50",
         iconColor: "text-amber-500",
-        trend: 0,
-      },
-      {
-        label: "Overdue",
-        value: formatCurrency(calData.summary.totalOverdue),
-        sub: "Past due date",
-        Icon: Banknote,
-        iconBg: "bg-rose-50",
-        iconColor: "text-rose-500",
-        trend: 0,
+        trend: report.cards.maintenanceCosts.changePercent,
       },
     ],
-    [calData, calYear, calMonth]
+    [report]
   );
 
   function getMonthLabel(year, month) {
@@ -367,7 +358,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {statCards.map((s) => (
             <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col gap-2 shadow-sm">
               <div className="flex items-start justify-between">
