@@ -44,4 +44,3 @@ coverage
 
 # Misc
 .dockerignore
-Dockerfile*
