@@ -19,8 +19,6 @@ import AddPropertyModal from "./components/AddPropertyModal";
 import { authenticatedFetch } from "@/utils/authFetch";
 import Swal from "sweetalert2";
 
-const ITEMS_PER_PAGE = 10;
-
 const PROPERTY_STATUS_OPTIONS = [
   { value: "LET", label: "Let" },
   { value: "NOTICE", label: "Notice" },
@@ -125,12 +123,13 @@ export default function AdminPropertiesPage() {
   const [landlords, setLandlords] = useState([]);
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [reloadKey, setReloadKey] = useState(0);
   const [localImageOverrides, setLocalImageOverrides] = useState({});
   const localImageOverridesRef = useRef({});
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    itemsPerPage: ITEMS_PER_PAGE,
+    itemsPerPage: 10,
     totalItems: 0,
     totalPages: 1,
   });
@@ -175,7 +174,7 @@ export default function AdminPropertiesPage() {
 
       const params = new URLSearchParams();
       params.append("page", String(page));
-      params.append("limit", String(ITEMS_PER_PAGE));
+      params.append("limit", String(itemsPerPage));
 
       const response = await authenticatedFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties?${params.toString()}`,
@@ -221,14 +220,14 @@ export default function AdminPropertiesPage() {
 
         const paginationMeta = data.meta?.pagination || data.data?.pagination || {};
         const totalItems = Number(paginationMeta.totalItems ?? rows.length);
-        const itemsPerPage = Number(paginationMeta.itemsPerPage ?? ITEMS_PER_PAGE);
+        const resolvedItemsPerPage = Number(paginationMeta.itemsPerPage ?? itemsPerPage);
         const totalPages = Number(
-          paginationMeta.totalPages ?? Math.max(1, Math.ceil(totalItems / itemsPerPage)),
+          paginationMeta.totalPages ?? Math.max(1, Math.ceil(totalItems / resolvedItemsPerPage)),
         );
 
         setPagination({
           currentPage: Number(paginationMeta.currentPage ?? page),
-          itemsPerPage,
+          itemsPerPage: resolvedItemsPerPage,
           totalItems,
           totalPages,
         });
@@ -236,7 +235,7 @@ export default function AdminPropertiesPage() {
         setProperties([]);
         setPagination({
           currentPage: page,
-          itemsPerPage: ITEMS_PER_PAGE,
+          itemsPerPage,
           totalItems: 0,
           totalPages: 1,
         });
@@ -248,7 +247,7 @@ export default function AdminPropertiesPage() {
         setProperties([]);
         setPagination({
           currentPage: page,
-          itemsPerPage: ITEMS_PER_PAGE,
+          itemsPerPage,
           totalItems: 0,
           totalPages: 1,
         });
@@ -335,7 +334,7 @@ export default function AdminPropertiesPage() {
     const controller = new AbortController();
     loadProperties({ page: currentPage, showLoader: true, signal: controller.signal });
     return () => controller.abort();
-  }, [currentPage, reloadKey]);
+  }, [currentPage, reloadKey, itemsPerPage]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -415,17 +414,17 @@ export default function AdminPropertiesPage() {
             const withoutDuplicate = prev.filter(
               (prop) => String(prop.id) !== String(createdRow.id),
             );
-            return [createdRow, ...withoutDuplicate].slice(0, ITEMS_PER_PAGE);
+            return [createdRow, ...withoutDuplicate].slice(0, itemsPerPage);
           });
         }
 
         setPagination((prev) => {
           const totalItems = Math.max(0, Number(prev.totalItems) || 0) + 1;
-          const itemsPerPage = Number(prev.itemsPerPage) || ITEMS_PER_PAGE;
+          const resolvedItemsPerPage = Number(prev.itemsPerPage) || itemsPerPage;
           return {
             ...prev,
             totalItems,
-            totalPages: Math.max(1, Math.ceil(totalItems / itemsPerPage)),
+            totalPages: Math.max(1, Math.ceil(totalItems / resolvedItemsPerPage)),
           };
         });
       }
@@ -755,11 +754,13 @@ export default function AdminPropertiesPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
           <Pagination
             total={pagination.totalItems}
-            itemsPerPage={pagination.itemsPerPage}
+            itemsPerPage={itemsPerPage}
             currentPage={currentPage}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={() => {}}
-            showItemsPerPage={false}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              setCurrentPage(1);
+            }}
           />
         </div>
       </div>
@@ -892,11 +893,13 @@ export default function AdminPropertiesPage() {
         </table>
         <Pagination
           total={pagination.totalItems}
-          itemsPerPage={pagination.itemsPerPage}
+          itemsPerPage={itemsPerPage}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
-          onItemsPerPageChange={() => {}}
-          showItemsPerPage={false}
+          onItemsPerPageChange={(value) => {
+            setItemsPerPage(value);
+            setCurrentPage(1);
+          }}
         />
       </div>
 
